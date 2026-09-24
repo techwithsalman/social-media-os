@@ -1,0 +1,63 @@
+import fs from 'fs';
+import path from 'path';
+import { IStorageProvider, StoredFile } from './index';
+
+export class LocalStorageProvider implements IStorageProvider {
+  private uploadDir: string;
+  private publicPrefix: string;
+
+  constructor() {
+    if (process.env.UPLOAD_DIR) {
+      this.uploadDir = path.isAbsolute(process.env.UPLOAD_DIR)
+        ? process.env.UPLOAD_DIR
+        : path.join(process.cwd(), process.env.UPLOAD_DIR);
+    } else {
+      this.uploadDir = path.join(process.cwd(), 'public', 'uploads');
+    }
+    this.publicPrefix = '/uploads';
+
+    if (!fs.existsSync(this.uploadDir)) {
+      fs.mkdirSync(this.uploadDir, { recursive: true });
+    }
+  }
+
+  async uploadFile(file: Buffer, filename: string, mimeType: string): Promise<StoredFile> {
+    const ext = path.extname(filename);
+    const baseName = path.basename(filename, ext);
+    const uniqueFilename = `${Date.now()}-${Math.random().toString(36).substring(2, 8)}${ext}`;
+    const filePath = path.join(this.uploadDir, uniqueFilename);
+
+    await fs.promises.writeFile(filePath, file);
+
+    const publicUrl = `${this.publicPrefix}/${uniqueFilename}`;
+
+    return {
+      filename: uniqueFilename,
+      originalName: filename,
+      mimeType,
+      size: file.length,
+      url: publicUrl,
+      thumbnailUrl: mimeType.startsWith('image/') ? publicUrl : undefined,
+    };
+  }
+
+  async deleteFile(urlOrFilename: string): Promise<boolean> {
+    try {
+      const filename = path.basename(urlOrFilename);
+      const filePath = path.join(this.uploadDir, filename);
+      if (fs.existsSync(filePath)) {
+        await fs.promises.unlink(filePath);
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error('Failed to delete file:', error);
+      return false;
+    }
+  }
+
+  getPublicUrl(filename: string): string {
+    const base = process.env.APP_URL || 'http://localhost:3000';
+    return `${base}${this.publicPrefix}/${filename}`;
+  }
+}
