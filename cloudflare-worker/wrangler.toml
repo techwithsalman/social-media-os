@@ -1,0 +1,11 @@
+name = "social-media-os-cron-worker"
+main = "src/index.ts"
+compatibility_date = "2024-09-01"
+
+# Trigger background queue processing every 1 minute
+[triggers]
+crons = ["* * * * *"]
+
+# Environment variables for Cloudflare Worker
+[vars]
+APP_URL = "https://app.techwithsalman.online"
