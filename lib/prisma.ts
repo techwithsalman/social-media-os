@@ -7,6 +7,11 @@ declare global {
 
 function getResolvedDatabaseUrl(): { dbUrl: string; absolutePath: string } {
   const envUrl = process.env.DATABASE_URL || '';
+  
+  if (envUrl.startsWith('postgres://') || envUrl.startsWith('postgresql://')) {
+    return { dbUrl: envUrl, absolutePath: 'PostgreSQL Database' };
+  }
+
   const rawPath = envUrl.startsWith('file:') ? envUrl.replace(/^file:/, '') : envUrl;
 
   let normalizedPath = rawPath.replace(/\\/g, '/');
