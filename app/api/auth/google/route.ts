@@ -4,7 +4,9 @@ export const dynamic = 'force-dynamic';
 
 export async function GET(req: NextRequest) {
   const clientId = process.env.GOOGLE_CLIENT_ID;
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://social-media-os.netlify.app';
+  
+  // Dynamically resolve the app URL from the incoming request (handles localhost, preview, and prod automatically)
+  const appUrl = req.nextUrl.origin;
   const redirectUri = `${appUrl}/api/auth/google/callback`;
 
   if (!clientId) {

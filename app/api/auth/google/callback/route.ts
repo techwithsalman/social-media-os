@@ -11,7 +11,8 @@ export async function GET(req: NextRequest) {
   const code = searchParams.get('code');
   const error = searchParams.get('error');
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://social-media-os.netlify.app';
+  // Dynamically resolve the app URL from the incoming request
+  const appUrl = req.nextUrl.origin;
 
   if (error || !code) {
     return NextResponse.redirect(new URL('/login?error=google_auth_failed', appUrl));
