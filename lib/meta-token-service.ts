@@ -19,7 +19,8 @@ export interface MetaTokenMetadata {
 }
 
 export function isRealApiMode() {
-  return process.env.REAL_API_MODE === 'true' && process.env.MOCK_API_MODE !== 'true';
+  // Enforce real Meta OAuth integration by disabling sandbox/mock mode
+  return true;
 }
 
 export function isMetaPlatform(platform: string): platform is MetaPlatform {
@@ -40,7 +41,10 @@ export function buildMetaGraphUrl(path: string) {
 }
 
 export function getConfiguredMetaRedirectUri() {
-  return process.env.META_REDIRECT_URI?.trim() || '';
+  const appUrl = process.env.NODE_ENV === "production"
+    ? "https://social-media-os.netlify.app"
+    : "http://localhost:3000";
+  return `${appUrl}${META_CALLBACK_PATH}`;
 }
 
 export function isMetaOAuthConfigured() {
