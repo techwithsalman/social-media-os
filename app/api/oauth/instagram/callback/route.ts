@@ -1,0 +1,62 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { getSession } from '@/lib/auth';
+import {
+  consumeInstagramOAuthState,
+  exchangeInstagramCode,
+  saveInstagramAccount,
+  InstagramOAuthError,
+} from '@/lib/instagram-oauth';
+
+function redirectToAccounts(req: NextRequest, code: string) {
+  const url = new URL('/accounts', req.url);
+  url.searchParams.set('meta_error', code);
+  return NextResponse.redirect(url);
+}
+
+export async function GET(req: NextRequest) {
+  try {
+    const session = await getSession();
+    if (!session) {
+      const url = new URL('/login', req.url);
+      url.searchParams.set('redirect', '/accounts');
+      return NextResponse.redirect(url);
+    }
+
+    const { searchParams } = new URL(req.url);
+    const oauthError = searchParams.get('error');
+    const errorDescription = searchParams.get('error_description');
+
+    if (oauthError) {
+      console.error('[Instagram OAuth Error]:', oauthError, errorDescription);
+      return redirectToAccounts(req, oauthError === 'access_denied' ? 'authorization_cancelled' : 'instagram_oauth_failed');
+    }
+
+    const code = searchParams.get('code');
+    const state = searchParams.get('state');
+
+    if (!code || !state) {
+      return redirectToAccounts(req, 'instagram_oauth_failed');
+    }
+
+    // Validate state securely
+    const oauthState = await consumeInstagramOAuthState(state, session);
+    
+    // Exchange token and fetch profile
+    const profile = await exchangeInstagramCode(code, oauthState.redirectUri);
+    
+    // Save isolated to the workspace
+    await saveInstagramAccount(profile, session);
+
+    // Redirect to Connected Accounts successfully
+    const successUrl = new URL('/accounts?instagram_connected=1', req.url);
+    return NextResponse.redirect(successUrl);
+  } catch (error) {
+    if (error instanceof InstagramOAuthError) {
+      console.error('[Instagram Callback Error]:', error.message);
+      return redirectToAccounts(req, error.code.toLowerCase());
+    }
+
+    console.error('[Instagram Callback Exception]:', error);
+    return redirectToAccounts(req, 'instagram_oauth_failed');
+  }
+}

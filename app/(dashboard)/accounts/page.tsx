@@ -217,9 +217,15 @@ export default function ConnectedAccountsPage() {
       return;
     }
 
-    if (mode.realApiMode && isMetaPlatform(platform)) {
+    if (mode.realApiMode && platform === 'INSTAGRAM') {
       setActionLoadingPlatform(platform);
-      window.location.href = `/api/oauth/meta/connect?platform=${encodeURIComponent(platform)}`;
+      window.location.href = `/api/oauth/instagram/connect`;
+      return;
+    }
+
+    if (mode.realApiMode && platform === 'FACEBOOK') {
+      setActionLoadingPlatform(platform);
+      window.location.href = `/api/oauth/meta/connect?platform=FACEBOOK`;
       return;
     }
 
