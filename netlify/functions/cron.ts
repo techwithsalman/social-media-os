@@ -5,21 +5,32 @@ export default async function reqHandler(req: Request) {
   console.log(`[NETLIFY CRON] Triggered`);
   console.log(`[NETLIFY CRON] Timestamp UTC: ${now}`);
   
-  // Safely resolve the base URL. Prefer Netlify's native 'URL' variable.
-  // Explicitly reject localhost if it leaked into production configs.
-  let APP_URL = process.env.URL || 'https://social-media-os.netlify.app';
-  if (process.env.APP_URL && !process.env.APP_URL.includes('localhost')) {
-    APP_URL = process.env.APP_URL;
-  } else if (process.env.APP_URL?.includes('localhost') && !process.env.NETLIFY) {
-    APP_URL = process.env.APP_URL; // Allow localhost only in pure local development
+  console.log(`[NETLIFY CRON] process.env.URL: ${process.env.URL || 'undefined'}`);
+  console.log(`[NETLIFY CRON] process.env.DEPLOY_PRIME_URL: ${process.env.DEPLOY_PRIME_URL || 'undefined'}`);
+  console.log(`[NETLIFY CRON] process.env.APP_URL: ${process.env.APP_URL || 'undefined'}`);
+
+  const rawBaseUrl =
+    process.env.URL ||
+    process.env.DEPLOY_PRIME_URL ||
+    'https://social-media-os.netlify.app';
+
+  const baseUrl = rawBaseUrl.replace(/\/$/, '');
+
+  const target = `${baseUrl}/api/queue/process`;
+  console.log(`[NETLIFY CRON] Resolved base URL: ${baseUrl}`);
+  console.log(`[NETLIFY CRON] Target: ${target}`);
+
+  if (target.includes('localhost') || target.includes('127.0.0.1')) {
+    console.error(`[NETLIFY CRON] FATAL CONFIG ERROR: Target resolved to localhost. Aborting.`);
+    return new Response("Configuration Error", { status: 500 });
   }
+
   const CRON_SECRET = process.env.CRON_SECRET || '';
   
   console.log(`[NETLIFY CRON] Calling queue processor...`);
-  console.log(`[NETLIFY CRON] Target: ${APP_URL}/api/queue/process`);
 
   try {
-    const res = await fetch(`${APP_URL}/api/queue/process?secret=${CRON_SECRET}`, {
+    const res = await fetch(`${target}?secret=${CRON_SECRET}`, {
       method: 'GET',
       headers: {
         'Accept': 'application/json',
