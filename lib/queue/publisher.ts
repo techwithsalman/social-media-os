@@ -161,6 +161,7 @@ export class PublishingEngine {
           }
         }
 
+        console.log(`[QUEUE] Platform publish started for ${pPost.platform}`);
         const result = await adapter.publishPost({
           caption: pPost.customCaption || post.masterCaption,
           hashtags: pPost.hashtags || undefined,
@@ -174,6 +175,8 @@ export class PublishingEngine {
           isMock: pPost.socialAccount.isMock,
         });
 
+        console.log(`[QUEUE] Platform result: ${result.success ? 'SUCCESS' : 'FAILED'} ${result.statusMessage || result.errorMessage || ''}`);
+
         if (result.success) {
           const postStatus = result.status || 'PUBLISHED';
           if (postStatus === 'PUBLISHED') {
@@ -184,6 +187,7 @@ export class PublishingEngine {
             processingCount++;
           }
 
+          console.log(`[QUEUE] Updating platform status... (${postStatus})`);
           await prisma.platformPost.update({
             where: { id: pPost.id },
             data: {

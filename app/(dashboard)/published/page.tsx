@@ -274,9 +274,13 @@ export default function PublishedPostsPage() {
 
                     {p.status === 'PUBLISHED' ? (
                       <p className="text-xs text-emerald-400 font-medium">Live broadcast verified</p>
-                    ) : p.status === 'PROCESSING' || p.status === 'INBOX_DRAFT' ? (
+                    ) : p.status === 'INBOX_DRAFT' ? (
                       <p className="text-xs text-indigo-300 leading-relaxed bg-indigo-950/40 p-2.5 rounded-lg border border-indigo-900/50 break-words font-medium">
                         {p.errorMessage || 'Sent to TikTok Creator Inbox (Draft)'}
+                      </p>
+                    ) : p.status === 'PROCESSING' ? (
+                      <p className="text-xs text-blue-300 leading-relaxed bg-blue-950/40 p-2.5 rounded-lg border border-blue-900/50 break-words font-medium">
+                        {p.errorMessage || 'Currently processing on platform...'}
                       </p>
                     ) : (
                       <p className="text-xs text-red-300 leading-relaxed bg-red-950/40 p-2.5 rounded-lg border border-red-900/50 break-words font-mono">

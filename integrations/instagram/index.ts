@@ -271,7 +271,7 @@ export class InstagramAdapter implements ISocialPlatformAdapter {
 
       if (isVideo) {
         let isReady = false;
-        for (let attempt = 0; attempt < 30; attempt++) {
+        for (let attempt = 0; attempt < 4; attempt++) {
           const status = await getFromMeta(`/${container.data.id}`, {
             fields: 'status_code,status',
             access_token: payload.accessToken,
@@ -362,3 +362,4 @@ export class InstagramAdapter implements ISocialPlatformAdapter {
     return true;
   }
 }
+
