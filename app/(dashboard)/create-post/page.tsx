@@ -835,12 +835,15 @@ export default function CreatePostPage() {
         }
       }
 
-      // Reset the form fields underneath the success banner
-      setMasterCaption('');
-      setMediaFile(null);
-      setPlatformSettings(createDefaultPlatformSettings());
-      setSyncCaptions(true);
       setPublishSuccess(data.publishResult);
+
+        if (data.publishResult?.overallStatus !== 'FAILED') {
+          // Reset the form fields underneath the success banner
+          setMasterCaption('');
+          setMediaFile(null);
+          setPlatformSettings(createDefaultPlatformSettings());
+          setSyncCaptions(true);
+        }
     } catch (err: any) {
       setErrorMessage(err.message || 'Error publishing post');
     } finally {

@@ -209,11 +209,28 @@ export class InstagramAdapter implements ISocialPlatformAdapter {
       };
     }
 
+    const logMetaError = (stage: string, errorData: any) => {
+      console.error(`[IG PUBLISH] ${stage} FAILED. IG User ID: ${payload.platformAccountId}`);
+      if (errorData?.error) {
+        const err = errorData.error;
+        console.error(`Meta Error [${err.code}:${err.error_subcode || 'N/A'}]: ${err.message}`);
+        console.error(`Type: ${err.type}`);
+        if (err.error_user_title) console.error(`User Title: ${err.error_user_title}`);
+        if (err.error_user_msg) console.error(`User Msg: ${err.error_user_msg}`);
+        if (err.fbtrace_id) console.error(`FBTrace ID: ${err.fbtrace_id}`);
+      } else {
+        console.error('Unknown Meta error:', errorData);
+      }
+    };
+
     try {
       const isVideo = payload.mediaType === 'VIDEO' || payload.contentType === 'REEL';
       const mediaUrl = buildPublicMediaUrl(payload.mediaUrl);
 
+      console.log(`[IG PUBLISH] STAGE A: Public media URL generated: ${mediaUrl}`);
+
       if (!mediaUrl) {
+        console.error(`[IG PUBLISH] STAGE A FAILED: mediaUrl is missing`);
         return {
           success: false,
           errorCode: 'IG_MEDIA_REQUIRED',
@@ -223,11 +240,17 @@ export class InstagramAdapter implements ISocialPlatformAdapter {
 
       const params: Record<string, string> = {
         access_token: payload.accessToken,
-        caption: `${payload.caption} ${payload.hashtags || ''}`.trim(),
       };
 
+      const captionText = `${payload.caption || ''} ${payload.hashtags || ''}`.trim();
+      if (captionText) {
+        params.caption = captionText;
+      }
+
       if (isVideo) {
-        params.media_type = payload.contentType === 'REEL' ? 'REELS' : 'VIDEO';
+        // According to Meta Docs for Instagram API with Instagram Login:
+        // Video publishing requires media_type=REELS
+        params.media_type = 'REELS';
         params.video_url = mediaUrl;
       } else {
         params.image_url = mediaUrl;
@@ -236,6 +259,7 @@ export class InstagramAdapter implements ISocialPlatformAdapter {
       const container = await postToMeta(`/${payload.platformAccountId}/media`, params);
 
       if (!container.ok || !container.data.id) {
+        logMetaError('STAGE B: Container creation', container.data);
         return {
           success: false,
           errorCode: container.ok ? 'IG_CONTAINER_FAILED' : container.errorCode,
@@ -243,15 +267,18 @@ export class InstagramAdapter implements ISocialPlatformAdapter {
         };
       }
 
+      console.log(`[IG PUBLISH] STAGE B: Container creation SUCCESS. ID: ${container.data.id}`);
+
       if (isVideo) {
         let isReady = false;
         for (let attempt = 0; attempt < 30; attempt++) {
           const status = await getFromMeta(`/${container.data.id}`, {
-            fields: 'status_code',
+            fields: 'status_code,status',
             access_token: payload.accessToken,
           });
 
           if (!status.ok) {
+            logMetaError('STAGE C: Container processing', status.data);
             return {
               success: false,
               errorCode: status.errorCode,
@@ -260,15 +287,17 @@ export class InstagramAdapter implements ISocialPlatformAdapter {
           }
 
           if (status.data.status_code === 'FINISHED' || status.data.status_code === 'PUBLISHED') {
+            console.log(`[IG PUBLISH] STAGE C: Container processing FINISHED. Status: ${status.data.status_code}`);
             isReady = true;
             break;
           }
 
           if (status.data.status_code === 'ERROR' || status.data.status_code === 'EXPIRED') {
+            logMetaError('STAGE C: Container processing', status.data);
             return {
               success: false,
               errorCode: 'IG_CONTAINER_ERROR',
-              errorMessage: `Instagram video processing failed: ${status.data.status_code}. The video file might be inaccessible to Meta.`,
+              errorMessage: `Instagram video processing failed: ${status.data.status_code}. The video file might be inaccessible to Meta or invalid.`,
             };
           }
 
@@ -276,6 +305,7 @@ export class InstagramAdapter implements ISocialPlatformAdapter {
         }
 
         if (!isReady) {
+          console.error(`[IG PUBLISH] STAGE C FAILED: Container processing timed out.`);
           return {
             success: false,
             errorCode: 'IG_CONTAINER_TIMEOUT',
@@ -290,12 +320,15 @@ export class InstagramAdapter implements ISocialPlatformAdapter {
       });
 
       if (!publish.ok || !publish.data.id) {
+        logMetaError('STAGE D: media_publish', publish.data);
         return {
           success: false,
           errorCode: publish.ok ? 'IG_PUBLISH_FAILED' : publish.errorCode,
           errorMessage: publish.ok ? 'Failed to publish Instagram media container' : publish.errorMessage,
         };
       }
+
+      console.log(`[IG PUBLISH] STAGE D: media_publish SUCCESS. ID: ${publish.data.id}`);
 
       return {
         success: true,
@@ -304,6 +337,7 @@ export class InstagramAdapter implements ISocialPlatformAdapter {
         publishedAt: new Date(),
       };
     } catch (error: any) {
+      console.error(`[IG PUBLISH] UNEXPECTED ERROR:`, error);
       return {
         success: false,
         errorCode: 'IG_API_ERROR',
