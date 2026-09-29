@@ -1,13 +1,16 @@
-import { schedule } from "@netlify/functions";
+import type { Config } from "@netlify/functions";
 
-// Run every 2 minutes
-export const handler = schedule("*/2 * * * *", async (event) => {
-  console.log("[SCHEDULER] Triggered by Netlify Cron");
+export default async function reqHandler(req: Request) {
+  const now = new Date().toISOString();
+  console.log(`[NETLIFY CRON] Triggered`);
+  console.log(`[NETLIFY CRON] Timestamp UTC: ${now}`);
   
-  const APP_URL = process.env.APP_URL || process.env.URL || 'https://social-media-os.netlify.app';
+  // Use explicit environment variable or default to the production URL
+  const APP_URL = process.env.APP_URL || 'https://social-media-os.netlify.app';
   const CRON_SECRET = process.env.CRON_SECRET || '';
   
-  console.log(`[SCHEDULER] Hitting API at: ${APP_URL}/api/queue/process`);
+  console.log(`[NETLIFY CRON] Calling queue processor...`);
+  console.log(`[NETLIFY CRON] Target: ${APP_URL}/api/queue/process`);
 
   try {
     const res = await fetch(`${APP_URL}/api/queue/process?secret=${CRON_SECRET}`, {
@@ -17,20 +20,22 @@ export const handler = schedule("*/2 * * * *", async (event) => {
       }
     });
     
-    if (!res.ok) {
-      console.error(`[SCHEDULER] Failed with status ${res.status}: ${res.statusText}`);
-      const text = await res.text();
-      console.error(`[SCHEDULER] Error Body:`, text);
-      return { statusCode: res.status };
-    }
-
-    const data = await res.json();
-    console.log(`[SCHEDULER] Processing result:`, data);
-  } catch (err) {
-    console.error(`[SCHEDULER] Network error triggering queue processor:`, err);
+    console.log(`[NETLIFY CRON] HTTP status: ${res.status} ${res.statusText}`);
+    
+    const text = await res.text();
+    console.log(`[NETLIFY CRON] Response:`, text);
+    
+    return new Response(text, { 
+      status: res.status,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  } catch (err: any) {
+    console.error(`[NETLIFY CRON] Network error:`, err);
+    return new Response("Error", { status: 500 });
   }
-  
-  return {
-    statusCode: 200,
-  };
-});
+}
+
+// OPTION A: Register the Netlify Scheduled Function explicitly in V2 syntax
+export const config: Config = {
+  schedule: "*/2 * * * *"
+};
