@@ -9,6 +9,8 @@ import { processScheduledMediaCleanup } from '../storage/r2-cleanup';
  */
 export async function processDueScheduledPosts() {
   const now = new Date();
+  
+  console.log(`\nSCHEDULER TRIGGER:\n${now.toISOString()}`);
 
   // 1. Find candidate posts marked as SCHEDULED with scheduledFor <= now
   const dueCandidates = await prisma.contentPost.findMany({
@@ -20,14 +22,28 @@ export async function processDueScheduledPosts() {
     },
     select: {
       id: true,
+      scheduledFor: true,
+      timezone: true,
     },
     take: 10,
   });
+
+  if (dueCandidates.length === 0) {
+    console.log(`[Queue Worker] No due posts found matching status='SCHEDULED' and scheduledFor <= ${now.toISOString()}`);
+  }
 
   const results = [];
   let claimedCount = 0;
 
   for (const candidate of dueCandidates) {
+    console.log(`\nPOST:\n${candidate.id}`);
+    console.log(`SCHEDULED AT:\n${candidate.scheduledFor ? candidate.scheduledFor.toISOString() : 'null'}`);
+    console.log(`CURRENT UTC:\n${now.toISOString()}`);
+    console.log(`TIMEZONE:\n${candidate.timezone || 'UTC'}`);
+    
+    const isDue = candidate.scheduledFor ? candidate.scheduledFor <= now : false;
+    console.log(`DUE:\n${isDue}`);
+
     // 2. Atomically claim the job: transition status to PROCESSING ONLY IF current status is STILL SCHEDULED
     const claimResult = await prisma.contentPost.updateMany({
       where: {
@@ -39,20 +55,34 @@ export async function processDueScheduledPosts() {
       },
     });
 
-    // If claimResult.count === 0, another concurrent worker instance already claimed this post
     if (claimResult.count === 0) {
-      console.log(`[Queue Worker] Post ${candidate.id} was already claimed by another worker. Skipping.`);
+      console.log(`CLAIM RESULT:\nskipped (already claimed)`);
       continue;
     }
 
+    console.log(`CLAIM RESULT:\nclaimed`);
     claimedCount++;
 
     try {
-      console.log(`[Queue Worker] Atomically claimed & publishing due post: ${candidate.id}`);
       const result = await PublishingEngine.publishContentPost(candidate.id);
+      
+      const success = result && result.overallStatus && result.overallStatus !== 'FAILED';
+      console.log(`PUBLISH RESULT:\n${success ? 'success' : 'failure'}`);
+      
+      if (!success) {
+        console.log(`ERROR:\n`, JSON.stringify(result, null, 2));
+      }
+      
       results.push(result);
-    } catch (err) {
-      console.error(`[Queue Worker] Failed to publish claimed post ${candidate.id}:`, err);
+    } catch (err: any) {
+      console.log(`PUBLISH RESULT:\nfailure`);
+      console.log(`ERROR:\n`, err?.message || err);
+      
+      // Fallback transition to FAILED if the engine threw an exception completely
+      await prisma.contentPost.updateMany({
+        where: { id: candidate.id, status: 'PROCESSING' },
+        data: { status: 'FAILED' }
+      }).catch(() => {});
     }
   }
 
