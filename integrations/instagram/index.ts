@@ -244,7 +244,8 @@ export class InstagramAdapter implements ISocialPlatformAdapter {
       }
 
       if (isVideo) {
-        for (let attempt = 0; attempt < 5; attempt++) {
+        let isReady = false;
+        for (let attempt = 0; attempt < 30; attempt++) {
           const status = await getFromMeta(`/${container.data.id}`, {
             fields: 'status_code',
             access_token: payload.accessToken,
@@ -259,18 +260,27 @@ export class InstagramAdapter implements ISocialPlatformAdapter {
           }
 
           if (status.data.status_code === 'FINISHED' || status.data.status_code === 'PUBLISHED') {
+            isReady = true;
             break;
           }
 
           if (status.data.status_code === 'ERROR' || status.data.status_code === 'EXPIRED') {
             return {
               success: false,
-              errorCode: 'IG_CONTAINER_NOT_READY',
-              errorMessage: `Instagram media container status is ${status.data.status_code}.`,
+              errorCode: 'IG_CONTAINER_ERROR',
+              errorMessage: `Instagram video processing failed: ${status.data.status_code}. The video file might be inaccessible to Meta.`,
             };
           }
 
-          await delay(2000);
+          await delay(3000);
+        }
+
+        if (!isReady) {
+          return {
+            success: false,
+            errorCode: 'IG_CONTAINER_TIMEOUT',
+            errorMessage: 'Instagram video processing timed out after 90 seconds. Please try again.',
+          };
         }
       }
 
