@@ -87,6 +87,9 @@ export async function processDueScheduledPosts() {
   }
 
   // 3. Maintenance trigger: process background media asset cleanup
+  console.log('[RECONCILE] Starting automatic reconciliation for PROCESSING posts...');
+  await PublishingEngine.reconcileProcessingPosts();
+
   let cleanupSummary = null;
   try {
     cleanupSummary = await processScheduledMediaCleanup();
