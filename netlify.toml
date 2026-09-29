@@ -3,6 +3,4 @@
   command = "npm run build"
   publish = ".next"
 
-# OPTION B: Explicitly register the cron schedule in netlify.toml
-[functions."cron"]
-  schedule = "*/2 * * * *"
+
