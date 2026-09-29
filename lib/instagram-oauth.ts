@@ -2,6 +2,7 @@ import prisma from './prisma';
 import { randomBytes, createHash } from 'crypto';
 import { SessionPayload } from './auth';
 import { getWorkspaceEntitlements } from './billing';
+import { encryptToken } from './crypto';
 
 export class InstagramOAuthError extends Error {
   constructor(message: string, public code: string, public status = 400) {
@@ -182,6 +183,8 @@ export async function saveInstagramAccount(
     );
   }
 
+  const encryptedAccessToken = encryptToken(profile.accessToken);
+
   const connectedAccount = await prisma.socialAccount.create({
     data: {
       workspaceId: session.workspaceId,
@@ -194,7 +197,7 @@ export async function saveInstagramAccount(
       isMock: false,
       token: {
         create: {
-          accessToken: profile.accessToken,
+          accessToken: encryptedAccessToken,
           refreshToken: null,
           scope: 'instagram_business_basic,instagram_business_content_publish',
           expiresAt: profile.expiresAt,

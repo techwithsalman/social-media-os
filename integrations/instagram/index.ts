@@ -16,8 +16,16 @@ import {
   sanitizeMetaErrorMessage,
 } from '../../lib/meta-token-service';
 
+function getApiHostUrl(path: string, token?: string) {
+  const normalizedPath = path.startsWith('/') ? path : `/${path}`;
+  if (token && token.startsWith('IG')) {
+    return `https://graph.instagram.com/v23.0${normalizedPath}`;
+  }
+  return buildMetaGraphUrl(path);
+}
+
 async function postToMeta(path: string, params: Record<string, string>) {
-  const res = await fetch(buildMetaGraphUrl(path), {
+  const res = await fetch(getApiHostUrl(path, params.access_token), {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded', Accept: 'application/json' },
     body: new URLSearchParams(params),
@@ -25,6 +33,7 @@ async function postToMeta(path: string, params: Record<string, string>) {
   const data = await res.json().catch(() => ({}));
 
   if (!res.ok) {
+    console.error('[IG API POST ERROR]', path, data);
     return {
       ok: false,
       data,
@@ -37,13 +46,14 @@ async function postToMeta(path: string, params: Record<string, string>) {
 }
 
 async function getFromMeta(path: string, params: Record<string, string>) {
-  const url = new URL(buildMetaGraphUrl(path));
+  const url = new URL(getApiHostUrl(path, params.access_token));
   Object.entries(params).forEach(([key, value]) => url.searchParams.set(key, value));
 
   const res = await fetch(url.toString(), { headers: { Accept: 'application/json' } });
   const data = await res.json().catch(() => ({}));
 
   if (!res.ok) {
+    console.error('[IG API GET ERROR]', path, data);
     return {
       ok: false,
       data,
