@@ -143,6 +143,41 @@ export class FacebookAdapter implements ISocialPlatformAdapter {
       };
     }
 
+    const logMetaError = async (stage: string, errorData: any) => {
+      console.error(`\n[FB PUBLISH ERROR] FAILED STAGE: ${stage}`);
+      console.error(`PAGE ID: ${payload.platformAccountId}`);
+
+      // Diagnostic token check
+      try {
+        const debugRes = await fetch(buildMetaGraphUrl('/debug_token') + `?input_token=${payload.accessToken}&access_token=${process.env.META_APP_ID}|${process.env.META_APP_SECRET}`).then(r => r.json());
+        const tokenData = debugRes?.data || {};
+        console.error(`TOKEN TYPE: ${tokenData.type || 'UNKNOWN'}`);
+        console.error(`GRANTED SCOPES: ${(tokenData.scopes || []).join(', ')}`);
+        console.error(`IS VALID: ${tokenData.is_valid}`);
+        
+        const missing = [];
+        if (!tokenData.scopes?.includes('pages_manage_posts')) missing.push('pages_manage_posts');
+        if (!tokenData.scopes?.includes('pages_read_engagement')) missing.push('pages_read_engagement');
+        if (missing.length > 0) {
+          console.error(`MISSING SCOPES: ${missing.join(', ')}`);
+          console.error(`RECONNECT REQUIRED: YES`);
+        }
+      } catch (e) {
+        console.error(`Failed to diagnose token scopes`);
+      }
+
+      if (errorData?.error) {
+        const err = errorData.error;
+        console.error(`Meta Error [${err.code}:${err.error_subcode || 'N/A'}]: ${err.message}`);
+        console.error(`Type: ${err.type}`);
+        if (err.error_user_title) console.error(`User Title: ${err.error_user_title}`);
+        if (err.error_user_msg) console.error(`User Msg: ${err.error_user_msg}`);
+        if (err.fbtrace_id) console.error(`FBTrace ID: ${err.fbtrace_id}`);
+      } else {
+        console.error('Unknown Meta error:', errorData);
+      }
+    };
+
     try {
       const mediaUrl = buildPublicMediaUrl(payload.mediaUrl);
       const caption = `${payload.caption} ${payload.hashtags || ''}`.trim();
@@ -156,6 +191,7 @@ export class FacebookAdapter implements ISocialPlatformAdapter {
         });
 
         if (!result.ok) {
+          await logMetaError('PHOTO PUBLISH', result.data);
           return {
             success: false,
             errorCode: result.errorCode,
@@ -172,6 +208,10 @@ export class FacebookAdapter implements ISocialPlatformAdapter {
       }
 
       if (payload.mediaType === 'VIDEO' && mediaUrl) {
+        console.log(`[FB PUBLISH] VIDEO REQUEST to /${payload.platformAccountId}/videos`);
+        console.log(`description: ${caption}`);
+        console.log(`file_url: ${mediaUrl}`);
+
         const result = await postToMeta(`/${payload.platformAccountId}/videos`, {
           access_token: payload.accessToken,
           description: caption,
@@ -179,6 +219,7 @@ export class FacebookAdapter implements ISocialPlatformAdapter {
         });
 
         if (!result.ok) {
+          await logMetaError('VIDEO PUBLISH', result.data);
           return {
             success: false,
             errorCode: result.errorCode,
@@ -200,6 +241,7 @@ export class FacebookAdapter implements ISocialPlatformAdapter {
       });
 
       if (!result.ok || !result.data.id) {
+        await logMetaError('FEED PUBLISH', result.data);
         return {
           success: false,
           errorCode: result.ok ? 'FB_PUBLISH_FAILED' : result.errorCode,
@@ -214,6 +256,7 @@ export class FacebookAdapter implements ISocialPlatformAdapter {
         publishedAt: new Date(),
       };
     } catch (error: any) {
+      console.error(`[FB PUBLISH ERROR] UNEXPECTED:`, error);
       return {
         success: false,
         errorCode: 'FB_API_ERROR',
