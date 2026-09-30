@@ -109,18 +109,29 @@ export const Sidebar: React.FC<SidebarProps> = ({
         }`}
       >
         {/* Brand Header */}
-        <div className="flex items-center gap-3.5 px-6 h-20 border-b border-slate-800/90 bg-[#080d18]">
-          <div className="flex items-center justify-center w-11 h-11 rounded-2xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-purple-500 text-white shadow-xl shadow-indigo-500/30 shrink-0">
-            <Sparkles className="w-6 h-6" />
+        <div className="flex items-center justify-between px-6 h-20 border-b border-slate-800/90 bg-[#080d18]">
+          <div className="flex items-center gap-3.5">
+            <div className="flex items-center justify-center w-11 h-11 rounded-2xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-purple-500 text-white shadow-xl shadow-indigo-500/30 shrink-0">
+              <Sparkles className="w-6 h-6" />
+            </div>
+            <div>
+              <h1 className="text-lg font-black tracking-tight text-white flex items-center gap-1.5">
+                Social Media <span className="text-indigo-400">OS</span>
+              </h1>
+              <p className="text-xs font-semibold text-slate-400 tracking-wider uppercase">
+                Multi-Platform Suite
+              </p>
+            </div>
           </div>
-          <div>
-            <h1 className="text-lg font-black tracking-tight text-white flex items-center gap-1.5">
-              Social Media <span className="text-indigo-400">OS</span>
-            </h1>
-            <p className="text-xs font-semibold text-slate-400 tracking-wider uppercase">
-              Multi-Platform Suite
-            </p>
-          </div>
+          {/* Close button for mobile */}
+          {isOpenMobile && (
+            <button
+              onClick={onCloseMobile}
+              className="lg:hidden p-2 -mr-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+            </button>
+          )}
         </div>
 
         {/* Workspace Quick Switcher */}

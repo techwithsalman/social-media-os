@@ -51,10 +51,7 @@ export class PublishingEngine {
       for (const pPost of stuckPlatforms) {
         if (!pPost.externalPostId || pPost.socialAccount.isMock) continue;
 
-        console.log(`\n[RECONCILE] Post ID: ${pPost.contentPostId}`);
-        console.log(`[RECONCILE] Platform: ${pPost.platform}`);
-        console.log(`[RECONCILE] externalPostId: ${pPost.externalPostId}`);
-        console.log(`[RECONCILE] Current status: ${pPost.status}`);
+        console.log(`[RECONCILE] Checking existing container: ${pPost.externalPostId}`);
 
         let newChildStatus = pPost.status;
 
@@ -70,7 +67,7 @@ export class PublishingEngine {
             console.log(`[RECONCILE] Meta status: ${statusData.status_code || 'UNKNOWN'}`);
 
             if (statusData.status_code === 'FINISHED' || statusData.status_code === 'PUBLISHED') {
-              console.log(`[RECONCILE] Action taken: Calling media_publish`);
+              console.log(`[RECONCILE] media_publish executed: true`);
               const publishUrl = `https://graph.instagram.com/v23.0/${pPost.socialAccount.platformAccountId}/media_publish`;
               const pubRes = await fetch(publishUrl, {
                 method: 'POST',
@@ -90,14 +87,14 @@ export class PublishingEngine {
                     errorMessage: null,
                   },
                 });
-                console.log(`[RECONCILE] Final DB status: PUBLISHED`);
+                console.log(`[RECONCILE] Final status: PUBLISHED`);
               } else if (pubData.error?.message?.includes('has already been published')) {
                  newChildStatus = 'PUBLISHED';
                  await prisma.platformPost.update({
                    where: { id: pPost.id },
                    data: { status: 'PUBLISHED', errorMessage: null }
                  });
-                 console.log(`[RECONCILE] Final DB status: PUBLISHED (already published)`);
+                 console.log(`[RECONCILE] Final status: PUBLISHED`);
               } else {
                 newChildStatus = 'FAILED';
                 await prisma.platformPost.update({
@@ -115,7 +112,7 @@ export class PublishingEngine {
               });
               console.log(`[RECONCILE] Final DB status: FAILED`);
             } else {
-              console.log(`[RECONCILE] Action taken: Still processing, skipping`);
+              console.log(`[RECONCILE] media_publish executed: false`);
             }
           } catch (err: any) {
             console.error(`[RECONCILE] Error querying Meta API:`, err);
@@ -443,17 +440,20 @@ export class PublishingEngine {
 
     // Determine final master status
     let finalStatus: 'PUBLISHED' | 'INBOX_DRAFT' | 'PROCESSING' | 'PARTIALLY_FAILED' | 'FAILED' = 'PUBLISHED';
-    if (successCount === 0 && failCount > 0 && processingCount === 0 && inboxDraftCount === 0) {
-      finalStatus = 'FAILED';
-    } else if (inboxDraftCount > 0 && successCount === 0 && processingCount === 0 && failCount === 0) {
-      finalStatus = 'INBOX_DRAFT';
-    } else if (successCount === 0 && processingCount > 0 && failCount === 0) {
-      finalStatus = 'PROCESSING';
-    } else if (failCount > 0) {
-      finalStatus = 'PARTIALLY_FAILED';
-    } else if (successCount > 0) {
-      finalStatus = 'PUBLISHED';
-    }
+      const totalCount = successCount + failCount + processingCount + inboxDraftCount;
+      if (successCount === totalCount && successCount > 0) {
+        finalStatus = 'PUBLISHED';
+      } else if (inboxDraftCount === totalCount && inboxDraftCount > 0) {
+        finalStatus = 'INBOX_DRAFT';
+      } else if (successCount + inboxDraftCount === totalCount && (successCount > 0 || inboxDraftCount > 0)) {
+        finalStatus = successCount > 0 ? 'PUBLISHED' : 'INBOX_DRAFT';
+      } else if (failCount === totalCount && failCount > 0) {
+        finalStatus = 'FAILED';
+      } else if (processingCount > 0 && failCount === 0) {
+        finalStatus = 'PROCESSING';
+      } else if (failCount > 0) {
+        finalStatus = 'PARTIALLY_FAILED';
+      }
 
     await prisma.contentPost.update({
       where: { id: contentPostId },

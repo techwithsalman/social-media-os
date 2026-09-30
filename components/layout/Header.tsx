@@ -95,8 +95,8 @@ export const Header: React.FC<HeaderProps> = ({
             <span>Back</span>
           </button>
         )}
-        <div>
-          <h2 className="text-xl md:text-2xl font-black text-white tracking-tight">
+        <div className="flex-1 min-w-0">
+          <h2 className="text-lg sm:text-xl md:text-2xl font-black text-white tracking-tight truncate">
             {title || 'Dashboard Overview'}
           </h2>
         </div>
@@ -114,7 +114,7 @@ export const Header: React.FC<HeaderProps> = ({
           onClick={handleSeedDemo}
           disabled={seeding}
           title="Seed realistic demo accounts and scheduled posts"
-          className="flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-xl bg-slate-800/90 hover:bg-slate-700 text-slate-200 border border-slate-700/90 transition-all duration-150 shadow-sm disabled:opacity-50"
+          className="flex items-center justify-center gap-2 px-2.5 sm:px-4 py-2 text-sm font-semibold rounded-xl bg-slate-800/90 hover:bg-slate-700 text-slate-200 border border-slate-700/90 transition-all duration-150 shadow-sm disabled:opacity-50"
         >
           {seeding ? (
             <div className="w-4 h-4 border-2 border-indigo-400 border-t-transparent rounded-full animate-spin" />
@@ -131,12 +131,12 @@ export const Header: React.FC<HeaderProps> = ({
         {/* Notifications Icon */}
         <button
           onClick={onOpenNotifications}
-          className="relative p-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+          className="relative p-2 sm:p-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
           title="Notifications"
         >
           <Bell className="w-5 h-5" />
           {unreadCount > 0 && (
-            <span className="absolute top-2 right-2 flex h-2.5 w-2.5">
+            <span className="absolute top-1.5 sm:top-2 right-1.5 sm:right-2 flex h-2.5 w-2.5">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-indigo-500"></span>
             </span>
@@ -146,10 +146,10 @@ export const Header: React.FC<HeaderProps> = ({
         {/* Fast Action: Create Post */}
         <Link
           href="/create-post"
-          className="flex items-center gap-2 px-5 py-2.5 text-sm font-bold rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white shadow-lg shadow-indigo-600/25 transition-all hover:scale-[1.02] active:scale-[0.98]"
+          className="flex items-center justify-center gap-2 px-2.5 sm:px-5 py-2.5 text-sm font-bold rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white shadow-lg shadow-indigo-600/25 transition-all hover:scale-[1.02] active:scale-[0.98]"
         >
-          <Plus className="w-4 h-4" />
-          <span>Create Post</span>
+          <Plus className="w-5 h-5 sm:w-4 sm:h-4" />
+          <span className="hidden sm:inline">Create Post</span>
         </Link>
       </div>
     </header>

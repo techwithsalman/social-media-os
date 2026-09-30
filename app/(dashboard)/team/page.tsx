@@ -124,7 +124,7 @@ export default function TeamPage() {
           {members.map((member) => (
             <div
               key={member.id}
-              className="py-5 first:pt-0 last:pb-0 flex items-center justify-between gap-5"
+              className="py-5 first:pt-0 last:pb-0 flex flex-col sm:flex-row sm:items-center justify-between gap-4 sm:gap-5"
             >
               <div className="flex items-center gap-4 overflow-hidden">
                 <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-indigo-500 to-purple-600 text-white flex items-center justify-center font-bold text-base shrink-0 shadow-md">

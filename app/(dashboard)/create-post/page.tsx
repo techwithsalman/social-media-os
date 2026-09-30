@@ -941,7 +941,7 @@ export default function CreatePostPage() {
       {/* Duplicating Post Notice */}
       {isDuplicating && (
         <div className="mb-8 p-5 rounded-2xl bg-indigo-500/10 border border-indigo-500/30 text-indigo-300 text-sm font-semibold flex items-center justify-between shadow-md">
-          <div className="flex items-center gap-3">
+          <div>
             <Copy className="w-5 h-5 text-indigo-400 shrink-0" />
             <span>Duplicating post — content and media pre-filled. Publishing will create a brand new post.</span>
           </div>
@@ -1881,20 +1881,20 @@ export default function CreatePostPage() {
           </div>
 
           {/* PUBLISHING ACTIONS BAR */}
-          <div className="sticky bottom-6 z-20 p-5 md:p-6 rounded-3xl bg-[#080d18]/95 backdrop-blur-xl border border-slate-800 shadow-2xl flex flex-wrap items-center justify-between gap-4">
+          <div className="sticky bottom-4 md:bottom-6 z-20 p-4 md:p-6 rounded-3xl bg-[#080d18]/95 backdrop-blur-xl border border-slate-800 shadow-2xl flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4">
             <div className="flex items-center gap-3">
               <button
                 type="button"
                 onClick={handleSaveDraft}
                 disabled={publishing}
-                className="flex items-center gap-2 px-5 py-3 text-sm font-bold rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition-colors disabled:opacity-50"
+                className="flex items-center justify-center gap-2 px-5 py-3 text-sm font-bold rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition-colors disabled:opacity-50 w-full sm:w-auto"
               >
                 <Save className="w-4 h-4 text-slate-400" />
                 <span>Save Draft</span>
               </button>
             </div>
 
-            <div className="flex items-center gap-3.5">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-3.5 w-full sm:w-auto">
               <button
                 type="button"
                 onClick={() => {
@@ -1902,7 +1902,7 @@ export default function CreatePostPage() {
                   setShowScheduleModal(true);
                 }}
                 disabled={publishing || selectedAccounts.length === 0}
-                className="flex items-center gap-2 px-5 py-3 text-sm font-bold rounded-2xl bg-indigo-950/70 hover:bg-indigo-900/70 text-indigo-300 border border-indigo-500/40 transition-colors disabled:opacity-50"
+                className="flex items-center justify-center gap-2 px-5 py-3 text-sm font-bold rounded-2xl bg-indigo-950/70 hover:bg-indigo-900/70 text-indigo-300 border border-indigo-500/40 transition-colors disabled:opacity-50 w-full sm:w-auto"
               >
                 <Clock className="w-4 h-4 text-indigo-400" />
                 <span>Schedule Post</span>

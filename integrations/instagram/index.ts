@@ -267,7 +267,8 @@ export class InstagramAdapter implements ISocialPlatformAdapter {
         };
       }
 
-      console.log(`[IG PUBLISH] STAGE B: Container creation SUCCESS. ID: ${container.data.id}`);
+      console.log(`[INSTAGRAM] Container created: ${container.data.id}`);
+        console.log(`[INSTAGRAM] Initial polling budget: 12s`);
 
       if (isVideo) {
         let isReady = false;
@@ -287,7 +288,7 @@ export class InstagramAdapter implements ISocialPlatformAdapter {
           }
 
           if (status.data.status_code === 'FINISHED' || status.data.status_code === 'PUBLISHED') {
-            console.log(`[IG PUBLISH] STAGE C: Container processing FINISHED. Status: ${status.data.status_code}`);
+            console.log(`[INSTAGRAM] Status: ${status.data.status_code}`);
             isReady = true;
             break;
           }
@@ -305,11 +306,14 @@ export class InstagramAdapter implements ISocialPlatformAdapter {
         }
 
         if (!isReady) {
-          console.error(`[IG PUBLISH] STAGE C FAILED: Container processing timed out.`);
+          console.log(`[INSTAGRAM] Status: IN_PROGRESS`);
+          console.log(`[INSTAGRAM] Returning PROCESSING for reconciliation`);
           return {
-            success: false,
-            errorCode: 'IG_CONTAINER_TIMEOUT',
-            errorMessage: 'Instagram video processing timed out after 90 seconds. Please try again.',
+            success: true,
+            status: 'PROCESSING',
+            externalPostId: container.data.id,
+            externalPostUrl: '',
+            statusMessage: 'Instagram is processing your video. Publishing will complete automatically.',
           };
         }
       }
