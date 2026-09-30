@@ -235,6 +235,18 @@ export default function ConnectedAccountsPage() {
       return;
     }
 
+    if (platform === 'X') {
+      setActionLoadingPlatform(platform);
+      window.location.href = `/api/oauth/x/connect`;
+      return;
+    }
+
+    if (platform === 'LINKEDIN') {
+      setActionLoadingPlatform(platform);
+      window.location.href = `/api/oauth/linkedin/connect`;
+      return;
+    }
+
     try {
       setActionLoadingPlatform(platform);
       const res = await fetch('/api/accounts/mock-connect', {

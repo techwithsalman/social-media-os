@@ -82,8 +82,94 @@ export class LinkedInAdapter implements ISocialPlatformAdapter {
     return true;
   }
 
-  async uploadMedia(mediaUrl: string, mediaType: string, accessToken: string): Promise<PlatformMediaUploadResult> {
-    return { mediaContainerId: `urn:li:digitalmediaAsset:${Date.now()}` };
+  async uploadMedia(mediaUrl: string, mediaType: string, accessToken: string, platformAccountId?: string): Promise<PlatformMediaUploadResult> {
+    const isMock = accessToken.startsWith('mock_') || process.env.MOCK_API_MODE === 'true';
+    if (isMock) {
+      return { mediaContainerId: `urn:li:image:${Date.now()}` };
+    }
+
+    try {
+      // 1. Fetch media
+      const mediaRes = await fetch(mediaUrl);
+      if (!mediaRes.ok) {
+        throw new Error('Failed to fetch media from URL');
+      }
+      const mediaBuffer = await mediaRes.arrayBuffer();
+
+      let authorUrn = '';
+      if (platformAccountId) {
+        authorUrn = platformAccountId.startsWith('urn:') ? platformAccountId : `urn:li:person:${platformAccountId}`;
+      } else {
+        const profileRes = await fetch('https://api.linkedin.com/v2/userinfo', {
+          headers: { Authorization: `Bearer ${accessToken}` }
+        });
+        const profile = await profileRes.json();
+        authorUrn = `urn:li:person:${profile.sub}`;
+      }
+
+      if (mediaType === 'VIDEO') {
+        const initRes = await fetch('https://api.linkedin.com/rest/videos?action=initializeUpload', {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            'Linkedin-Version': '202401',
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            initializeUploadRequest: {
+              owner: authorUrn,
+              fileSizeBytes: mediaBuffer.byteLength,
+              uploadCaptions: false,
+              uploadThumbnail: false
+            }
+          })
+        });
+        const initData = await initRes.json();
+        if (!initRes.ok) throw new Error(initData.message || 'Failed to initialize video upload');
+
+        const uploadUrl = initData.value.uploadInstructions[0].uploadUrl;
+        const videoUrn = initData.value.video;
+
+        const uploadRes = await fetch(uploadUrl, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/octet-stream' },
+          body: mediaBuffer
+        });
+
+        if (!uploadRes.ok) throw new Error('Failed to upload video bytes');
+        return { mediaContainerId: videoUrn };
+      } else {
+        const initRes = await fetch('https://api.linkedin.com/rest/images?action=initializeUpload', {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            'Linkedin-Version': '202401',
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            initializeUploadRequest: { owner: authorUrn }
+          })
+        });
+        const initData = await initRes.json();
+        if (!initRes.ok) throw new Error(initData.message || 'Failed to initialize image upload');
+
+        const uploadUrl = initData.value.uploadUrl;
+        const imageUrn = initData.value.image;
+
+        const uploadRes = await fetch(uploadUrl, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/octet-stream' },
+          body: mediaBuffer
+        });
+
+        if (!uploadRes.ok) throw new Error('Failed to upload image bytes');
+        return { mediaContainerId: imageUrn };
+      }
+
+    } catch (error: any) {
+      console.error('[LinkedIn Upload Error]', error);
+      throw new Error(error.message || 'LinkedIn media upload failed');
+    }
   }
 
   async publishPost(payload: PublishPayload): Promise<PublishResult> {
@@ -99,43 +185,69 @@ export class LinkedInAdapter implements ISocialPlatformAdapter {
     }
 
     try {
-      const res = await fetch('https://api.linkedin.com/v2/ugcPosts', {
+      const authorUrn = payload.platformAccountId.startsWith('urn:') ? payload.platformAccountId : `urn:li:person:${payload.platformAccountId}`;
+
+      let mediaContainerId = undefined;
+      if (payload.mediaUrl) {
+         const mediaUploadResult = await this.uploadMedia(payload.mediaUrl, payload.mediaType || 'IMAGE', payload.accessToken, authorUrn);
+         mediaContainerId = mediaUploadResult.mediaContainerId;
+      }
+
+      const postBody: any = {
+        author: authorUrn,
+        commentary: `${payload.caption} ${payload.hashtags || ''}`.trim(),
+        visibility: payload.visibility === 'CONNECTIONS_ONLY' ? 'CONNECTIONS' : 'PUBLIC',
+        distribution: {
+          feedDistribution: "MAIN_FEED",
+          targetEntities: [],
+          thirdPartyDistributionChannels: []
+        },
+        lifecycleState: 'PUBLISHED',
+        isReshareDisabledByAuthor: false
+      };
+
+      if (mediaContainerId) {
+        postBody.content = {
+           media: {
+              id: mediaContainerId
+           }
+        };
+      }
+
+      const res = await fetch('https://api.linkedin.com/rest/posts', {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${payload.accessToken}`,
+          'Linkedin-Version': '202401',
           'Content-Type': 'application/json',
           'X-Restli-Protocol-Version': '2.0.0',
         },
-        body: JSON.stringify({
-          author: payload.platformAccountId.startsWith('urn:') ? payload.platformAccountId : `urn:li:person:${payload.platformAccountId}`,
-          lifecycleState: 'PUBLISHED',
-          specificContent: {
-            'com.linkedin.ugc.ShareContent': {
-              shareCommentary: {
-                text: `${payload.caption} ${payload.hashtags || ''}`.trim(),
-              },
-              shareMediaCategory: payload.mediaUrl ? (payload.mediaType === 'VIDEO' ? 'VIDEO' : 'IMAGE') : 'NONE',
-            },
-          },
-          visibility: {
-            'com.linkedin.ugc.MemberNetworkVisibility': payload.visibility === 'CONNECTIONS_ONLY' ? 'CONNECTIONS' : 'PUBLIC',
-          },
-        }),
+        body: JSON.stringify(postBody),
       });
 
-      const data = await res.json();
-      if (!res.ok || !data.id) {
+      let data: any = {};
+      const resText = await res.text();
+      if (resText) {
+         try {
+            data = JSON.parse(resText);
+         } catch(e) {}
+      }
+
+      const locationHeader = res.headers.get('x-restli-id') || res.headers.get('x-linkedin-id');
+      const postId = locationHeader || data?.id;
+
+      if (!res.ok || !postId) {
         return {
           success: false,
           errorCode: 'LINKEDIN_SHARE_FAILED',
-          errorMessage: data?.message || 'Failed to publish to LinkedIn',
+          errorMessage: data?.message || data?.errorDetailType || 'Failed to publish to LinkedIn',
         };
       }
 
       return {
         success: true,
-        externalPostId: data.id,
-        externalPostUrl: `https://www.linkedin.com/feed/update/${data.id}`,
+        externalPostId: postId,
+        externalPostUrl: `https://www.linkedin.com/feed/update/${postId}`,
         publishedAt: new Date(),
       };
     } catch (error: any) {
