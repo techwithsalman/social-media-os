@@ -19,12 +19,12 @@ export default function AnalyticsPage() {
   const [dateRange, setDateRange] = useState('30D');
 
   const metrics = [
-    { label: 'Total Impressions', value: '184.2K', change: '+18.4%', icon: Eye, color: 'text-indigo-400' },
-    { label: 'Total Reach', value: '92.6K', change: '+12.1%', icon: Users, color: 'text-blue-400' },
-    { label: 'Engagement Rate', value: '4.85%', change: '+0.6%', icon: TrendingUp, color: 'text-emerald-400' },
-    { label: 'Total Likes', value: '14.8K', change: '+24.5%', icon: Heart, color: 'text-rose-400' },
-    { label: 'Comments', value: '1.92K', change: '+8.3%', icon: MessageCircle, color: 'text-amber-400' },
-    { label: 'Shares / Retweets', value: '840', change: '+15.2%', icon: Share2, color: 'text-purple-400' },
+    { label: 'Total Impressions', value: "--", change: "--", icon: Eye, color: 'text-indigo-400' },
+    { label: 'Total Reach', value: "--", change: "--", icon: Users, color: 'text-blue-400' },
+    { label: 'Engagement Rate', value: "--", change: "--", icon: TrendingUp, color: 'text-emerald-400' },
+    { label: 'Total Likes', value: "--", change: "--", icon: Heart, color: 'text-rose-400' },
+    { label: 'Comments', value: "--", change: "--", icon: MessageCircle, color: 'text-amber-400' },
+    { label: 'Shares / Retweets', value: "--", change: "--", icon: Share2, color: 'text-purple-400' },
   ];
 
   const platformBreakdown = [

@@ -236,7 +236,7 @@ export class PublishingEngine {
         let finalAccessToken = decryptedToken;
 
         // Auto-refresh TikTok token if near or past expiration before publishing
-        if (platformType === 'TIKTOK' && pPost.socialAccount.token) {
+        if ((platformType === 'TIKTOK' || platformType === 'YOUTUBE') && pPost.socialAccount.token) {
           const tokenRecord = pPost.socialAccount.token;
           const isNearOrPastExpiry =
             tokenRecord.expiresAt &&
@@ -267,12 +267,12 @@ export class PublishingEngine {
                 });
 
                 console.log(
-                  `[Queue Publisher] Successfully refreshed expired TikTok token for @${pPost.socialAccount.username}`
+                  `[Queue Publisher] Successfully refreshed expired ${platformType} token for @${pPost.socialAccount.username}`
                 );
               }
             } catch (refreshErr: any) {
               console.error(
-                `[Queue Publisher] TikTok token refresh failed for @${pPost.socialAccount.username}:`,
+                `[Queue Publisher] ${platformType} token refresh failed for @${pPost.socialAccount.username}:`,
                 refreshErr
               );
 
@@ -282,7 +282,7 @@ export class PublishingEngine {
               });
 
               throw new Error(
-                `TikTok session for @${pPost.socialAccount.username} has expired and could not be refreshed. Please reconnect account in Social Accounts.`
+                `${platformType} session for @${pPost.socialAccount.username} has expired and could not be refreshed. Please reconnect account in Social Accounts.`
               );
             }
           }

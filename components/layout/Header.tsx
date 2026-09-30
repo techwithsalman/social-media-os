@@ -109,7 +109,9 @@ export const Header: React.FC<HeaderProps> = ({
           <span>Development Simulation</span>
         </div>
 
-        {/* Quick Seed Demo Data */}
+        {process.env.NODE_ENV !== 'production' && (
+        <>
+          {/* Quick Seed Demo Data */}
         <button
           onClick={handleSeedDemo}
           disabled={seeding}
@@ -127,6 +129,8 @@ export const Header: React.FC<HeaderProps> = ({
             {seeding ? 'Seeding...' : seedSuccess ? 'Data Loaded!' : 'Seed Demo Data'}
           </span>
         </button>
+        </>
+      )}
 
         {/* Notifications Icon */}
         <button

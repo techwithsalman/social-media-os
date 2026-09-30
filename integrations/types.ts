@@ -54,6 +54,7 @@ export interface PublishResult {
   errorCode?: string;
   isMockSimulation?: boolean;
   publishedAt?: Date;
+  updatedMetadata?: any;
 }
 
 export interface PlatformPostStatusResult {

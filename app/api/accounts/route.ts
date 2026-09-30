@@ -20,18 +20,33 @@ export async function GET() {
 
     await syncMetaAccountTokenStatuses(session.workspaceId);
 
-    if (isRealTikTokConfigured()) {
-      await prisma.socialAccount.deleteMany({
-        where: {
-          workspaceId: session.workspaceId,
-          platform: 'TIKTOK',
-          isMock: true,
-        },
-      });
-    }
+            // Global one-time cleanup of ALL mock social accounts from production DB
+    await prisma.socialAccount.deleteMany({
+      where: {
+        workspaceId: session.workspaceId,
+        isMock: true,
+      }
+    });
 
-    const accounts = await prisma.socialAccount.findMany({
-      where: { workspaceId: session.workspaceId },
+    // Global one-time cleanup of seeded mock posts and notifications
+    await prisma.contentPost.deleteMany({
+      where: {
+        workspaceId: session.workspaceId,
+        title: {
+          in: [
+            'Q3 Product Announcement & Roadmap',
+            'Creator Workflow Deep Dive',
+            'Official Social Media OS Launch Announcement',
+            '5 Posts Scheduled for this week',
+          ],
+        },
+      },
+    });
+
+    
+
+const accounts = await prisma.socialAccount.findMany({
+      where: { workspaceId: session.workspaceId, isMock: false },
       include: {
         token: {
           select: {

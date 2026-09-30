@@ -203,7 +203,7 @@ const DEFAULT_PLATFORM_SETTINGS: Record<string, PlatformSettingsState> = {
     allowDuet: true,
     allowStitch: true,
     linkUrl: '',
-    boardName: 'Brand Studio',
+    boardName: '',
     youtubeTitle: '',
     categoryId: '22',
     audience: 'PUBLIC',
@@ -1824,7 +1824,7 @@ export default function CreatePostPage() {
                         type="text"
                         value={platformSettings.PINTEREST?.boardName || ''}
                         onChange={(e) => updatePlatformSetting('PINTEREST', 'boardName', e.target.value)}
-                        placeholder="Brand Studio"
+                        placeholder=""
                         className="w-full p-3 text-sm bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:ring-1 focus:ring-indigo-500"
                       />
                     </div>
@@ -1964,15 +1964,15 @@ export default function CreatePostPage() {
                 <div className="flex items-center justify-between pb-3.5 border-b border-slate-900 mb-4">
                   <div className="flex items-center gap-3">
                     <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-600 flex items-center justify-center text-white text-sm font-bold shrink-0">
-                      B
+                      {(selectedAccounts.find(a => a.platform === previewPlatform)?.name?.[0] || accounts.find(a => a.platform === previewPlatform)?.name?.[0] || 'Y').toUpperCase()}
                     </div>
                     <div>
                       <p className="text-sm font-bold text-white flex items-center gap-2">
-                        <span>Brand Studio</span>
+                        <span>{selectedAccounts.find(a => a.platform === previewPlatform)?.name || accounts.find(a => a.platform === previewPlatform)?.name || 'Your Channel'}</span>
                         <PlatformIcon platform={previewPlatform} size={14} className="w-3.5 h-3.5 rounded" />
                       </p>
                       <p className="text-xs text-slate-500">
-                        {previewPlatform === 'YOUTUBE' ? '@AlexRiveraOfficial' : '@brandstudio'} • Just now
+                        {selectedAccounts.find(a => a.platform === previewPlatform)?.username || accounts.find(a => a.platform === previewPlatform)?.username || '@yourchannel'} • Just now
                       </p>
                     </div>
                   </div>

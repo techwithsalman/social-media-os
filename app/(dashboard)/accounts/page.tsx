@@ -229,6 +229,12 @@ export default function ConnectedAccountsPage() {
       return;
     }
 
+    if (platform === 'YOUTUBE') {
+      setActionLoadingPlatform(platform);
+      window.location.href = `/api/oauth/youtube/connect`;
+      return;
+    }
+
     try {
       setActionLoadingPlatform(platform);
       const res = await fetch('/api/accounts/mock-connect', {
@@ -298,7 +304,7 @@ export default function ConnectedAccountsPage() {
             Connected Channels ({connectedPlatformCount} / {supportedPlatforms.length})
           </h1>
           <p className="text-sm md:text-base text-slate-400 mt-1.5">
-            Connect official developer OAuth accounts or test instantly with simulated sandbox connections.
+            Connect your official social media accounts to manage and schedule content.
           </p>
         </div>
 
