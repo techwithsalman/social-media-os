@@ -64,10 +64,9 @@ export class PublishingEngine {
             const statusRes = await fetch(statusUrl);
             const statusData = await statusRes.json().catch(() => ({}));
 
-            console.log(`[RECONCILE] Meta status: ${statusData.status_code || 'UNKNOWN'}`);
+            console.log(`[RECONCILE] Status: ${statusData.status_code || 'UNKNOWN'}`);
 
             if (statusData.status_code === 'FINISHED' || statusData.status_code === 'PUBLISHED') {
-              console.log(`[RECONCILE] media_publish executed: true`);
               const publishUrl = `https://graph.instagram.com/v23.0/${pPost.socialAccount.platformAccountId}/media_publish`;
               const pubRes = await fetch(publishUrl, {
                 method: 'POST',
@@ -307,7 +306,14 @@ export class PublishingEngine {
           }
         }
 
-        console.log(`[QUEUE] Platform publish started for ${pPost.platform}`);
+        const isScheduled = !!post.scheduledFor;
+        const isMulti = post.platformPosts.length > 1;
+        const flowSource = isMulti ? 'MULTI_PLATFORM' : isScheduled ? 'SCHEDULED' : 'POST_NOW';
+        if (pPost.platform === 'INSTAGRAM') {
+          console.log(`[INSTAGRAM] Flow source: ${flowSource}`);
+        } else {
+          console.log(`[QUEUE] Platform publish started for ${pPost.platform}`);
+        }
         const result = await adapter.publishPost({
           caption: pPost.customCaption || post.masterCaption,
           hashtags: pPost.hashtags || undefined,

@@ -267,8 +267,8 @@ export class InstagramAdapter implements ISocialPlatformAdapter {
         };
       }
 
-      console.log(`[INSTAGRAM] Container created: ${container.data.id}`);
-        console.log(`[INSTAGRAM] Initial polling budget: 12s`);
+      console.log(`[INSTAGRAM] Container ID: ${container.data.id}`);
+        console.log(`[INSTAGRAM] Initial poll budget: 12 seconds`);
 
       if (isVideo) {
         let isReady = false;
