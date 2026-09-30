@@ -23,11 +23,12 @@ export function getYouTubeConfig() {
   const clientId = process.env.GOOGLE_CLIENT_ID;
   const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
 
-  const appUrl = process.env.NODE_ENV === "production"
-    ? "https://social-media-os.netlify.app"
-    : "http://localhost:3000";
-    
-  const redirectUri = `${appUrl}/api/oauth/youtube/callback`;
+  // Enforce explicit production URL exactly as registered in Google Cloud Console
+  // Fallback to localhost ONLY if explicitly running local development
+  const redirectUri = process.env.YOUTUBE_REDIRECT_URI || 
+    (process.env.NODE_ENV === "development" 
+      ? "http://localhost:3000/api/oauth/youtube/callback" 
+      : "https://social-media-os.netlify.app/api/oauth/youtube/callback");
 
   if (!clientId || !clientSecret) {
     throw new YouTubeOAuthError(
