@@ -130,17 +130,31 @@ export class YouTubeAdapter implements ISocialPlatformAdapter {
       }
 
       let uploadUrl = payload.metadata?.youtubeUploadUrl;
-      let totalSize = payload.metadata?.youtubeUploadTotalSize;
+      let totalSize = payload.metadata?.youtubeUploadTotalSize || payload.metadata?.mediaSize || 0;
       
       // Step 1: Initialize Resumable Upload Session if it doesn't exist
       if (!uploadUrl) {
-        // Find total size by making a HEAD request to R2
-        const headRes = await fetch(payload.mediaUrl, { method: 'HEAD' });
-        totalSize = parseInt(headRes.headers.get('content-length') || '0', 10);
-        
-        if (totalSize === 0) {
-           return { success: false, errorCode: 'MEDIA_ERROR', errorMessage: 'Could not determine media size.' };
-        }
+        // Find exact total size robustly: DB -> HEAD -> Fallback
+          totalSize = payload.metadata?.youtubeUploadTotalSize || payload.metadata?.mediaSize || 0;
+          
+          if (!totalSize) {
+            try {
+              const headRes = await fetch(payload.mediaUrl, { method: 'HEAD' });
+              totalSize = parseInt(headRes.headers.get('content-length') || '0', 10);
+            } catch (err) {
+              console.error('[YOUTUBE] HEAD request failed:', err);
+            }
+          }
+          
+          if (!totalSize || isNaN(totalSize) || totalSize === 0) {
+             console.error('[YOUTUBE] Size resolution failed:', {
+               mediaUrl: payload.mediaUrl,
+               dbByteSize: payload.metadata?.mediaSize,
+               r2ContentLength: totalSize,
+               sizeSource: 'Failed'
+             });
+             return { success: false, errorCode: 'MEDIA_ERROR', errorMessage: 'Could not determine media size.' };
+          }
 
         const videoTitle = payload.metadata?.youtubeTitle || payload.caption.slice(0, 100) || 'Untitled Video';
         const description = payload.caption;

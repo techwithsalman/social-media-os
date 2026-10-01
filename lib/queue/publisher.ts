@@ -288,11 +288,16 @@ export class PublishingEngine {
           }
         }
 
-        let metadataObj = {};
+        let metadataObj: Record<string, any> = {};
         try {
           if (pPost.metadata) metadataObj = JSON.parse(pPost.metadata);
         } catch {
           // ignore
+        }
+        
+        // Inject exact media size from database to assist resilient uploading
+        if (post.mediaAsset) {
+          metadataObj.mediaSize = post.mediaAsset.size;
         }
 
         // Determine media type & resolve private R2 access URL
