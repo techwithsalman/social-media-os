@@ -55,9 +55,11 @@ interface PlatformSettingsState {
   linkUrl: string;
   boardName?: string;
   youtubeTitle: string;
-  categoryId: string;
-  audience: string;
-}
+    categoryId: string;
+    audience: string;
+    youtubeTitleManualOverride?: boolean;
+    youtubeDescManualOverride?: boolean;
+  }
 
 interface MediaFileState {
   id: string;
@@ -540,13 +542,25 @@ export default function CreatePostPage() {
   const handleMasterCaptionChange = (text: string) => {
     setMasterCaption(text);
     if (syncCaptions) {
+      const paragraphs = text.split(/\n\s*\n/).map(p => p.trim()).filter(Boolean);
+      const autoYoutubeTitle = (paragraphs[0] || '').slice(0, 100);
+      const autoYoutubeDescription = paragraphs.slice(1).join('\n\n') || '';
+
       setPlatformSettings((prev) => {
         const next = { ...prev };
         Object.keys(next).forEach((plat) => {
-          next[plat] = {
-            ...next[plat],
-            caption: text,
-          };
+          if (plat === 'YOUTUBE') {
+            next[plat] = {
+              ...next[plat],
+              youtubeTitle: next[plat].youtubeTitleManualOverride ? next[plat].youtubeTitle : autoYoutubeTitle,
+              caption: next[plat].youtubeDescManualOverride ? next[plat].caption : autoYoutubeDescription,
+            };
+          } else {
+            next[plat] = {
+              ...next[plat],
+              caption: text,
+            };
+          }
         });
         return next;
       });
@@ -592,13 +606,21 @@ export default function CreatePostPage() {
     key: keyof PlatformSettingsState,
     value: any
   ) => {
-    setPlatformSettings((prev) => ({
-      ...prev,
-      [platform]: {
-        ...(prev[platform] || DEFAULT_PLATFORM_SETTINGS[platform]),
-        [key]: value,
-      },
-    }));
+    setPlatformSettings((prev) => {
+      const platState = { ...(prev[platform] || DEFAULT_PLATFORM_SETTINGS[platform]) };
+      // @ts-ignore
+      platState[key] = value;
+      
+      if (platform === 'YOUTUBE') {
+        if (key === 'youtubeTitle') platState.youtubeTitleManualOverride = true;
+        if (key === 'caption') platState.youtubeDescManualOverride = true;
+      }
+      
+      return {
+        ...prev,
+        [platform]: platState,
+      };
+    });
   };
 
   const toggleAccountSelection = (accountId: string) => {
@@ -707,7 +729,7 @@ export default function CreatePostPage() {
         return {
           socialAccountId: a.id,
           platform: a.platform,
-          customCaption: platSet.caption || masterCaption,
+          customCaption: (platSet.caption !== undefined && platSet.caption !== null) ? platSet.caption : masterCaption,
           hashtags: platSet.hashtags,
           contentType: platSet.contentType,
           visibility: platSet.visibility,
@@ -1640,13 +1662,12 @@ export default function CreatePostPage() {
 
                   <div>
                     <label className="block text-xs md:text-sm font-bold text-slate-300 mb-1.5">
-                      Description (Synced with Master Caption)
-                    </label>
-                    <textarea
-                      rows={3}
-                      disabled={syncCaptions}
-                      value={platformSettings.YOUTUBE?.caption}
-                      onChange={(e) => updatePlatformSetting('YOUTUBE', 'caption', e.target.value)}
+                        YouTube Description
+                      </label>
+                      <textarea
+                        rows={3}
+                        value={platformSettings.YOUTUBE?.caption}
+                        onChange={(e) => updatePlatformSetting('YOUTUBE', 'caption', e.target.value)}
                       placeholder="YouTube description..."
                       className="w-full p-3.5 text-sm bg-slate-950 border border-slate-800 rounded-xl text-white placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-indigo-500 disabled:opacity-60 leading-relaxed"
                     />
