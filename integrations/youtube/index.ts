@@ -11,6 +11,21 @@ import {
 } from '../types';
 import { DEMO_SOCIAL_ACCOUNT_BY_PLATFORM } from '../../lib/platforms';
 
+
+function getYouTubeMimeType(payload: any) {
+  if (payload.metadata?.mediaMimeType && payload.metadata.mediaMimeType !== 'VIDEO' && payload.metadata.mediaMimeType !== 'IMAGE') {
+    return payload.metadata.mediaMimeType;
+  }
+  
+  const filename = (payload.metadata?.mediaFilename || payload.mediaUrl || '').toLowerCase();
+  if (filename.includes('.mp4')) return 'video/mp4';
+  if (filename.includes('.webm')) return 'video/webm';
+  if (filename.includes('.mov')) return 'video/quicktime';
+  if (filename.includes('.m4v')) return 'video/x-m4v';
+  
+  return 'application/octet-stream';
+}
+
 export class YouTubeAdapter implements ISocialPlatformAdapter {
   readonly platform: SocialPlatformType = 'YOUTUBE';
 
@@ -129,7 +144,16 @@ export class YouTubeAdapter implements ISocialPlatformAdapter {
          };
       }
 
-      let uploadUrl = payload.metadata?.youtubeUploadUrl;
+      const resolvedMimeType = getYouTubeMimeType(payload);
+        
+        console.log('[YOUTUBE] Diagnostic Upload Info:');
+        console.log('[YOUTUBE] media category:', payload.mediaType);
+        console.log('[YOUTUBE] stored mime type:', payload.metadata?.mediaMimeType);
+        console.log('[YOUTUBE] resolved mime type:', resolvedMimeType);
+        console.log('[YOUTUBE] filename:', payload.metadata?.mediaFilename);
+        console.log('[YOUTUBE] X-Upload-Content-Type:', resolvedMimeType);
+        
+        let uploadUrl = payload.metadata?.youtubeUploadUrl;
       let totalSize = payload.metadata?.youtubeUploadTotalSize || payload.metadata?.mediaSize || 0;
       
       // Step 1: Initialize Resumable Upload Session if it doesn't exist
@@ -145,6 +169,8 @@ export class YouTubeAdapter implements ISocialPlatformAdapter {
               console.error('[YOUTUBE] HEAD request failed:', err);
             }
           }
+          
+          console.log('[YOUTUBE] total size:', totalSize);
           
           if (!totalSize || isNaN(totalSize) || totalSize === 0) {
              console.error('[YOUTUBE] Size resolution failed:', {
@@ -169,7 +195,7 @@ export class YouTubeAdapter implements ISocialPlatformAdapter {
               Authorization: `Bearer ${payload.accessToken}`,
               'Content-Type': 'application/json; charset=UTF-8',
               'X-Upload-Content-Length': totalSize.toString(),
-              'X-Upload-Content-Type': payload.mediaType || 'video/mp4',
+              'X-Upload-Content-Type': resolvedMimeType,
             },
             body: JSON.stringify({
               snippet: {
@@ -263,7 +289,7 @@ export class YouTubeAdapter implements ISocialPlatformAdapter {
       const uploadRes = await fetch(uploadUrl, {
         method: 'PUT',
         headers: {
-          'Content-Type': payload.mediaType || 'video/mp4',
+          'Content-Type': resolvedMimeType,
           'Content-Length': chunkBuffer.length.toString(),
           'Content-Range': contentRange,
         },

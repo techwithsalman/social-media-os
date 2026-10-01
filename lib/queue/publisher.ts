@@ -298,6 +298,8 @@ export class PublishingEngine {
         // Inject exact media size from database to assist resilient uploading
         if (post.mediaAsset) {
           metadataObj.mediaSize = post.mediaAsset.size;
+          metadataObj.mediaMimeType = post.mediaAsset.mimeType;
+          metadataObj.mediaFilename = post.mediaAsset.originalName || post.mediaAsset.filename;
         }
 
         // Determine media type & resolve private R2 access URL
