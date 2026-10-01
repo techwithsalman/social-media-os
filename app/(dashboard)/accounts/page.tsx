@@ -211,6 +211,18 @@ export default function ConnectedAccountsPage() {
   }, [accounts, loading]);
 
   const handleConnect = async (platform: string) => {
+    if (platform === 'LINKEDIN') {
+      window.open('https://www.linkedin.com/developers/', '_blank', 'noopener,noreferrer');
+      return;
+    }
+    if (platform === 'X') {
+      window.open('https://developer.x.com/', '_blank', 'noopener,noreferrer');
+      return;
+    }
+    if (platform === 'SNAPCHAT') {
+      window.open('https://developers.snap.com/', '_blank', 'noopener,noreferrer');
+      return;
+    }
     if (platform === 'TIKTOK' && mode.realTikTokConfigured) {
       setActionLoadingPlatform(platform);
       window.location.href = `/api/oauth/tiktok/connect`;
@@ -235,17 +247,9 @@ export default function ConnectedAccountsPage() {
       return;
     }
 
-    if (platform === 'X') {
-      setActionLoadingPlatform(platform);
-      window.location.href = `/api/oauth/x/connect`;
-      return;
-    }
+    
 
-    if (platform === 'LINKEDIN') {
-      setActionLoadingPlatform(platform);
-      window.location.href = `/api/oauth/linkedin/connect`;
-      return;
-    }
+    
 
     try {
       setActionLoadingPlatform(platform);
@@ -478,8 +482,12 @@ export default function ConnectedAccountsPage() {
                           <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                         ) : (
                           <>
-                            <Share2 className="w-4 h-4" />
-                            <span>Connect</span>
+                            {(plat.id === 'LINKEDIN' || plat.id === 'X' || plat.id === 'SNAPCHAT') ? (
+                                <ExternalLink className="w-4 h-4" />
+                              ) : (
+                                <Share2 className="w-4 h-4" />
+                              )}
+                              <span>Connect</span>
                           </>
                         )}
                       </button>
