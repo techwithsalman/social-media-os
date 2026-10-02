@@ -1,5 +1,9 @@
-/** @type {import('next').NextConfig} */
-const nextConfig = {
+const fs = require('fs');
+const path = 'next.config.js';
+let content = fs.readFileSync(path, 'utf8');
+
+if (!content.includes('async headers()')) {
+  const headersObj = `
   async headers() {
     return [
       {
@@ -28,22 +32,9 @@ const nextConfig = {
         ],
       },
     ];
-  },
-  output: 'standalone',
-  reactStrictMode: true,
-  images: {
-    remotePatterns: [
-      {
-        protocol: 'https',
-        hostname: '**',
-      },
-    ],
-  },
-  experimental: {
-    serverActions: {
-      bodySizeLimit: '50mb',
-    },
-  },
-};
-
-module.exports = nextConfig;
+  },`;
+  
+  content = content.replace(/const nextConfig = \{/, 'const nextConfig = {' + headersObj);
+  fs.writeFileSync(path, content);
+  console.log('Added security headers to next.config.js');
+}

@@ -18,6 +18,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Missing required parameters.' }, { status: 400 });
     }
 
+    if (!objectKey.startsWith(`workspaces/${session.workspaceId}/`)) {
+      return NextResponse.json({ error: 'Unauthorized object key.' }, { status: 403 });
+    }
+
     // Generate the playback/download URL for the newly uploaded R2 object
     const playbackUrl = await resolveMediaAccessUrl(objectKey, session.workspaceId);
 

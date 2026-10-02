@@ -4,8 +4,14 @@ import { hashPassword, signSessionToken, AUTH_COOKIE_NAME } from '@/lib/auth';
 import { WORKSPACE_TIMEZONE } from '@/lib/timezone';
 import { ensureDefaultPlans, getPlanByCode } from '@/lib/billing';
 
+import { getRateLimit } from '@/lib/rate-limit';
+
 export async function POST(req: NextRequest) {
   try {
+    const ip = req.headers.get('x-forwarded-for') || 'unknown';
+    const rateLimit = getRateLimit(`signup_${ip}`, 5, 60 * 1000);
+    if (!rateLimit.success) return NextResponse.json({ error: 'Too many attempts, try again later.' }, { status: 429 });
+
     const { firstName, lastName, email, password, confirmPassword } = await req.json();
 
     if (!email || !password || !firstName || !lastName) {
