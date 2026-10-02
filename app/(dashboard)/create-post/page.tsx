@@ -271,6 +271,8 @@ export default function CreatePostPage() {
 
   // UI tabs & views
   const [activeTab, setActiveTab] = useState<string>('ALL');
+  const [pinterestBoards, setPinterestBoards] = useState<any[]>([]);
+  const [fetchingBoards, setFetchingBoards] = useState(false);
   const [previewPlatform, setPreviewPlatform] = useState<string>('INSTAGRAM');
 
   // Modals
@@ -1841,13 +1843,17 @@ export default function CreatePostPage() {
                       <label className="block text-xs md:text-sm font-bold text-slate-300 mb-1.5">
                         Board
                       </label>
-                      <input
-                        type="text"
-                        value={platformSettings.PINTEREST?.boardName || ''}
-                        onChange={(e) => updatePlatformSetting('PINTEREST', 'boardName', e.target.value)}
-                        placeholder=""
-                        className="w-full p-3 text-sm bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                      />
+                      <select
+                          value={platformSettings.PINTEREST?.boardName || ''}
+                          onChange={(e) => updatePlatformSetting('PINTEREST', 'boardName', e.target.value)}
+                          className="w-full p-3 text-sm bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                        >
+                          <option value="">-- Select a Board --</option>
+                          {pinterestBoards.map(b => (
+                             <option key={b.id} value={b.id}>{b.name} ({b.accountName})</option>
+                          ))}
+                        </select>
+                        {fetchingBoards && <p className="text-xs text-indigo-400 mt-1">Loading boards...</p>}
                     </div>
 
                     <div>
