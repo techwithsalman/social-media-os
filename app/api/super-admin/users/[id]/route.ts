@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { verifyCsrfOrigin } from '@/lib/csrf';
 import prisma from '@/lib/prisma';
 import { getAdminUserDetail } from '@/lib/admin-data';
 import { logActivity } from '@/lib/audit';
@@ -81,6 +82,7 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
 }
 
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
+  if (!verifyCsrfOrigin(req)) return NextResponse.json({ error: 'CSRF token missing or invalid' }, { status: 403 });
   try {
     const admin = await requireSuperAdmin();
     const body = await req.json();

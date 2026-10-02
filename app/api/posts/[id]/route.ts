@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { verifyCsrfOrigin } from '@/lib/csrf';
 import prisma from '@/lib/prisma';
 import { getSession } from '@/lib/auth';
 import { PublishingEngine } from '@/lib/queue/publisher';
@@ -80,6 +81,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
 }
 
 export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
+  if (!verifyCsrfOrigin(req)) return NextResponse.json({ error: 'CSRF token missing or invalid' }, { status: 403 });
   try {
     const session = await getSession();
     if (!session) {
@@ -236,6 +238,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
 }
 
 export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
+  if (!verifyCsrfOrigin(req)) return NextResponse.json({ error: 'CSRF token missing or invalid' }, { status: 403 });
   try {
     const session = await getSession();
     if (!session) {
@@ -284,6 +287,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
 }
 
 export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
+  if (!verifyCsrfOrigin(req)) return NextResponse.json({ error: 'CSRF token missing or invalid' }, { status: 403 });
   try {
     const session = await getSession();
     if (!session) {

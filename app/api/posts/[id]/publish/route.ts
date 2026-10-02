@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { verifyCsrfOrigin } from '@/lib/csrf';
 import { getSession } from '@/lib/auth';
 import { PublishingEngine } from '@/lib/queue/publisher';
 import prisma from '@/lib/prisma';
 import { EntitlementError, assertCanCreateBillablePost, assertWorkspaceActive, recordPostUsage } from '@/lib/billing';
 
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
+  if (!verifyCsrfOrigin(req)) return NextResponse.json({ error: 'CSRF token missing or invalid' }, { status: 403 });
   try {
     const session = await getSession();
     if (!session) {

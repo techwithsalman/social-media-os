@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getSession } from '@/lib/auth';
 import { exchangeTikTokCodeForTokens, fetchTikTokUserInfo, TikTokOAuthError } from '@/lib/tiktok-oauth';
 import prisma from '@/lib/prisma';
 import { encryptToken } from '@/lib/crypto';
@@ -31,6 +32,11 @@ function redirectToAccounts(
 }
 
 export async function GET(req: NextRequest) {
+  const session = await getSession();
+  if (!session) {
+    return redirectToAccounts(req, { error: 'unauthorized', errorDesc: 'You must be logged in.' });
+  }
+
   const { searchParams } = new URL(req.url);
   const code = searchParams.get('code');
   const state = searchParams.get('state');
@@ -117,6 +123,9 @@ export async function GET(req: NextRequest) {
 
   try {
     const tokenResult = await exchangeTikTokCodeForTokens(code, state);
+    if (tokenResult.userId !== session.userId || tokenResult.workspaceId !== session.workspaceId) {
+      throw new TikTokOAuthError('OAuth state does not match your current session. Possible CSRF attack prevented.', 'STATE_MISMATCH');
+    }
     const userInfo = await fetchTikTokUserInfo(tokenResult.accessToken);
 
     const tokenData = {
