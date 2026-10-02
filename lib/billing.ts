@@ -209,7 +209,7 @@ export async function getEffectivePlan(workspaceId: string, now = new Date()) {
       where: {
         workspaceId,
         status: { in: ['ACTIVE', 'MANUAL', 'TRIALING'] },
-        OR: [{ currentPeriodEnd: null }, { currentPeriodEnd: { gte: now } }, { trialEndsAt: { gte: now } }],
+        OR: [{ currentPeriodEnd: null }, { currentPeriodEnd: { gte: new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000) } }, { trialEndsAt: { gte: now } }],
       },
       include: { plan: true },
       orderBy: { createdAt: 'desc' },
@@ -704,4 +704,130 @@ export function serializeEntitlements(entitlements: Awaited<ReturnType<typeof ge
         }
       : null,
   };
+}
+
+export async function assignManualSubscription(workspaceId: string, planCode: string, adminUserId: string) {
+  const plan = await getPlanByCode(planCode);
+  const now = new Date();
+  
+  const currentPeriodEnd = new Date(now);
+  currentPeriodEnd.setMonth(currentPeriodEnd.getMonth() + 1);
+
+  const subscription = await prisma.subscription.create({
+    data: {
+      workspaceId,
+      planId: plan.id,
+      planTier: plan.code,
+      status: 'ACTIVE',
+      source: 'MANUAL',
+      startedAt: now,
+      currentPeriodStart: now,
+      currentPeriodEnd: currentPeriodEnd,
+      cancelAtPeriodEnd: false,
+    },
+  });
+
+  await prisma.paymentTransaction.create({
+    data: {
+      workspaceId,
+      planId: plan.id,
+      amount: plan.monthlyPrice || 0,
+      currency: plan.currency || 'USD',
+      provider: 'MANUAL',
+      status: 'PAID',
+      paidAt: now,
+      createdByAdminId: adminUserId,
+      notes: 'Initial manual subscription assignment',
+    }
+  });
+
+  await syncWorkspacePlanCache(workspaceId, plan.code);
+  return { plan, subscription };
+}
+
+export async function renewManualSubscription(workspaceId: string, adminUserId: string) {
+  const now = new Date();
+  
+  // Find the current active manual subscription
+  const sub = await prisma.subscription.findFirst({
+    where: {
+      workspaceId,
+      source: 'MANUAL',
+    },
+    orderBy: { createdAt: 'desc' },
+    include: { plan: true }
+  });
+
+  if (!sub || !sub.plan) {
+    throw new Error('No active manual subscription found to renew');
+  }
+
+  let newStart = now;
+  let newEnd = new Date(now);
+  
+  if (sub.currentPeriodEnd && sub.currentPeriodEnd > now) {
+    newStart = sub.currentPeriodStart || now;
+    newEnd = new Date(sub.currentPeriodEnd);
+  }
+  
+  newEnd.setMonth(newEnd.getMonth() + 1);
+
+  const updatedSub = await prisma.subscription.update({
+    where: { id: sub.id },
+    data: {
+      currentPeriodStart: newStart,
+      currentPeriodEnd: newEnd,
+      status: 'ACTIVE', // Restore to active if it was PASTDUE
+    }
+  });
+
+  await prisma.paymentTransaction.create({
+    data: {
+      workspaceId,
+      planId: sub.plan.id,
+      amount: sub.plan.monthlyPrice || 0,
+      currency: sub.plan.currency || 'USD',
+      provider: 'MANUAL',
+      status: 'PAID',
+      paidAt: now,
+      createdByAdminId: adminUserId,
+      notes: 'Manual monthly renewal',
+    }
+  });
+
+  await syncWorkspacePlanCache(workspaceId, sub.plan.code);
+  return { plan: sub.plan, subscription: updatedSub };
+}
+
+export function computePaymentStatus(sub: any) {
+  if (!sub || sub.source !== 'MANUAL' || !sub.currentPeriodEnd) return 'FREE';
+  const now = new Date();
+  
+  // Strip time for day comparison
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const end = new Date(sub.currentPeriodEnd);
+  const endDate = new Date(end.getFullYear(), end.getMonth(), end.getDate());
+  
+  const graceEnd = new Date(endDate);
+  graceEnd.setDate(graceEnd.getDate() + 3);
+  
+  if (today.getTime() === endDate.getTime()) {
+    return 'DUE';
+  } else if (today < endDate) {
+    return 'PAID';
+  } else if (today <= graceEnd) {
+    return 'PAST_DUE';
+  } else {
+    return 'EXPIRED';
+  }
+}
+
+export async function downgradeToFree(workspaceId: string, adminUserId: string) {
+  // Cancel manual subscription
+  await prisma.subscription.updateMany({
+    where: { workspaceId, source: 'MANUAL', status: 'ACTIVE' },
+    data: { status: 'CANCELED', currentPeriodEnd: new Date() }
+  });
+  await syncWorkspacePlanCache(workspaceId, 'FREE');
+  return { plan: 'FREE' };
 }

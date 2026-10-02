@@ -10,7 +10,7 @@ import {
   resetCurrentUsage,
   revokeActivePlanOverrides,
   setCurrentPostUsage,
-} from '@/lib/billing';
+assignManualSubscription, renewManualSubscription, downgradeToFree } from '@/lib/billing';
 import { adminErrorResponse, requireSuperAdmin } from '@/lib/super-admin';
 
 function addDuration(duration: string) {
@@ -124,6 +124,33 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
         targetUserId: params.id,
         action: 'COMPLIMENTARY_ACCESS_REVOKED',
         details: `${admin.user.email} revoked complimentary access. Effective plan is now ${effectivePlan.plan.code}.`,
+      });
+    } else if (body.action === 'assign_manual') {
+      const result = await assignManualSubscription(workspaceId, body.planCode, admin.user.id);
+      await logActivity({
+        workspaceId,
+        actorUserId: admin.user.id,
+        targetUserId: params.id,
+        action: 'MANUAL_SUBSCRIPTION_ASSIGNED',
+        details: `${admin.user.email} assigned ${result.plan.code} manually.`,
+      });
+    } else if (body.action === 'renew_manual') {
+      const result = await renewManualSubscription(workspaceId, admin.user.id);
+      await logActivity({
+        workspaceId,
+        actorUserId: admin.user.id,
+        targetUserId: params.id,
+        action: 'MANUAL_SUBSCRIPTION_RENEWED',
+        details: `${admin.user.email} renewed ${result.plan.code} for 1 month.`,
+      });
+    } else if (body.action === 'downgrade_free') {
+      await downgradeToFree(workspaceId, admin.user.id);
+      await logActivity({
+        workspaceId,
+        actorUserId: admin.user.id,
+        targetUserId: params.id,
+        action: 'MANUAL_SUBSCRIPTION_DOWNGRADED',
+        details: `${admin.user.email} downgraded to FREE.`,
       });
     } else if (body.action === 'change_plan') {
       const result = await changeWorkspacePlan(workspaceId, body.planCode);

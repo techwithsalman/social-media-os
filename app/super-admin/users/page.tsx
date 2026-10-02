@@ -25,7 +25,7 @@ export default async function SuperAdminUsersPage() {
               <tr className="border-b border-slate-800 bg-slate-900/50">
                 <th className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-wider">User</th>
                 <th className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-wider">Workspace</th>
-                <th className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-wider">Plan</th>
+                <th className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-wider">Plan</th>\n<th className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-wider">Payment Status</th>\n<th className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-wider">Renewal Date</th>
                 <th className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-wider">Status</th>
                 <th className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-wider text-right">Actions</th>
               </tr>

@@ -7,6 +7,25 @@ import {
   ArrowLeft, Shield, CreditCard, Activity, Box 
 } from 'lucide-react';
 
+
+function computePaymentStatus(sub: any) {
+  if (!sub || sub.source !== 'MANUAL' || !sub.currentPeriodEnd) return 'FREE';
+  const now = new Date();
+  
+  // Strip time for day comparison
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const end = new Date(sub.currentPeriodEnd);
+  const endDate = new Date(end.getFullYear(), end.getMonth(), end.getDate());
+  
+  const graceEnd = new Date(endDate);
+  graceEnd.setDate(graceEnd.getDate() + 3);
+  
+  if (today.getTime() === endDate.getTime()) return 'DUE';
+  if (today < endDate) return 'PAID';
+  if (today <= graceEnd) return 'PAST_DUE';
+  return 'EXPIRED';
+}
+
 export function UserDetailClient({ detail, plans }: { detail: any, plans: any[] }) {
   const router = useRouter();
   const [loadingAction, setLoadingAction] = useState<string | null>(null);
