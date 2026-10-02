@@ -21,9 +21,24 @@ export function UserDetailClient({ detail, plans }: { detail: any, plans: any[] 
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action, ...payload })
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Action failed');
-      setMessage({ type: 'success', text: 'Action successful' });
+      let data: any = {};
+      const text = await res.text();
+      if (text) {
+        try {
+          data = JSON.parse(text);
+        } catch (e) {
+          console.error('Failed to parse JSON:', text);
+        }
+      }
+      
+      if (!res.ok) {
+        throw new Error(data.error || `Action failed (${res.status})`);
+      }
+      
+      setMessage({ 
+        type: 'success', 
+        text: data.message || 'Action successful' 
+      });
       router.refresh();
     } catch (err: any) {
       setMessage({ type: 'error', text: err.message });
