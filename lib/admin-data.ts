@@ -166,6 +166,8 @@ export async function getAdminUserRows() {
         currentPlanName: entitlements?.plan.name || 'Free',
         subscriptionStatus: entitlements?.subscription?.status || entitlements?.source || 'FREE',
         effectivePlanSource: entitlements?.source || 'FREE',
+          paymentStatus: entitlements?.subscription ? computePaymentStatus(entitlements.subscription) : 'FREE',
+          renewalDate: entitlements?.subscription?.currentPeriodEnd || null,
         connectedAccounts: entitlements?.usage.connectedAccounts || 0,
         postsUsedThisMonth: entitlements?.usage.postsThisMonth || 0,
         storageUsedBytes: entitlements?.usage.storageUsedBytes || 0,
