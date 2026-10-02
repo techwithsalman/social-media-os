@@ -62,7 +62,7 @@ export async function createLinkedInAuthorizationUrl(session: SessionPayload) {
     client_id: clientId,
     redirect_uri: redirectUri,
     state,
-    scope: 'openid profile email w_member_social w_organization_social',
+    scope: 'openid profile email w_member_social',
   });
 
   return {
@@ -70,16 +70,14 @@ export async function createLinkedInAuthorizationUrl(session: SessionPayload) {
   };
 }
 
-export async function exchangeLinkedInCode(code: string, state: string) {
+export async function exchangeLinkedInCode(code: string, state: string, session: SessionPayload) {
   const stateHash = hashToken(state);
 
   const stateRecord = await prisma.metaOAuthState.findUnique({
     where: { stateHash },
   });
 
-  if (!stateRecord) {
-    throw new LinkedInOAuthError('Invalid or expired state', 'INVALID_STATE');
-  }
+  if (!stateRecord) { throw new LinkedInOAuthError('Invalid or expired state', 'INVALID_STATE'); } if (stateRecord.userId !== session.userId || stateRecord.workspaceId !== session.workspaceId) { throw new LinkedInOAuthError('OAuth state does not match your session. Possible CSRF attack prevented.', 'STATE_MISMATCH'); }
 
   if (stateRecord.consumedAt) {
     throw new LinkedInOAuthError('State already consumed', 'STATE_CONSUMED');
@@ -251,3 +249,4 @@ export async function getLinkedInOrganizations(accessToken: string) {
   const data = await res.json();
   return data.elements || [];
 }
+

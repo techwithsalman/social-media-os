@@ -211,10 +211,7 @@ export default function ConnectedAccountsPage() {
   }, [accounts, loading]);
 
   const handleConnect = async (platform: string) => {
-    if (platform === 'LINKEDIN') {
-      window.open('https://www.linkedin.com/developers/', '_blank', 'noopener,noreferrer');
-      return;
-    }
+    if (platform === 'LINKEDIN') { window.location.href = '/api/oauth/linkedin/connect'; return; }
     if (platform === 'X') {
       window.open('https://developer.x.com/', '_blank', 'noopener,noreferrer');
       return;
@@ -482,7 +479,7 @@ export default function ConnectedAccountsPage() {
                           <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                         ) : (
                           <>
-                            {(plat.id === 'LINKEDIN' || plat.id === 'X' || plat.id === 'SNAPCHAT') ? (
+                            {(plat.id === 'X' || plat.id === 'SNAPCHAT') ? (
                                 <ExternalLink className="w-4 h-4" />
                               ) : (
                                 <Share2 className="w-4 h-4" />

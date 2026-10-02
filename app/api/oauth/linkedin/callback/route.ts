@@ -42,7 +42,7 @@ export async function GET(req: NextRequest) {
     }
 
     // 1. Exchange Code for Token and Verify State
-    const tokenData = await exchangeLinkedInCode(code, state);
+    const tokenData = await exchangeLinkedInCode(code, state, session);
 
     // 2. Get Profile Info
     const profile = await getLinkedInProfile(tokenData.accessToken);
