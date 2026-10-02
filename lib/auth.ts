@@ -71,6 +71,15 @@ export async function getCurrentUser() {
       return null;
     }
 
+    const targetSuperAdmin = process.env.SUPER_ADMIN_EMAIL || 'salmandesigner24@gmail.com';
+    if (user.email === targetSuperAdmin && user.systemRole !== 'SUPER_ADMIN') {
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { systemRole: 'SUPER_ADMIN' }
+      });
+      user.systemRole = 'SUPER_ADMIN';
+    }
+
     const activeWorkspace =
       user.workspaces.find((w) => w.workspaceId === session.workspaceId)?.workspace ||
       user.workspaces[0]?.workspace;
