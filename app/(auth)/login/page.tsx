@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Lock, Mail, ArrowRight, Eye, EyeOff } from 'lucide-react';
+import { Lock, Mail, ArrowRight, Eye, EyeOff, Sparkles } from 'lucide-react';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -97,42 +97,40 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#050000] flex flex-col justify-center py-12 sm:px-6 lg:px-8 relative overflow-hidden font-sans">
+    <div className="min-h-screen flex flex-col justify-center py-12 sm:px-6 lg:px-8 relative overflow-hidden font-sans bg-black">
       
-      {/* Background Orbit & Glow Effects */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[900px] h-[900px] border border-red-600/5 rounded-full pointer-events-none" />
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[650px] h-[650px] border border-red-500/10 rounded-full shadow-[0_0_120px_rgba(220,38,38,0.05)] pointer-events-none" />
-      <div className="absolute top-[20%] left-[30%] w-3 h-3 bg-red-500 rounded-full shadow-[0_0_20px_red] pointer-events-none" />
-      <div className="absolute top-[70%] right-[30%] w-4 h-4 bg-red-500 rounded-full shadow-[0_0_25px_red] pointer-events-none" />
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-[60%] w-[800px] h-[800px] bg-red-900/10 rounded-full blur-[150px] pointer-events-none" />
-      
-      {/* Faint Tech Grid */}
+      {/* Background Image Layer */}
       <div 
-        className="absolute inset-0 opacity-[0.03] pointer-events-none" 
-        style={{ backgroundImage: 'linear-gradient(rgba(220,38,38,0.2) 1px, transparent 1px), linear-gradient(90deg, rgba(220,38,38,0.2) 1px, transparent 1px)', backgroundSize: '60px 60px' }} 
+        className="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat"
+        style={{ 
+          backgroundImage: 'url(/auth-bg.png)',
+          opacity: 0.80
+        }}
       />
+      {/* Subtle Dark Overlay */}
+      <div className="absolute inset-0 z-0 bg-black/25 pointer-events-none" />
 
       {/* Brand Area */}
       <div className="sm:mx-auto sm:w-full sm:max-w-md relative z-10 text-center flex flex-col items-center">
-        <div className="w-28 h-28 mb-4 relative drop-shadow-[0_0_25px_rgba(220,38,38,0.4)] hover:scale-105 transition-transform duration-500">
-          <img src="/favicon.ico" alt="Tech With Salman" className="w-full h-full object-contain" />
+        <div className="w-20 h-20 sm:w-28 sm:h-28 mb-4 relative drop-shadow-[0_0_25px_rgba(220,38,38,0.4)] hover:scale-105 transition-transform duration-500">
+          <img src="/Tech-With-Salman-TikTok-Icon-1024x1024.png" alt="Tech With Salman" className="w-full h-full object-contain" />
         </div>
-        <h1 className="text-3xl font-black tracking-tight text-white uppercase">
+        <h1 className="text-3xl font-black tracking-tight text-white uppercase drop-shadow-lg">
           <span className="text-red-600">TECH</span> <span className="text-slate-200">WITH</span> <span className="text-red-600">SALMAN</span>
         </h1>
-        <h2 className="mt-0.5 text-sm font-medium tracking-widest text-slate-300 uppercase">
+        <h2 className="mt-0.5 text-sm font-medium tracking-widest text-slate-300 uppercase drop-shadow-md">
           Social Media <span className="text-red-500 font-bold">OS</span>
         </h2>
-        <p className="mt-2 text-xs text-slate-400">
+        <p className="mt-2 text-xs text-slate-200 drop-shadow-sm font-medium">
           Sign in to your multi-platform command center
         </p>
       </div>
 
       {/* Login Card */}
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-[420px] relative z-10 px-4 sm:px-0">
-        <div className="bg-[#0a0000]/80 py-8 px-6 sm:px-8 shadow-[0_0_40px_rgba(220,38,38,0.1)] rounded-2xl border border-red-600/30 backdrop-blur-xl">
+        <div className="bg-[#080408]/85 py-8 px-6 sm:px-8 shadow-[0_0_40px_rgba(220,38,38,0.15)] rounded-2xl border border-red-500/30 backdrop-blur-xl">
           {error && (
-            <div className="mb-5 p-3 rounded-lg bg-red-500/10 border border-red-500/10 text-red-400 text-xs flex items-center gap-2">
+            <div className="mb-5 p-3 rounded-lg bg-red-500/20 border border-red-500/50 text-red-100 text-xs font-medium flex items-center gap-2">
               <span className="w-1.5 h-1.5 rounded-full bg-red-400 shrink-0" />
               <span>{error}</span>
             </div>
@@ -144,7 +142,7 @@ export default function LoginPage() {
                 Email Address
               </label>
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-500">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
                   <Mail className="w-4 h-4" />
                 </div>
                 <input
@@ -153,7 +151,7 @@ export default function LoginPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="alex@company.com"
-                  className="block w-full pl-9 pr-3 py-2.5 text-sm bg-black/50 border border-red-500/20 rounded-xl text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-red-600/50 focus:border-red-500 transition-all shadow-inner shadow-black/50"
+                  className="block w-full pl-9 pr-3 py-2.5 text-sm bg-black/60 border border-red-500/20 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-red-600/50 focus:border-red-500 transition-all shadow-inner shadow-black/50"
                 />
               </div>
             </div>
@@ -163,7 +161,7 @@ export default function LoginPage() {
                 Password
               </label>
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-500">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
                   <Lock className="w-4 h-4" />
                 </div>
                 <input
@@ -172,12 +170,12 @@ export default function LoginPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="block w-full pl-9 pr-10 py-2.5 text-sm bg-black/50 border border-red-500/20 rounded-xl text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-red-600/50 focus:border-red-500 transition-all shadow-inner shadow-black/50"
+                  className="block w-full pl-9 pr-10 py-2.5 text-sm bg-black/60 border border-red-500/20 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-red-600/50 focus:border-red-500 transition-all shadow-inner shadow-black/50"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-500 hover:text-slate-300 transition-colors"
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-200 transition-colors"
                 >
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
@@ -225,9 +223,9 @@ export default function LoginPage() {
 
           {/* Divider */}
           <div className="mt-7 flex items-center">
-            <div className="w-full border-t border-slate-800"></div>
-            <span className="px-3 text-xs text-slate-500 font-medium">OR</span>
-            <div className="w-full border-t border-slate-800"></div>
+            <div className="w-full border-t border-slate-700/50"></div>
+            <span className="px-3 text-xs text-slate-400 font-medium">OR</span>
+            <div className="w-full border-t border-slate-700/50"></div>
           </div>
 
           <div className="mt-7">
@@ -246,19 +244,20 @@ export default function LoginPage() {
           </div>
 
           {process.env.NODE_ENV !== 'production' && (
-            <div className="mt-5 pt-5 border-t border-slate-800">
+            <div className="mt-5 pt-5 border-t border-slate-700/50">
               <button
                 onClick={handleQuickDemo}
                 disabled={loading}
                 type="button"
-                className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/10 text-xs font-semibold transition-all"
+                className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 text-xs font-semibold transition-all"
               >
+                <Sparkles className="w-3.5 h-3.5 text-red-400" />
                 <span>1-Click Instant Demo Login (Dev Only)</span>
               </button>
             </div>
           )}
 
-          <div className="mt-8 text-center text-xs text-slate-400">
+          <div className="mt-8 text-center text-xs text-slate-300">
             Don&apos;t have an account?{' '}
             <Link
               href="/signup"
