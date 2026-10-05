@@ -77,11 +77,11 @@ export const Header: React.FC<HeaderProps> = ({
   };
 
   return (
-    <header className="sticky top-0 z-30 flex items-center justify-between h-20 px-6 md:px-10 bg-[#050202]/90 backdrop-blur-xl border-b border-slate-800 shadow-sm">
+    <header className="sticky top-0 z-30 flex items-center justify-between h-20 px-6 md:px-10 bg-[#050202]/90 backdrop-blur-xl border-b border-[#2a1010] shadow-sm">
       <div className="flex items-center gap-4">
         <button
           onClick={onOpenMobileSidebar}
-          className="p-2.5 -ml-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 lg:hidden transition-colors"
+          className="p-2.5 -ml-2 rounded-xl text-neutral-400 hover:text-white hover:bg-[#1a0a0a] lg:hidden transition-colors"
         >
           <Menu className="w-6 h-6" />
         </button>
@@ -89,7 +89,7 @@ export const Header: React.FC<HeaderProps> = ({
           <button
             type="button"
             onClick={handleInternalBack}
-            className="inline-flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-bold text-slate-300 bg-[#100606]/80 hover:bg-slate-800 hover:text-white border border-slate-800 transition-colors"
+            className="inline-flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-bold text-neutral-300 bg-[#100606]/80 hover:bg-[#1a0a0a] hover:text-white border border-[#2a1010] transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
             <span>Back</span>
@@ -113,7 +113,7 @@ export const Header: React.FC<HeaderProps> = ({
           onClick={handleSeedDemo}
           disabled={seeding}
           title="Seed realistic demo accounts and scheduled posts"
-          className="flex items-center justify-center gap-2 px-2.5 sm:px-4 py-2 text-sm font-semibold rounded-xl bg-slate-800/90 hover:bg-slate-700 text-slate-200 border border-slate-700/90 transition-all duration-150 shadow-sm disabled:opacity-50"
+          className="flex items-center justify-center gap-2 px-2.5 sm:px-4 py-2 text-sm font-semibold rounded-xl bg-[#1a0a0a]/90 hover:bg-[#2a1010] text-neutral-200 border border-[#3a1515]/90 transition-all duration-150 shadow-sm disabled:opacity-50"
         >
           {seeding ? (
             <div className="w-4 h-4 border-2 border-red-400 border-t-transparent rounded-full animate-spin" />
@@ -132,7 +132,7 @@ export const Header: React.FC<HeaderProps> = ({
         {/* Notifications Icon */}
         <button
           onClick={onOpenNotifications}
-          className="relative p-2 sm:p-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+          className="relative p-2 sm:p-2.5 rounded-xl text-neutral-400 hover:text-white hover:bg-[#1a0a0a] transition-colors"
           title="Notifications"
         >
           <Bell className="w-5 h-5" />

@@ -165,7 +165,7 @@ export default function BulkUploadPage() {
         <h1 className="text-2xl md:text-3xl font-black text-white tracking-tight">
           Batch Media Uploader & Schedule Matrix
         </h1>
-        <p className="text-sm md:text-base text-slate-400 mt-1.5">
+        <p className="text-sm md:text-base text-neutral-400 mt-1.5">
           Upload up to 50 videos simultaneously and generate multi-day posting schedules automatically.
         </p>
       </div>
@@ -180,8 +180,8 @@ export default function BulkUploadPage() {
       {/* Grid: Matrix Settings & Upload Zone */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-10">
         {/* Left: Schedule Matrix Generator (1 Col) */}
-        <div className="bg-[#0d1322] border border-slate-800 rounded-3xl p-6 md:p-8 shadow-md space-y-5">
-          <div className="flex items-center gap-3 pb-4 border-b border-slate-800">
+        <div className="bg-[#0a0404] border border-[#2a1010] rounded-3xl p-6 md:p-8 shadow-md space-y-5">
+          <div className="flex items-center gap-3 pb-4 border-b border-[#2a1010]">
             <Sliders className="w-5 h-5 text-red-500" />
             <h3 className="text-sm font-bold text-white uppercase tracking-wider">
               Automatic Matrix Config
@@ -189,13 +189,13 @@ export default function BulkUploadPage() {
           </div>
 
           <div>
-            <label className="block text-xs md:text-sm font-bold text-slate-300 mb-1.5">
+            <label className="block text-xs md:text-sm font-bold text-neutral-300 mb-1.5">
               Posts Per Day
             </label>
             <select
               value={postsPerDay}
               onChange={(e) => setPostsPerDay(parseInt(e.target.value, 10))}
-              className="w-full p-3 text-sm bg-slate-900 border border-slate-800 rounded-xl text-white"
+              className="w-full p-3 text-sm bg-[#0f0505] border border-[#2a1010] rounded-xl text-white"
             >
               <option value="1">1 Post / Day</option>
               <option value="2">2 Posts / Day</option>
@@ -205,25 +205,25 @@ export default function BulkUploadPage() {
           </div>
 
           <div>
-            <label className="block text-xs md:text-sm font-bold text-slate-300 mb-1.5">
+            <label className="block text-xs md:text-sm font-bold text-neutral-300 mb-1.5">
               Starting Date
             </label>
             <input
               type="date"
               value={startDate}
               onChange={(e) => setStartDate(e.target.value)}
-              className="w-full p-3 text-sm bg-slate-900 border border-slate-800 rounded-xl text-white"
+              className="w-full p-3 text-sm bg-[#0f0505] border border-[#2a1010] rounded-xl text-white"
             />
           </div>
 
           <div>
-            <label className="block text-xs md:text-sm font-bold text-slate-300 mb-1.5">
+            <label className="block text-xs md:text-sm font-bold text-neutral-300 mb-1.5">
               Timezone
             </label>
             <select
               value={timezone}
               onChange={(e) => setTimezone(e.target.value)}
-              className="w-full p-3 text-sm bg-slate-900 border border-slate-800 rounded-xl text-white"
+              className="w-full p-3 text-sm bg-[#0f0505] border border-[#2a1010] rounded-xl text-white"
             >
               <option value="Asia/Karachi">Asia/Karachi (PKT +05:00)</option>
               <option value="UTC">UTC</option>
@@ -233,7 +233,7 @@ export default function BulkUploadPage() {
           </div>
 
           <div>
-            <label className="block text-xs md:text-sm font-bold text-slate-300 mb-2.5">
+            <label className="block text-xs md:text-sm font-bold text-neutral-300 mb-2.5">
               Target Networks
             </label>
             <div className="grid grid-cols-2 gap-2.5">
@@ -245,7 +245,7 @@ export default function BulkUploadPage() {
                     className={`flex items-center gap-2.5 p-2.5 rounded-xl border text-xs md:text-sm font-semibold cursor-pointer ${
                       isChecked
                         ? 'bg-red-950/40 border-red-500/50 text-white'
-                        : 'bg-slate-900/40 border-slate-800 text-slate-400'
+                        : 'bg-[#0f0505]/40 border-[#2a1010] text-neutral-400'
                     }`}
                   >
                     <input
@@ -256,7 +256,7 @@ export default function BulkUploadPage() {
                           prev.includes(plat) ? prev.filter((p) => p !== plat) : [...prev, plat]
                         );
                       }}
-                      className="rounded border-slate-700 bg-slate-950 text-red-600 w-4 h-4"
+                      className="rounded border-[#3a1515] bg-[#050202] text-red-600 w-4 h-4"
                     />
                     <PlatformIcon platform={plat} size={16} className="w-4 h-4 rounded" />
                     <span>{plat}</span>
@@ -277,7 +277,7 @@ export default function BulkUploadPage() {
 
         {/* Right: Master Caption & Multi-Dropzone (2 Cols) */}
         <div className="lg:col-span-2 space-y-6">
-          <div className="bg-[#0d1322] border border-slate-800 rounded-3xl p-6 md:p-8 shadow-md">
+          <div className="bg-[#0a0404] border border-[#2a1010] rounded-3xl p-6 md:p-8 shadow-md">
             <h3 className="text-sm md:text-base font-bold text-white uppercase tracking-wider mb-3">
               Bulk Master Caption
             </h3>
@@ -286,22 +286,22 @@ export default function BulkUploadPage() {
               value={bulkMasterCaption}
               onChange={(e) => setBulkMasterCaption(e.target.value)}
               placeholder="Enter master caption to apply across all uploaded items in this batch..."
-              className="w-full p-4 text-sm md:text-base bg-slate-900 border border-slate-800 rounded-2xl text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-red-500 leading-relaxed"
+              className="w-full p-4 text-sm md:text-base bg-[#0f0505] border border-[#2a1010] rounded-2xl text-white placeholder-neutral-500 focus:outline-none focus:ring-1 focus:ring-red-500 leading-relaxed"
             />
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mt-4 pt-4 border-t border-slate-800">
-              <label className="flex items-center gap-3 text-sm font-semibold text-slate-200 cursor-pointer">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mt-4 pt-4 border-t border-[#2a1010]">
+              <label className="flex items-center gap-3 text-sm font-semibold text-neutral-200 cursor-pointer">
                 <input
                   type="checkbox"
                   checked={applyToAllVideos}
                   onChange={(e) => setApplyToAllVideos(e.target.checked)}
-                  className="rounded-md border-slate-700 bg-slate-900 text-red-600 w-4 h-4"
+                  className="rounded-md border-[#3a1515] bg-[#0f0505] text-red-600 w-4 h-4"
                 />
                 <span>Apply caption to all batch videos & platforms</span>
               </label>
 
               <button
                 onClick={handleApplyBulkCaption}
-                className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-sm font-bold text-red-400 border border-slate-700 transition-colors"
+                className="px-4 py-2 rounded-xl bg-[#1a0a0a] hover:bg-[#2a1010] text-sm font-bold text-red-400 border border-[#3a1515] transition-colors"
               >
                 Apply to List
               </button>
@@ -311,7 +311,7 @@ export default function BulkUploadPage() {
           {/* Multi-Dropzone */}
           <div
             onClick={() => fileInputRef.current?.click()}
-            className="cursor-pointer border-2 border-dashed border-slate-700 hover:border-red-500/80 rounded-3xl p-8 text-center bg-[#0d1322]/80 hover:bg-[#0d1322] transition-all group"
+            className="cursor-pointer border-2 border-dashed border-[#3a1515] hover:border-red-500/80 rounded-3xl p-8 text-center bg-[#0a0404]/80 hover:bg-[#0a0404] transition-all group"
           >
             <input
               ref={fileInputRef}
@@ -327,7 +327,7 @@ export default function BulkUploadPage() {
             <p className="text-base font-bold text-white">
               Drop batch video & image files here to add to queue
             </p>
-            <p className="text-xs md:text-sm text-slate-400 mt-1.5">
+            <p className="text-xs md:text-sm text-neutral-400 mt-1.5">
               Supports 20+ videos at once (MP4, MOV, JPG, PNG)
             </p>
           </div>
@@ -335,8 +335,8 @@ export default function BulkUploadPage() {
       </div>
 
       {/* Generated Content Batch List */}
-      <div className="bg-[#0d1322] border border-slate-800 rounded-3xl p-6 md:p-8 shadow-md">
-        <div className="flex items-center justify-between mb-6 pb-4 border-b border-slate-800">
+      <div className="bg-[#0a0404] border border-[#2a1010] rounded-3xl p-6 md:p-8 shadow-md">
+        <div className="flex items-center justify-between mb-6 pb-4 border-b border-[#2a1010]">
           <div className="flex items-center gap-3">
             <Layers className="w-5 h-5 text-red-500" />
             <h3 className="text-lg md:text-xl font-bold text-white">
@@ -364,19 +364,19 @@ export default function BulkUploadPage() {
           {items.map((item, idx) => (
             <div
               key={item.id}
-              className="p-5 rounded-2xl bg-slate-900/60 border border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-5"
+              className="p-5 rounded-2xl bg-[#0f0505]/60 border border-[#2a1010] flex flex-col md:flex-row md:items-center justify-between gap-5"
             >
               <div className="flex items-center gap-4 overflow-hidden">
-                <span className="w-7 text-center text-sm font-black text-slate-500 shrink-0">
+                <span className="w-7 text-center text-sm font-black text-neutral-500 shrink-0">
                   {String(idx + 1).padStart(2, '0')}
                 </span>
-                <div className="w-16 h-16 rounded-xl bg-slate-800 overflow-hidden shrink-0 border border-slate-700">
+                <div className="w-16 h-16 rounded-xl bg-[#1a0a0a] overflow-hidden shrink-0 border border-[#3a1515]">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={item.url} alt="" className="w-full h-full object-cover" />
                 </div>
                 <div className="overflow-hidden">
                   <p className="text-sm md:text-base font-bold text-white truncate">{item.name}</p>
-                  <p className="text-xs md:text-sm text-slate-300 mt-1 line-clamp-1">
+                  <p className="text-xs md:text-sm text-neutral-300 mt-1 line-clamp-1">
                     {item.caption}
                   </p>
                   <div className="flex items-center gap-1.5 mt-2">
@@ -388,7 +388,7 @@ export default function BulkUploadPage() {
               </div>
 
               {/* Schedule time controls & delete */}
-              <div className="flex items-center gap-3.5 shrink-0 pt-3 md:pt-0 border-t md:border-t-0 border-slate-800">
+              <div className="flex items-center gap-3.5 shrink-0 pt-3 md:pt-0 border-t md:border-t-0 border-[#2a1010]">
                 <div className="flex items-center gap-2.5">
                   <input
                     type="date"
@@ -399,7 +399,7 @@ export default function BulkUploadPage() {
                         prev.map((i) => (i.id === item.id ? { ...i, scheduledDate: val } : i))
                       );
                     }}
-                    className="p-2 text-xs md:text-sm bg-slate-950 border border-slate-800 rounded-xl text-white"
+                    className="p-2 text-xs md:text-sm bg-[#050202] border border-[#2a1010] rounded-xl text-white"
                   />
                   <input
                     type="time"
@@ -410,13 +410,13 @@ export default function BulkUploadPage() {
                         prev.map((i) => (i.id === item.id ? { ...i, scheduledTime: val } : i))
                       );
                     }}
-                    className="p-2 text-xs md:text-sm bg-slate-950 border border-slate-800 rounded-xl text-white"
+                    className="p-2 text-xs md:text-sm bg-[#050202] border border-[#2a1010] rounded-xl text-white"
                   />
                 </div>
 
                 <button
                   onClick={() => setItems((prev) => prev.filter((i) => i.id !== item.id))}
-                  className="p-2.5 rounded-xl text-slate-400 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                  className="p-2.5 rounded-xl text-neutral-400 hover:text-red-400 hover:bg-red-500/10 transition-colors"
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>

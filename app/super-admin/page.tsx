@@ -54,7 +54,7 @@ export default async function SuperAdminOverviewPage() {
         <div>
           <p className="text-xs font-black uppercase tracking-wider text-amber-300">Overview</p>
           <h2 className="text-3xl font-black text-white tracking-tight mt-1">Platform Command Center</h2>
-          <p className="text-sm text-slate-400 mt-2 max-w-2xl">
+          <p className="text-sm text-neutral-400 mt-2 max-w-2xl">
             System-wide SaaS, usage, billing, publishing, and workspace health across Social Media OS.
           </p>
         </div>
@@ -71,9 +71,9 @@ export default async function SuperAdminOverviewPage() {
         {stats.map((stat) => {
           const Icon = stat.icon;
           return (
-            <div key={stat.label} className="rounded-2xl bg-[#0d1322] border border-slate-800 p-5 min-h-[132px]">
+            <div key={stat.label} className="rounded-2xl bg-[#0a0404] border border-[#2a1010] p-5 min-h-[132px]">
               <div className="flex items-start justify-between gap-4">
-                <p className="text-xs font-black uppercase tracking-wider text-slate-500">{stat.label}</p>
+                <p className="text-xs font-black uppercase tracking-wider text-neutral-500">{stat.label}</p>
                 <Icon className={`w-5 h-5 ${stat.color}`} />
               </div>
               <p className="text-3xl font-black text-white mt-7">{stat.value}</p>
@@ -83,8 +83,8 @@ export default async function SuperAdminOverviewPage() {
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-        <div className="xl:col-span-2 rounded-2xl bg-[#0d1322] border border-slate-800 p-6">
-          <div className="flex items-center justify-between pb-4 border-b border-slate-800 mb-4">
+        <div className="xl:col-span-2 rounded-2xl bg-[#0a0404] border border-[#2a1010] p-6">
+          <div className="flex items-center justify-between pb-4 border-b border-[#2a1010] mb-4">
             <h3 className="text-lg font-black text-white">Recent Activity</h3>
             <Link href="/super-admin/activity" className="text-sm font-bold text-amber-300 hover:text-amber-200">
               View All
@@ -92,34 +92,34 @@ export default async function SuperAdminOverviewPage() {
           </div>
           <div className="space-y-3">
             {overview.recentActivity.length === 0 ? (
-              <p className="text-sm text-slate-500 py-8 text-center">No system activity yet.</p>
+              <p className="text-sm text-neutral-500 py-8 text-center">No system activity yet.</p>
             ) : (
               overview.recentActivity.map((activity) => (
-                <div key={activity.id} className="rounded-xl bg-slate-950/60 border border-slate-800 px-4 py-3">
+                <div key={activity.id} className="rounded-xl bg-[#050202]/60 border border-[#2a1010] px-4 py-3">
                   <div className="flex items-center justify-between gap-4">
                     <span className="text-xs font-black text-amber-300 uppercase tracking-wider">
                       {activity.action.replaceAll('_', ' ')}
                     </span>
-                    <span className="text-xs text-slate-500">{new Date(activity.createdAt).toLocaleString()}</span>
+                    <span className="text-xs text-neutral-500">{new Date(activity.createdAt).toLocaleString()}</span>
                   </div>
-                  <p className="text-sm text-slate-300 mt-1.5">{activity.details || 'No details recorded.'}</p>
+                  <p className="text-sm text-neutral-300 mt-1.5">{activity.details || 'No details recorded.'}</p>
                 </div>
               ))
             )}
           </div>
         </div>
 
-        <div className="rounded-2xl bg-[#0d1322] border border-slate-800 p-6">
-          <h3 className="text-lg font-black text-white pb-4 border-b border-slate-800 mb-4">Recent Users</h3>
+        <div className="rounded-2xl bg-[#0a0404] border border-[#2a1010] p-6">
+          <h3 className="text-lg font-black text-white pb-4 border-b border-[#2a1010] mb-4">Recent Users</h3>
           <div className="space-y-3">
             {overview.recentUsers.map((user) => (
               <Link
                 key={user.id}
                 href={`/super-admin/users/${user.id}`}
-                className="block rounded-xl bg-slate-950/60 hover:bg-slate-900 border border-slate-800 px-4 py-3"
+                className="block rounded-xl bg-[#050202]/60 hover:bg-[#0f0505] border border-[#2a1010] px-4 py-3"
               >
                 <p className="text-sm font-black text-white">{user.firstName} {user.lastName}</p>
-                <p className="text-xs text-slate-400 mt-0.5">{user.email}</p>
+                <p className="text-xs text-neutral-400 mt-0.5">{user.email}</p>
               </Link>
             ))}
           </div>

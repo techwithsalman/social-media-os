@@ -31,7 +31,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
   const [unreadCount, setUnreadCount] = useState(2);
 
   return (
-    <div className="min-h-screen bg-[#070b14] text-slate-100 flex">
+    <div className="min-h-screen bg-[#070b14] text-neutral-100 flex">
       {/* Left Sidebar (w-72) */}
       <Sidebar
         user={user}

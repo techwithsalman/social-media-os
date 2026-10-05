@@ -172,7 +172,7 @@ export const PlatformIcon: React.FC<PlatformIconProps> = ({
     default:
       return (
         <div
-          className={`flex items-center justify-center rounded-md bg-indigo-600 text-white font-bold text-xs ${className}`}
+          className={`flex items-center justify-center rounded-md bg-red-600 text-white font-bold text-xs ${className}`}
         >
           {platform?.slice(0, 2)?.toUpperCase()}
         </div>

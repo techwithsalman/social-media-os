@@ -47,9 +47,9 @@ export function SuperAdminShell({ children, user }: SuperAdminShellProps) {
   const pathname = usePathname();
 
   return (
-    <div className="min-h-screen bg-[#070b14] text-slate-100 flex">
-      <aside className="fixed left-0 top-0 bottom-0 z-40 w-72 bg-[#050202] border-r border-slate-800 flex flex-col shadow-2xl">
-        <div className="h-20 px-6 flex items-center gap-3 border-b border-slate-800 bg-[#060a12]">
+    <div className="min-h-screen bg-[#070b14] text-neutral-100 flex">
+      <aside className="fixed left-0 top-0 bottom-0 z-40 w-72 bg-[#050202] border-r border-[#2a1010] flex flex-col shadow-2xl">
+        <div className="h-20 px-6 flex items-center gap-3 border-b border-[#2a1010] bg-[#060a12]">
           <div className="w-11 h-11 rounded-2xl bg-amber-500/15 text-amber-300 flex items-center justify-center border border-amber-500/30 shadow-lg">
             <ShieldCheck className="w-6 h-6" />
           </div>
@@ -70,34 +70,34 @@ export function SuperAdminShell({ children, user }: SuperAdminShellProps) {
                 className={`flex items-center gap-3.5 px-4 py-3 rounded-xl text-sm font-bold transition-all ${
                   isActive
                     ? 'bg-amber-500/15 text-amber-200 border border-amber-500/30 shadow-md'
-                    : 'text-slate-400 hover:text-slate-100 hover:bg-slate-800/70'
+                    : 'text-neutral-400 hover:text-neutral-100 hover:bg-[#1a0a0a]/70'
                 }`}
               >
-                <Icon className={`w-5 h-5 ${isActive ? 'text-amber-300' : 'text-slate-500'}`} />
+                <Icon className={`w-5 h-5 ${isActive ? 'text-amber-300' : 'text-neutral-500'}`} />
                 <span>{item.label}</span>
               </Link>
             );
           })}
         </nav>
 
-        <div className="p-4 border-t border-slate-800 bg-[#060a12]">
+        <div className="p-4 border-t border-[#2a1010] bg-[#060a12]">
           <Link
             href="/dashboard"
-            className="block mb-3 px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-sm font-bold text-slate-200"
+            className="block mb-3 px-4 py-2.5 rounded-xl bg-[#0f0505] hover:bg-[#1a0a0a] border border-[#2a1010] text-sm font-bold text-neutral-200"
           >
             Back to App
           </Link>
-          <div className="p-3 rounded-xl bg-slate-900/80 border border-slate-800">
+          <div className="p-3 rounded-xl bg-[#0f0505]/80 border border-[#2a1010]">
             <p className="text-sm font-black text-white truncate">
               {user.firstName} {user.lastName}
             </p>
-            <p className="text-xs text-slate-400 truncate mt-0.5">{user.email}</p>
+            <p className="text-xs text-neutral-400 truncate mt-0.5">{user.email}</p>
           </div>
         </div>
       </aside>
 
       <main className="flex-1 min-w-0 pl-72">
-        <div className="sticky top-0 z-20 h-20 px-8 flex items-center justify-between border-b border-slate-800 bg-[#050202]/92 backdrop-blur-xl">
+        <div className="sticky top-0 z-20 h-20 px-8 flex items-center justify-between border-b border-[#2a1010] bg-[#050202]/92 backdrop-blur-xl">
           <div>
             <p className="text-xs font-black uppercase tracking-wider text-amber-300">System Control</p>
             <h1 className="text-2xl font-black text-white tracking-tight">SaaS Administration</h1>

@@ -73,14 +73,14 @@ function getStatusDisplay(status?: string) {
     case 'DISCONNECTED':
       return {
         label: 'Disconnected',
-        dotClass: 'bg-slate-500',
-        pillClass: 'bg-slate-800 text-slate-400 border border-slate-700',
+        dotClass: 'bg-neutral-500',
+        pillClass: 'bg-[#1a0a0a] text-neutral-400 border border-[#3a1515]',
       };
     default:
       return {
         label: 'Unlinked',
-        dotClass: 'bg-slate-500',
-        pillClass: 'bg-slate-800 text-slate-400 border border-slate-700',
+        dotClass: 'bg-neutral-500',
+        pillClass: 'bg-[#1a0a0a] text-neutral-400 border border-[#3a1515]',
       };
   }
 }
@@ -316,7 +316,7 @@ export default function ConnectedAccountsPage() {
           <h1 className="text-2xl md:text-3xl font-black text-white tracking-tight">
             Connected Channels ({connectedPlatformCount} / {supportedPlatforms.length})
           </h1>
-          <p className="text-sm md:text-base text-slate-400 mt-1.5">
+          <p className="text-sm md:text-base text-neutral-400 mt-1.5">
             Connect your official social media accounts to manage and schedule content.
           </p>
         </div>
@@ -356,8 +356,8 @@ export default function ConnectedAccountsPage() {
               key={plat.id}
               className={`rounded-3xl border p-7 md:p-8 flex flex-col justify-between transition-all min-h-[260px] ${
                 connected
-                  ? 'bg-[#0d1322] border-slate-800 hover:border-slate-700 shadow-md'
-                  : 'bg-[#090d16]/70 border-slate-800/70 hover:border-slate-700/80'
+                  ? 'bg-[#0a0404] border-[#2a1010] hover:border-[#3a1515] shadow-md'
+                  : 'bg-[#050202]/70 border-[#2a1010]/70 hover:border-[#3a1515]/80'
               }`}
             >
               <div>
@@ -367,7 +367,7 @@ export default function ConnectedAccountsPage() {
                     <PlatformIcon platform={plat.id} size={42} className="w-11 h-11 rounded-2xl shrink-0" />
                     <div>
                       <h3 className="text-lg font-bold text-white">{plat.name}</h3>
-                      <p className="text-xs md:text-sm text-slate-400 mt-1 leading-relaxed">{plat.desc}</p>
+                      <p className="text-xs md:text-sm text-neutral-400 mt-1 leading-relaxed">{plat.desc}</p>
                     </div>
                   </div>
 
@@ -381,9 +381,9 @@ export default function ConnectedAccountsPage() {
 
                 {/* Profile Card if connected */}
                 {connected && (
-                  <div className="mb-5 p-4 rounded-2xl bg-[#100606]/90 border border-slate-800 flex items-center justify-between">
+                  <div className="mb-5 p-4 rounded-2xl bg-[#100606]/90 border border-[#2a1010] flex items-center justify-between">
                     <div className="flex items-center gap-3.5 overflow-hidden">
-                      <div className="w-10 h-10 rounded-xl overflow-hidden bg-slate-800 shrink-0 border border-slate-700">
+                      <div className="w-10 h-10 rounded-xl overflow-hidden bg-[#1a0a0a] shrink-0 border border-[#3a1515]">
                         {connected.profileImageUrl ? (
                           // eslint-disable-next-line @next/next/no-img-element
                           <img
@@ -401,7 +401,7 @@ export default function ConnectedAccountsPage() {
                         <p className="text-sm font-bold text-white truncate">
                           {connected.name}
                         </p>
-                        <p className="text-xs text-slate-400 truncate">
+                        <p className="text-xs text-neutral-400 truncate">
                           @{connected.username}
                         </p>
                       </div>
@@ -417,12 +417,12 @@ export default function ConnectedAccountsPage() {
               </div>
 
               {/* Action Buttons */}
-              <div className="pt-4 border-t border-slate-800/80 flex items-center justify-between gap-3">
+              <div className="pt-4 border-t border-[#2a1010]/80 flex items-center justify-between gap-3">
                 <button
                   onClick={() =>
                     setActiveDocPlatform(activeDocPlatform === plat.id ? null : plat.id)
                   }
-                  className="text-xs md:text-sm text-slate-400 hover:text-red-500 font-semibold flex items-center gap-1.5 transition-colors"
+                  className="text-xs md:text-sm text-neutral-400 hover:text-red-500 font-semibold flex items-center gap-1.5 transition-colors"
                 >
                   <HelpCircle className="w-4 h-4" />
                   <span>API Specs</span>
@@ -452,7 +452,7 @@ export default function ConnectedAccountsPage() {
                             onClick={() => handleRefreshAccount(connected.id, plat.id)}
                             disabled={isActing}
                             title="Refresh Profile"
-                            className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-sm font-semibold border border-slate-700 transition-colors"
+                            className="px-3.5 py-2 rounded-xl bg-[#1a0a0a] hover:bg-[#2a1010] text-neutral-200 text-sm font-semibold border border-[#3a1515] transition-colors"
                           >
                             <RefreshCw className={`w-4 h-4 ${isActing ? 'animate-spin' : ''}`} />
                           </button>
@@ -491,7 +491,7 @@ export default function ConnectedAccountsPage() {
 
               {/* Developer Requirements Drawer */}
               {activeDocPlatform === plat.id && requirements[plat.id] && (
-                <div className="mt-5 p-5 rounded-2xl bg-slate-950 border border-slate-800 text-sm space-y-3">
+                <div className="mt-5 p-5 rounded-2xl bg-[#050202] border border-[#2a1010] text-sm space-y-3">
                   <div className="flex items-center justify-between">
                     <span className="font-bold text-white">OAuth & API Specs</span>
                     <a
@@ -505,16 +505,16 @@ export default function ConnectedAccountsPage() {
                     </a>
                   </div>
                   <div>
-                    <span className="text-xs text-slate-400 font-bold uppercase">Required Scopes:</span>
+                    <span className="text-xs text-neutral-400 font-bold uppercase">Required Scopes:</span>
                     <div className="flex flex-wrap gap-1.5 mt-1.5">
                       {requirements[plat.id].requiredScopes.map((sc) => (
-                        <span key={sc} className="px-2 py-0.5 rounded-md bg-[#100606] text-xs text-slate-300 font-mono">
+                        <span key={sc} className="px-2 py-0.5 rounded-md bg-[#100606] text-xs text-neutral-300 font-mono">
                           {sc}
                         </span>
                       ))}
                     </div>
                   </div>
-                  <p className="text-xs text-slate-400 italic leading-relaxed">
+                  <p className="text-xs text-neutral-400 italic leading-relaxed">
                     {requirements[plat.id].notes}
                   </p>
                 </div>

@@ -43,13 +43,13 @@ export default function AnalyticsPage() {
           <h1 className="text-2xl md:text-3xl font-black text-white tracking-tight">
             Cross-Platform Analytics
           </h1>
-          <p className="text-sm md:text-base text-slate-400 mt-1.5">
+          <p className="text-sm md:text-base text-neutral-400 mt-1.5">
             Aggregated audience growth, content engagement, and network metrics across all channels.
           </p>
         </div>
 
         {/* Date Filter */}
-        <div className="flex items-center bg-[#0d1322] border border-slate-800 rounded-2xl p-1.5 text-sm font-bold shadow-sm">
+        <div className="flex items-center bg-[#0a0404] border border-[#2a1010] rounded-2xl p-1.5 text-sm font-bold shadow-sm">
           {['7D', '30D', '90D', 'YTD'].map((range) => (
             <button
               key={range}
@@ -57,7 +57,7 @@ export default function AnalyticsPage() {
               className={`px-4 py-1.5 rounded-xl transition-all ${
                 dateRange === range
                   ? 'bg-red-600 text-white shadow-md'
-                  : 'text-slate-400 hover:text-slate-200'
+                  : 'text-neutral-400 hover:text-neutral-200'
               }`}
             >
               {range}
@@ -71,9 +71,9 @@ export default function AnalyticsPage() {
         {metrics.map((m) => {
           const Icon = m.icon;
           return (
-            <div key={m.label} className="p-5 md:p-6 rounded-2xl bg-[#0d1322] border border-slate-800 shadow-sm flex flex-col justify-between min-h-[140px]">
+            <div key={m.label} className="p-5 md:p-6 rounded-2xl bg-[#0a0404] border border-[#2a1010] shadow-sm flex flex-col justify-between min-h-[140px]">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+                <span className="text-xs font-bold text-neutral-400 uppercase tracking-wider">
                   {m.label}
                 </span>
                 <Icon className={`w-4 h-4 ${m.color}`} />
@@ -82,7 +82,7 @@ export default function AnalyticsPage() {
                 <p className="text-2xl md:text-3xl font-black text-white mt-2">{m.value}</p>
                 <p className="text-xs font-bold text-emerald-400 mt-1 flex items-center gap-1">
                   <span>{m.change}</span>
-                  <span className="text-slate-500 font-normal">vs last period</span>
+                  <span className="text-neutral-500 font-normal">vs last period</span>
                 </p>
               </div>
             </div>
@@ -91,8 +91,8 @@ export default function AnalyticsPage() {
       </div>
 
       {/* Platform Performance Table */}
-      <div className="bg-[#0d1322] border border-slate-800 rounded-3xl p-6 md:p-8 shadow-md mb-10">
-        <div className="flex items-center justify-between mb-6 pb-4 border-b border-slate-800">
+      <div className="bg-[#0a0404] border border-[#2a1010] rounded-3xl p-6 md:p-8 shadow-md mb-10">
+        <div className="flex items-center justify-between mb-6 pb-4 border-b border-[#2a1010]">
           <div className="flex items-center gap-3">
             <BarChart3 className="w-5 h-5 text-red-500" />
             <h3 className="text-lg md:text-xl font-bold text-white">Platform Performance Breakdown</h3>
@@ -105,7 +105,7 @@ export default function AnalyticsPage() {
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm">
             <thead>
-              <tr className="border-b border-slate-800 text-slate-400 uppercase text-xs font-bold">
+              <tr className="border-b border-[#2a1010] text-neutral-400 uppercase text-xs font-bold">
                 <th className="pb-4">Channel</th>
                 <th className="pb-4">Audience / Followers</th>
                 <th className="pb-4">Total Views</th>
@@ -113,17 +113,17 @@ export default function AnalyticsPage() {
                 <th className="pb-4">Broadcasts</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-800/60">
+            <tbody className="divide-y divide-[#2a1010]/60">
               {platformBreakdown.map((item) => (
-                <tr key={item.platform} className="hover:bg-slate-900/40 transition-colors">
+                <tr key={item.platform} className="hover:bg-[#0f0505]/40 transition-colors">
                   <td className="py-4 flex items-center gap-3">
                     <PlatformIcon platform={item.platform} size={24} className="w-6 h-6 rounded-lg" />
                     <span className="font-bold text-white text-base">{item.platform}</span>
                   </td>
-                  <td className="py-4 font-bold text-slate-200">{item.followers}</td>
-                  <td className="py-4 font-bold text-slate-200">{item.views}</td>
+                  <td className="py-4 font-bold text-neutral-200">{item.followers}</td>
+                  <td className="py-4 font-bold text-neutral-200">{item.views}</td>
                   <td className="py-4 font-black text-emerald-400">{item.engagement}</td>
-                  <td className="py-4 text-slate-400 font-semibold">{item.posts} posts</td>
+                  <td className="py-4 text-neutral-400 font-semibold">{item.posts} posts</td>
                 </tr>
               ))}
             </tbody>

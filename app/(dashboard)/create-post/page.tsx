@@ -935,10 +935,10 @@ export default function CreatePostPage() {
   const scheduleTimezoneLabel = getTimezoneLabel(timezone);
   const renderPlatformMediaPreview = () => (
     <div>
-      <label className="block text-xs md:text-sm font-bold text-slate-300 mb-1.5">
+      <label className="block text-xs md:text-sm font-bold text-neutral-300 mb-1.5">
         Media Preview
       </label>
-      <div className="rounded-xl overflow-hidden bg-slate-950 border border-slate-800 aspect-video flex items-center justify-center">
+      <div className="rounded-xl overflow-hidden bg-[#050202] border border-[#2a1010] aspect-video flex items-center justify-center">
         {mediaFile ? (
           mediaFile.mimeType.startsWith('video/') ? (
             <video src={mediaFile.url} controls className="w-full h-full object-cover" />
@@ -952,8 +952,8 @@ export default function CreatePostPage() {
           )
         ) : (
           <div className="text-center p-5">
-            <ImageIcon className="w-8 h-8 text-slate-700 mx-auto mb-2" />
-            <p className="text-xs font-semibold text-slate-500">No media attached</p>
+            <ImageIcon className="w-8 h-8 text-neutral-700 mx-auto mb-2" />
+            <p className="text-xs font-semibold text-neutral-500">No media attached</p>
           </div>
         )}
       </div>
@@ -1053,7 +1053,7 @@ export default function CreatePostPage() {
             {publishSuccess.platformResults?.map((res: any) => (
               <div
                 key={res.platformPostId}
-                className="p-4 rounded-xl bg-[#100606]/90 border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-sm"
+                className="p-4 rounded-xl bg-[#100606]/90 border border-[#2a1010] flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-sm"
               >
                 <div className="flex items-center gap-2.5">
                   <PlatformIcon platform={res.platform} size={20} className="w-5 h-5 rounded" />
@@ -1091,10 +1091,10 @@ export default function CreatePostPage() {
         {/* Left Composer Panel (7 Cols) */}
         <div className="lg:col-span-7 space-y-8">
           {/* STEP 1: SELECT ACCOUNTS */}
-          <div className="p-6 md:p-8 rounded-3xl bg-[#0d1322] border border-slate-800 shadow-md">
+          <div className="p-6 md:p-8 rounded-3xl bg-[#0a0404] border border-[#2a1010] shadow-md">
             <div className="flex items-center justify-between mb-5">
               <div>
-                <h3 className="text-sm md:text-base font-bold text-slate-200 uppercase tracking-wider flex items-center gap-3">
+                <h3 className="text-sm md:text-base font-bold text-neutral-200 uppercase tracking-wider flex items-center gap-3">
                   <span className="flex items-center justify-center w-7 h-7 rounded-xl bg-red-600 text-white text-xs font-black shadow-md">
                     1
                   </span>
@@ -1106,7 +1106,7 @@ export default function CreatePostPage() {
                   type="button"
                   onClick={handleResetForm}
                   title="Clear all inputs and start a fresh blank post"
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-xs font-bold border border-slate-700 transition-colors"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#1a0a0a] hover:bg-[#2a1010] text-neutral-300 hover:text-white text-xs font-bold border border-[#3a1515] transition-colors"
                 >
                   <RotateCcw className="w-3.5 h-3.5" />
                   <span>Clear Form</span>
@@ -1127,12 +1127,12 @@ export default function CreatePostPage() {
             </div>
 
             {loadingAccounts ? (
-              <div className="py-8 text-center text-sm text-slate-400">
+              <div className="py-8 text-center text-sm text-neutral-400">
                 Loading connected accounts...
               </div>
             ) : accounts.length === 0 ? (
-              <div className="p-6 rounded-2xl bg-slate-900/60 border border-dashed border-slate-800 text-center">
-                <p className="text-sm text-slate-300">No social accounts connected yet.</p>
+              <div className="p-6 rounded-2xl bg-[#0f0505]/60 border border-dashed border-[#2a1010] text-center">
+                <p className="text-sm text-neutral-300">No social accounts connected yet.</p>
                 <button
                   onClick={() => router.push('/accounts')}
                   className="mt-3 text-sm font-bold text-red-500 hover:underline"
@@ -1154,21 +1154,21 @@ export default function CreatePostPage() {
                       className={`cursor-pointer p-4 rounded-2xl border transition-all flex items-center gap-3.5 ${
                         isSelected
                           ? 'bg-red-950/40 border-red-500/60 shadow-md'
-                          : 'bg-slate-900/40 border-slate-800 opacity-60 hover:opacity-100'
+                          : 'bg-[#0f0505]/40 border-[#2a1010] opacity-60 hover:opacity-100'
                       }`}
                     >
                       <input
                         type="checkbox"
                         checked={isSelected}
                         onChange={() => {}}
-                        className="rounded-md border-slate-700 bg-slate-900 text-red-600 focus:ring-red-500 w-5 h-5 cursor-pointer"
+                        className="rounded-md border-[#3a1515] bg-[#0f0505] text-red-600 focus:ring-red-500 w-5 h-5 cursor-pointer"
                       />
                       <PlatformIcon platform={acc.platform} size={24} className="w-6 h-6 rounded-lg shrink-0" />
                       <div className="overflow-hidden">
                         <p className="text-sm font-bold text-white truncate">
                           {acc.name}
                         </p>
-                        <p className="text-xs text-slate-400 truncate">
+                        <p className="text-xs text-neutral-400 truncate">
                           @{acc.username}
                         </p>
                       </div>
@@ -1180,8 +1180,8 @@ export default function CreatePostPage() {
           </div>
 
           {/* STEP 2: MEDIA UPLOAD */}
-          <div className="p-6 md:p-8 rounded-3xl bg-[#0d1322] border border-slate-800 shadow-md">
-            <h3 className="text-sm md:text-base font-bold text-slate-200 uppercase tracking-wider mb-5 flex items-center gap-3">
+          <div className="p-6 md:p-8 rounded-3xl bg-[#0a0404] border border-[#2a1010] shadow-md">
+            <h3 className="text-sm md:text-base font-bold text-neutral-200 uppercase tracking-wider mb-5 flex items-center gap-3">
               <span className="flex items-center justify-center w-7 h-7 rounded-xl bg-red-600 text-white text-xs font-black shadow-md">
                 2
               </span>
@@ -1198,7 +1198,7 @@ export default function CreatePostPage() {
                   }
                 }}
                 onClick={() => fileInputRef.current?.click()}
-                className="cursor-pointer border-2 border-dashed border-slate-700 hover:border-red-500/80 rounded-3xl p-10 text-center bg-slate-900/40 hover:bg-slate-900/70 transition-all group"
+                className="cursor-pointer border-2 border-dashed border-[#3a1515] hover:border-red-500/80 rounded-3xl p-10 text-center bg-[#0f0505]/40 hover:bg-[#0f0505]/70 transition-all group"
               >
                 <input
                   ref={fileInputRef}
@@ -1213,7 +1213,7 @@ export default function CreatePostPage() {
                 {uploading ? (
                   <div className="flex flex-col items-center">
                     <div className="w-10 h-10 border-3 border-red-500 border-t-transparent rounded-full animate-spin mb-3.5" />
-                    <p className="text-sm font-bold text-slate-200">
+                    <p className="text-sm font-bold text-neutral-200">
                       Uploading & Optimizing Media...
                     </p>
                   </div>
@@ -1225,19 +1225,19 @@ export default function CreatePostPage() {
                     <p className="text-base md:text-lg font-bold text-white">
                       Drop your content here
                     </p>
-                    <p className="text-sm text-slate-400 mt-1.5">
+                    <p className="text-sm text-neutral-400 mt-1.5">
                       or <span className="text-red-500 font-bold underline">Browse Files</span> from your device
                     </p>
-                    <p className="text-xs text-slate-400 mt-3">
+                    <p className="text-xs text-neutral-400 mt-3">
                       Supports JPG, JPEG, PNG, WEBP, MP4, MOV (up to 50MB)
                     </p>
                   </div>
                 )}
               </div>
             ) : (
-              <div className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800 flex items-center justify-between gap-5 shadow-sm">
+              <div className="p-5 rounded-2xl bg-[#0f0505]/80 border border-[#2a1010] flex items-center justify-between gap-5 shadow-sm">
                 <div className="flex items-center gap-4 overflow-hidden">
-                  <div className="w-20 h-20 rounded-2xl bg-slate-800 overflow-hidden shrink-0 border border-slate-700 flex items-center justify-center">
+                  <div className="w-20 h-20 rounded-2xl bg-[#1a0a0a] overflow-hidden shrink-0 border border-[#3a1515] flex items-center justify-center">
                     {mediaFile.url ? (
                       mediaFile.mimeType.startsWith('video/') ? (
                         <video src={mediaFile.url} className="w-full h-full object-cover" />
@@ -1253,7 +1253,7 @@ export default function CreatePostPage() {
                     <p className="text-sm md:text-base font-bold text-white truncate">
                       {mediaFile.name}
                     </p>
-                    <p className="text-xs md:text-sm text-slate-400 mt-1">
+                    <p className="text-xs md:text-sm text-neutral-400 mt-1">
                       {(mediaFile.size / (1024 * 1024)).toFixed(2)} MB •{' '}
                       {mediaFile.mimeType.split('/')[1]?.toUpperCase()}
                     </p>
@@ -1272,7 +1272,7 @@ export default function CreatePostPage() {
                 <div className="flex items-center gap-2.5 shrink-0">
                   <button
                     onClick={() => fileInputRef.current?.click()}
-                    className="p-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-sm font-semibold border border-slate-700 transition-colors"
+                    className="p-2.5 rounded-xl bg-[#1a0a0a] hover:bg-[#2a1010] text-neutral-200 text-sm font-semibold border border-[#3a1515] transition-colors"
                     title="Replace media"
                   >
                     <RefreshCw className="w-4 h-4" />
@@ -1299,16 +1299,16 @@ export default function CreatePostPage() {
           </div>
 
           {/* STEP 3: MASTER CAPTION & SYNC */}
-          <div className="p-6 md:p-8 rounded-3xl bg-[#0d1322] border border-slate-800 shadow-md">
+          <div className="p-6 md:p-8 rounded-3xl bg-[#0a0404] border border-[#2a1010] shadow-md">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm md:text-base font-bold text-slate-200 uppercase tracking-wider flex items-center gap-3">
+              <h3 className="text-sm md:text-base font-bold text-neutral-200 uppercase tracking-wider flex items-center gap-3">
                 <span className="flex items-center justify-center w-7 h-7 rounded-xl bg-red-600 text-white text-xs font-black shadow-md">
                   3
                 </span>
                 <span>Master Caption</span>
               </h3>
 
-              <div className="text-sm font-semibold text-slate-400">
+              <div className="text-sm font-semibold text-neutral-400">
                 {masterCaption.length} characters
               </div>
             </div>
@@ -1319,20 +1319,20 @@ export default function CreatePostPage() {
                 value={masterCaption}
                 onChange={(e) => handleMasterCaptionChange(e.target.value)}
                 placeholder="Write the main caption for your content..."
-                className="w-full p-4 text-base bg-[#100606]/90 border border-slate-800 rounded-2xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all resize-y leading-relaxed"
+                className="w-full p-4 text-base bg-[#100606]/90 border border-[#2a1010] rounded-2xl text-white placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all resize-y leading-relaxed"
               />
             </div>
 
             {/* Sync Switch */}
-            <div className="mt-4 pt-4 border-t border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="mt-4 pt-4 border-t border-[#2a1010] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <label className="flex items-center gap-3 cursor-pointer select-none">
                 <input
                   type="checkbox"
                   checked={syncCaptions}
                   onChange={handleToggleSync}
-                  className="rounded-md border-slate-700 bg-slate-900 text-red-600 focus:ring-red-500 w-5 h-5 cursor-pointer"
+                  className="rounded-md border-[#3a1515] bg-[#0f0505] text-red-600 focus:ring-red-500 w-5 h-5 cursor-pointer"
                 />
-                <span className="text-sm font-bold text-slate-200">
+                <span className="text-sm font-bold text-neutral-200">
                   Apply this caption to all selected platforms
                 </span>
               </label>
@@ -1346,9 +1346,9 @@ export default function CreatePostPage() {
           </div>
 
           {/* STEP 4: PLATFORM-SPECIFIC TABS & EXPANDABLE FIELDS */}
-          <div className="p-6 md:p-8 rounded-3xl bg-[#0d1322] border border-slate-800 shadow-md">
+          <div className="p-6 md:p-8 rounded-3xl bg-[#0a0404] border border-[#2a1010] shadow-md">
             <div className="flex items-center justify-between mb-5">
-              <h3 className="text-sm md:text-base font-bold text-slate-200 uppercase tracking-wider flex items-center gap-3">
+              <h3 className="text-sm md:text-base font-bold text-neutral-200 uppercase tracking-wider flex items-center gap-3">
                 <span className="flex items-center justify-center w-7 h-7 rounded-xl bg-red-600 text-white text-xs font-black shadow-md">
                   4
                 </span>
@@ -1357,13 +1357,13 @@ export default function CreatePostPage() {
             </div>
 
             {/* Tabs */}
-            <div className="max-w-full flex flex-nowrap xl:flex-wrap items-center gap-2 overflow-x-auto xl:overflow-visible px-1 pb-3 mb-6 border-b border-slate-800">
+            <div className="max-w-full flex flex-nowrap xl:flex-wrap items-center gap-2 overflow-x-auto xl:overflow-visible px-1 pb-3 mb-6 border-b border-[#2a1010]">
               <button
                 onClick={() => setActiveTab('ALL')}
                 className={`px-4 py-2.5 rounded-xl text-sm font-bold whitespace-nowrap shrink-0 transition-all ${
                   activeTab === 'ALL'
                     ? 'bg-red-600 text-white shadow-md'
-                    : 'bg-slate-900/60 text-slate-400 hover:text-white'
+                    : 'bg-[#0f0505]/60 text-neutral-400 hover:text-white'
                 }`}
               >
                 All Cards
@@ -1378,7 +1378,7 @@ export default function CreatePostPage() {
                   className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold whitespace-nowrap shrink-0 transition-all ${
                     activeTab === plat
                       ? 'bg-red-600 text-white shadow-md'
-                      : 'bg-slate-900/60 text-slate-400 hover:text-white'
+                      : 'bg-[#0f0505]/60 text-neutral-400 hover:text-white'
                   }`}
                 >
                   <PlatformIcon platform={plat} size={16} className="w-4 h-4 rounded" />
@@ -1391,19 +1391,19 @@ export default function CreatePostPage() {
             <div className="space-y-6">
               {/* INSTAGRAM */}
               {(activeTab === 'ALL' || activeTab === 'INSTAGRAM') && (
-                <div className="p-6 rounded-2xl bg-slate-900/70 border border-slate-800 space-y-4">
+                <div className="p-6 rounded-2xl bg-[#0f0505]/70 border border-[#2a1010] space-y-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2.5">
                       <PlatformIcon platform="INSTAGRAM" size={22} className="w-5.5 h-5.5 rounded-lg" />
                       <span className="text-base font-bold text-white">Instagram Settings</span>
                     </div>
-                    <span className="text-xs font-semibold text-slate-400">
+                    <span className="text-xs font-semibold text-neutral-400">
                       {platformSettings.INSTAGRAM?.caption?.length || 0} / 2,200 chars
                     </span>
                   </div>
 
                   <div>
-                    <label className="block text-xs md:text-sm font-bold text-slate-300 mb-1.5">
+                    <label className="block text-xs md:text-sm font-bold text-neutral-300 mb-1.5">
                       Caption
                     </label>
                     <textarea
@@ -1412,19 +1412,19 @@ export default function CreatePostPage() {
                       value={platformSettings.INSTAGRAM?.caption}
                       onChange={(e) => updatePlatformSetting('INSTAGRAM', 'caption', e.target.value)}
                       placeholder="Custom Instagram caption..."
-                      className="w-full p-3.5 text-sm bg-slate-950 border border-slate-800 rounded-xl text-white placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-red-500 disabled:opacity-60 leading-relaxed"
+                      className="w-full p-3.5 text-sm bg-[#050202] border border-[#2a1010] rounded-xl text-white placeholder-neutral-600 focus:outline-none focus:ring-1 focus:ring-red-500 disabled:opacity-60 leading-relaxed"
                     />
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-xs md:text-sm font-bold text-slate-300 mb-1.5">
+                      <label className="block text-xs md:text-sm font-bold text-neutral-300 mb-1.5">
                         Content Type
                       </label>
                       <select
                         value={platformSettings.INSTAGRAM?.contentType}
                         onChange={(e) => updatePlatformSetting('INSTAGRAM', 'contentType', e.target.value)}
-                        className="w-full p-3 text-sm bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:ring-1 focus:ring-red-500"
+                        className="w-full p-3 text-sm bg-[#050202] border border-[#2a1010] rounded-xl text-white focus:outline-none focus:ring-1 focus:ring-red-500"
                       >
                         <option value="POST">Feed Post</option>
                         <option value="REEL">Instagram Reel</option>
@@ -1433,7 +1433,7 @@ export default function CreatePostPage() {
                     </div>
 
                     <div>
-                      <label className="block text-xs md:text-sm font-bold text-slate-300 mb-1.5">
+                      <label className="block text-xs md:text-sm font-bold text-neutral-300 mb-1.5">
                         Hashtags
                       </label>
                       <input
@@ -1441,18 +1441,18 @@ export default function CreatePostPage() {
                         value={platformSettings.INSTAGRAM?.hashtags}
                         onChange={(e) => updatePlatformSetting('INSTAGRAM', 'hashtags', e.target.value)}
                         placeholder="#branding #launch"
-                        className="w-full p-3 text-sm bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:ring-1 focus:ring-red-500"
+                        className="w-full p-3 text-sm bg-[#050202] border border-[#2a1010] rounded-xl text-white focus:outline-none focus:ring-1 focus:ring-red-500"
                       />
                     </div>
                   </div>
 
-                  <div className="flex flex-wrap items-center gap-6 pt-2 text-sm text-slate-300">
+                  <div className="flex flex-wrap items-center gap-6 pt-2 text-sm text-neutral-300">
                     <label className="flex items-center gap-2.5 cursor-pointer">
                       <input
                         type="checkbox"
                         checked={platformSettings.INSTAGRAM?.allowComments}
                         onChange={(e) => updatePlatformSetting('INSTAGRAM', 'allowComments', e.target.checked)}
-                        className="rounded border-slate-700 bg-slate-950 text-red-600 w-4 h-4"
+                        className="rounded border-[#3a1515] bg-[#050202] text-red-600 w-4 h-4"
                       />
                       <span>Allow Comments</span>
                     </label>
@@ -1461,7 +1461,7 @@ export default function CreatePostPage() {
                         type="checkbox"
                         checked={platformSettings.INSTAGRAM?.hideLikes}
                         onChange={(e) => updatePlatformSetting('INSTAGRAM', 'hideLikes', e.target.checked)}
-                        className="rounded border-slate-700 bg-slate-950 text-red-600 w-4 h-4"
+                        className="rounded border-[#3a1515] bg-[#050202] text-red-600 w-4 h-4"
                       />
                       <span>Hide Like Counts</span>
                     </label>
@@ -1471,19 +1471,19 @@ export default function CreatePostPage() {
 
               {/* FACEBOOK */}
               {(activeTab === 'ALL' || activeTab === 'FACEBOOK') && (
-                <div className="p-6 rounded-2xl bg-slate-900/70 border border-slate-800 space-y-4">
+                <div className="p-6 rounded-2xl bg-[#0f0505]/70 border border-[#2a1010] space-y-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2.5">
                       <PlatformIcon platform="FACEBOOK" size={22} className="w-5.5 h-5.5 rounded-lg" />
                       <span className="text-base font-bold text-white">Facebook Settings</span>
                     </div>
-                    <span className="text-xs font-semibold text-slate-400">
+                    <span className="text-xs font-semibold text-neutral-400">
                       {platformSettings.FACEBOOK?.caption?.length || 0} chars
                     </span>
                   </div>
 
                   <div>
-                    <label className="block text-xs md:text-sm font-bold text-slate-300 mb-1.5">
+                    <label className="block text-xs md:text-sm font-bold text-neutral-300 mb-1.5">
                       Caption
                     </label>
                     <textarea
@@ -1492,19 +1492,19 @@ export default function CreatePostPage() {
                       value={platformSettings.FACEBOOK?.caption}
                       onChange={(e) => updatePlatformSetting('FACEBOOK', 'caption', e.target.value)}
                       placeholder="Custom Facebook caption..."
-                      className="w-full p-3.5 text-sm bg-slate-950 border border-slate-800 rounded-xl text-white placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-red-500 disabled:opacity-60 leading-relaxed"
+                      className="w-full p-3.5 text-sm bg-[#050202] border border-[#2a1010] rounded-xl text-white placeholder-neutral-600 focus:outline-none focus:ring-1 focus:ring-red-500 disabled:opacity-60 leading-relaxed"
                     />
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-xs md:text-sm font-bold text-slate-300 mb-1.5">
+                      <label className="block text-xs md:text-sm font-bold text-neutral-300 mb-1.5">
                         Post Type
                       </label>
                       <select
                         value={platformSettings.FACEBOOK?.contentType}
                         onChange={(e) => updatePlatformSetting('FACEBOOK', 'contentType', e.target.value)}
-                        className="w-full p-3 text-sm bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:ring-1 focus:ring-red-500"
+                        className="w-full p-3 text-sm bg-[#050202] border border-[#2a1010] rounded-xl text-white focus:outline-none focus:ring-1 focus:ring-red-500"
                       >
                         <option value="POST">Page Post</option>
                         <option value="VIDEO">Page Video</option>
@@ -1513,7 +1513,7 @@ export default function CreatePostPage() {
                     </div>
 
                     <div>
-                      <label className="block text-xs md:text-sm font-bold text-slate-300 mb-1.5">
+                      <label className="block text-xs md:text-sm font-bold text-neutral-300 mb-1.5">
                         Optional Link URL
                       </label>
                       <input
@@ -1521,7 +1521,7 @@ export default function CreatePostPage() {
                         value={platformSettings.FACEBOOK?.linkUrl}
                         onChange={(e) => updatePlatformSetting('FACEBOOK', 'linkUrl', e.target.value)}
                         placeholder="https://yourwebsite.com"
-                        className="w-full p-3 text-sm bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:ring-1 focus:ring-red-500"
+                        className="w-full p-3 text-sm bg-[#050202] border border-[#2a1010] rounded-xl text-white focus:outline-none focus:ring-1 focus:ring-red-500"
                       />
                     </div>
                   </div>
@@ -1530,19 +1530,19 @@ export default function CreatePostPage() {
 
               {/* TIKTOK */}
               {(activeTab === 'ALL' || activeTab === 'TIKTOK') && (
-                <div className="p-6 rounded-2xl bg-slate-900/70 border border-slate-800 space-y-4">
+                <div className="p-6 rounded-2xl bg-[#0f0505]/70 border border-[#2a1010] space-y-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2.5">
                       <PlatformIcon platform="TIKTOK" size={22} className="w-5.5 h-5.5 rounded-lg" />
                       <span className="text-base font-bold text-white">TikTok Settings</span>
                     </div>
-                    <span className="text-xs font-semibold text-slate-400">
+                    <span className="text-xs font-semibold text-neutral-400">
                       {platformSettings.TIKTOK?.caption?.length || 0} / 4,000 chars
                     </span>
                   </div>
 
                   <div>
-                    <label className="block text-xs md:text-sm font-bold text-slate-300 mb-1.5">
+                    <label className="block text-xs md:text-sm font-bold text-neutral-300 mb-1.5">
                       Caption & Title
                     </label>
                     <textarea
@@ -1551,19 +1551,19 @@ export default function CreatePostPage() {
                       value={platformSettings.TIKTOK?.caption}
                       onChange={(e) => updatePlatformSetting('TIKTOK', 'caption', e.target.value)}
                       placeholder="Custom TikTok caption..."
-                      className="w-full p-3.5 text-sm bg-slate-950 border border-slate-800 rounded-xl text-white placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-red-500 disabled:opacity-60 leading-relaxed"
+                      className="w-full p-3.5 text-sm bg-[#050202] border border-[#2a1010] rounded-xl text-white placeholder-neutral-600 focus:outline-none focus:ring-1 focus:ring-red-500 disabled:opacity-60 leading-relaxed"
                     />
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div>
-                      <label className="block text-xs md:text-sm font-bold text-slate-300 mb-1.5">
+                      <label className="block text-xs md:text-sm font-bold text-neutral-300 mb-1.5">
                         Publishing Method
                       </label>
                       <select
                         value={platformSettings.TIKTOK?.contentType || 'VIDEO'}
                         onChange={(e) => updatePlatformSetting('TIKTOK', 'contentType', e.target.value)}
-                        className="w-full p-3 text-sm bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:ring-1 focus:ring-red-500 font-semibold"
+                        className="w-full p-3 text-sm bg-[#050202] border border-[#2a1010] rounded-xl text-white focus:outline-none focus:ring-1 focus:ring-red-500 font-semibold"
                       >
                         <option value="VIDEO">Direct Post (video.publish - Production)</option>
                         <option value="INBOX_DRAFT">Creator Inbox (video.upload - Sandbox Demo)</option>
@@ -1576,13 +1576,13 @@ export default function CreatePostPage() {
                     </div>
 
                     <div>
-                      <label className="block text-xs md:text-sm font-bold text-slate-300 mb-1.5">
+                      <label className="block text-xs md:text-sm font-bold text-neutral-300 mb-1.5">
                         Privacy Level
                       </label>
                       <select
                         value={platformSettings.TIKTOK?.visibility}
                         onChange={(e) => updatePlatformSetting('TIKTOK', 'visibility', e.target.value)}
-                        className="w-full p-3 text-sm bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:ring-1 focus:ring-red-500"
+                        className="w-full p-3 text-sm bg-[#050202] border border-[#2a1010] rounded-xl text-white focus:outline-none focus:ring-1 focus:ring-red-500"
                       >
                         <option value="PUBLIC_TO_EVERYONE">Public to Everyone</option>
                         <option value="MUTUAL_FOLLOW_FRIENDS">Friends Only</option>
@@ -1591,7 +1591,7 @@ export default function CreatePostPage() {
                     </div>
 
                     <div>
-                      <label className="block text-xs md:text-sm font-bold text-slate-300 mb-1.5">
+                      <label className="block text-xs md:text-sm font-bold text-neutral-300 mb-1.5">
                         Hashtags
                       </label>
                       <input
@@ -1599,18 +1599,18 @@ export default function CreatePostPage() {
                         value={platformSettings.TIKTOK?.hashtags}
                         onChange={(e) => updatePlatformSetting('TIKTOK', 'hashtags', e.target.value)}
                         placeholder="#fyp #viral"
-                        className="w-full p-3 text-sm bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:ring-1 focus:ring-red-500"
+                        className="w-full p-3 text-sm bg-[#050202] border border-[#2a1010] rounded-xl text-white focus:outline-none focus:ring-1 focus:ring-red-500"
                       />
                     </div>
                   </div>
 
-                  <div className="flex flex-wrap items-center gap-6 pt-2 text-sm text-slate-300">
+                  <div className="flex flex-wrap items-center gap-6 pt-2 text-sm text-neutral-300">
                     <label className="flex items-center gap-2.5 cursor-pointer">
                       <input
                         type="checkbox"
                         checked={platformSettings.TIKTOK?.allowComments}
                         onChange={(e) => updatePlatformSetting('TIKTOK', 'allowComments', e.target.checked)}
-                        className="rounded border-slate-700 bg-slate-950 text-red-600 w-4 h-4"
+                        className="rounded border-[#3a1515] bg-[#050202] text-red-600 w-4 h-4"
                       />
                       <span>Allow Comments</span>
                     </label>
@@ -1619,7 +1619,7 @@ export default function CreatePostPage() {
                         type="checkbox"
                         checked={platformSettings.TIKTOK?.allowDuet}
                         onChange={(e) => updatePlatformSetting('TIKTOK', 'allowDuet', e.target.checked)}
-                        className="rounded border-slate-700 bg-slate-950 text-red-600 w-4 h-4"
+                        className="rounded border-[#3a1515] bg-[#050202] text-red-600 w-4 h-4"
                       />
                       <span>Allow Duet</span>
                     </label>
@@ -1628,7 +1628,7 @@ export default function CreatePostPage() {
                         type="checkbox"
                         checked={platformSettings.TIKTOK?.allowStitch}
                         onChange={(e) => updatePlatformSetting('TIKTOK', 'allowStitch', e.target.checked)}
-                        className="rounded border-slate-700 bg-slate-950 text-red-600 w-4 h-4"
+                        className="rounded border-[#3a1515] bg-[#050202] text-red-600 w-4 h-4"
                       />
                       <span>Allow Stitch</span>
                     </label>
@@ -1638,7 +1638,7 @@ export default function CreatePostPage() {
 
               {/* YOUTUBE */}
               {(activeTab === 'ALL' || activeTab === 'YOUTUBE') && (
-                <div className="p-6 rounded-2xl bg-slate-900/70 border border-slate-800 space-y-4">
+                <div className="p-6 rounded-2xl bg-[#0f0505]/70 border border-[#2a1010] space-y-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2.5">
                       <PlatformIcon platform="YOUTUBE" size={22} className="w-5.5 h-5.5 rounded-lg" />
@@ -1650,7 +1650,7 @@ export default function CreatePostPage() {
                   </div>
 
                   <div>
-                    <label className="block text-xs md:text-sm font-bold text-slate-300 mb-1.5">
+                    <label className="block text-xs md:text-sm font-bold text-neutral-300 mb-1.5">
                       Video Title (Required for YouTube)
                     </label>
                     <input
@@ -1658,12 +1658,12 @@ export default function CreatePostPage() {
                       value={platformSettings.YOUTUBE?.youtubeTitle}
                       onChange={(e) => updatePlatformSetting('YOUTUBE', 'youtubeTitle', e.target.value)}
                       placeholder="Enter YouTube Video Title..."
-                      className="w-full p-3.5 text-base bg-slate-950 border border-slate-800 rounded-xl text-white placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-red-500 font-bold"
+                      className="w-full p-3.5 text-base bg-[#050202] border border-[#2a1010] rounded-xl text-white placeholder-neutral-600 focus:outline-none focus:ring-1 focus:ring-red-500 font-bold"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-xs md:text-sm font-bold text-slate-300 mb-1.5">
+                    <label className="block text-xs md:text-sm font-bold text-neutral-300 mb-1.5">
                         YouTube Description
                       </label>
                       <textarea
@@ -1671,19 +1671,19 @@ export default function CreatePostPage() {
                         value={platformSettings.YOUTUBE?.caption}
                         onChange={(e) => updatePlatformSetting('YOUTUBE', 'caption', e.target.value)}
                       placeholder="YouTube description..."
-                      className="w-full p-3.5 text-sm bg-slate-950 border border-slate-800 rounded-xl text-white placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-red-500 disabled:opacity-60 leading-relaxed"
+                      className="w-full p-3.5 text-sm bg-[#050202] border border-[#2a1010] rounded-xl text-white placeholder-neutral-600 focus:outline-none focus:ring-1 focus:ring-red-500 disabled:opacity-60 leading-relaxed"
                     />
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-xs md:text-sm font-bold text-slate-300 mb-1.5">
+                      <label className="block text-xs md:text-sm font-bold text-neutral-300 mb-1.5">
                         Visibility
                       </label>
                       <select
                         value={platformSettings.YOUTUBE?.visibility}
                         onChange={(e) => updatePlatformSetting('YOUTUBE', 'visibility', e.target.value)}
-                        className="w-full p-3 text-sm bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:ring-1 focus:ring-red-500"
+                        className="w-full p-3 text-sm bg-[#050202] border border-[#2a1010] rounded-xl text-white focus:outline-none focus:ring-1 focus:ring-red-500"
                       >
                         <option value="PUBLIC">Public</option>
                         <option value="UNLISTED">Unlisted</option>
@@ -1692,7 +1692,7 @@ export default function CreatePostPage() {
                     </div>
 
                     <div>
-                      <label className="block text-xs md:text-sm font-bold text-slate-300 mb-1.5">
+                      <label className="block text-xs md:text-sm font-bold text-neutral-300 mb-1.5">
                         Tags
                       </label>
                       <input
@@ -1700,7 +1700,7 @@ export default function CreatePostPage() {
                         value={platformSettings.YOUTUBE?.hashtags}
                         onChange={(e) => updatePlatformSetting('YOUTUBE', 'hashtags', e.target.value)}
                         placeholder="tech, saas, growth"
-                        className="w-full p-3 text-sm bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:ring-1 focus:ring-red-500"
+                        className="w-full p-3 text-sm bg-[#050202] border border-[#2a1010] rounded-xl text-white focus:outline-none focus:ring-1 focus:ring-red-500"
                       />
                     </div>
                   </div>
@@ -1709,19 +1709,19 @@ export default function CreatePostPage() {
 
               {/* LINKEDIN */}
               {(activeTab === 'ALL' || activeTab === 'LINKEDIN') && (
-                <div className="p-6 rounded-2xl bg-slate-900/70 border border-slate-800 space-y-4">
+                <div className="p-6 rounded-2xl bg-[#0f0505]/70 border border-[#2a1010] space-y-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2.5">
                       <PlatformIcon platform="LINKEDIN" size={22} className="w-5.5 h-5.5 rounded-lg" />
                       <span className="text-base font-bold text-white">LinkedIn Settings</span>
                     </div>
-                    <span className="text-xs font-semibold text-slate-400">
+                    <span className="text-xs font-semibold text-neutral-400">
                       {platformSettings.LINKEDIN?.caption?.length || 0} / 3,000 chars
                     </span>
                   </div>
 
                   <div>
-                    <label className="block text-xs md:text-sm font-bold text-slate-300 mb-1.5">
+                    <label className="block text-xs md:text-sm font-bold text-neutral-300 mb-1.5">
                       Post Text
                     </label>
                     <textarea
@@ -1730,19 +1730,19 @@ export default function CreatePostPage() {
                       value={platformSettings.LINKEDIN?.caption}
                       onChange={(e) => updatePlatformSetting('LINKEDIN', 'caption', e.target.value)}
                       placeholder="Custom LinkedIn post text..."
-                      className="w-full p-3.5 text-sm bg-slate-950 border border-slate-800 rounded-xl text-white placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-red-500 disabled:opacity-60 leading-relaxed"
+                      className="w-full p-3.5 text-sm bg-[#050202] border border-[#2a1010] rounded-xl text-white placeholder-neutral-600 focus:outline-none focus:ring-1 focus:ring-red-500 disabled:opacity-60 leading-relaxed"
                     />
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-xs md:text-sm font-bold text-slate-300 mb-1.5">
+                      <label className="block text-xs md:text-sm font-bold text-neutral-300 mb-1.5">
                         Audience Target
                       </label>
                       <select
                         value={platformSettings.LINKEDIN?.visibility}
                         onChange={(e) => updatePlatformSetting('LINKEDIN', 'visibility', e.target.value)}
-                        className="w-full p-3 text-sm bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:ring-1 focus:ring-red-500"
+                        className="w-full p-3 text-sm bg-[#050202] border border-[#2a1010] rounded-xl text-white focus:outline-none focus:ring-1 focus:ring-red-500"
                       >
                         <option value="PUBLIC">Anyone (Public)</option>
                         <option value="CONNECTIONS_ONLY">Connections Only</option>
@@ -1750,7 +1750,7 @@ export default function CreatePostPage() {
                     </div>
 
                     <div>
-                      <label className="block text-xs md:text-sm font-bold text-slate-300 mb-1.5">
+                      <label className="block text-xs md:text-sm font-bold text-neutral-300 mb-1.5">
                         Hashtags
                       </label>
                       <input
@@ -1758,7 +1758,7 @@ export default function CreatePostPage() {
                         value={platformSettings.LINKEDIN?.hashtags}
                         onChange={(e) => updatePlatformSetting('LINKEDIN', 'hashtags', e.target.value)}
                         placeholder="#business #growth"
-                        className="w-full p-3 text-sm bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:ring-1 focus:ring-red-500"
+                        className="w-full p-3 text-sm bg-[#050202] border border-[#2a1010] rounded-xl text-white focus:outline-none focus:ring-1 focus:ring-red-500"
                       />
                     </div>
                   </div>
@@ -1767,7 +1767,7 @@ export default function CreatePostPage() {
 
               {/* X / TWITTER */}
               {(activeTab === 'ALL' || activeTab === 'X') && (
-                <div className="p-6 rounded-2xl bg-slate-900/70 border border-slate-800 space-y-4">
+                <div className="p-6 rounded-2xl bg-[#0f0505]/70 border border-[#2a1010] space-y-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2.5">
                       <PlatformIcon platform="X" size={22} className="w-5.5 h-5.5 rounded-lg" />
@@ -1777,7 +1777,7 @@ export default function CreatePostPage() {
                       className={`text-xs font-black ${
                         (platformSettings.X?.caption?.length || 0) > 280
                           ? 'text-red-400'
-                          : 'text-slate-400'
+                          : 'text-neutral-400'
                       }`}
                     >
                       {platformSettings.X?.caption?.length || 0} / 280 chars
@@ -1785,7 +1785,7 @@ export default function CreatePostPage() {
                   </div>
 
                   <div>
-                    <label className="block text-xs md:text-sm font-bold text-slate-300 mb-1.5">
+                    <label className="block text-xs md:text-sm font-bold text-neutral-300 mb-1.5">
                       Tweet Text
                     </label>
                     <textarea
@@ -1794,10 +1794,10 @@ export default function CreatePostPage() {
                       value={platformSettings.X?.caption}
                       onChange={(e) => updatePlatformSetting('X', 'caption', e.target.value)}
                       placeholder="What is happening?!"
-                      className={`w-full p-3.5 text-sm bg-slate-950 border rounded-xl text-white placeholder-slate-600 focus:outline-none focus:ring-1 disabled:opacity-60 leading-relaxed ${
+                      className={`w-full p-3.5 text-sm bg-[#050202] border rounded-xl text-white placeholder-neutral-600 focus:outline-none focus:ring-1 disabled:opacity-60 leading-relaxed ${
                         (platformSettings.X?.caption?.length || 0) > 280
                           ? 'border-red-500/80 focus:ring-red-500'
-                          : 'border-slate-800 focus:ring-red-500'
+                          : 'border-[#2a1010] focus:ring-red-500'
                       }`}
                     />
                   </div>
@@ -1813,19 +1813,19 @@ export default function CreatePostPage() {
 
               {/* PINTEREST */}
               {(activeTab === 'ALL' || activeTab === 'PINTEREST') && (
-                <div className="p-6 rounded-2xl bg-slate-900/70 border border-slate-800 space-y-4">
+                <div className="p-6 rounded-2xl bg-[#0f0505]/70 border border-[#2a1010] space-y-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2.5">
                       <PlatformIcon platform="PINTEREST" size={22} className="w-5.5 h-5.5 rounded-lg" />
                       <span className="text-base font-bold text-white">Pinterest Settings</span>
                     </div>
-                    <span className="text-xs font-semibold text-slate-400">
+                    <span className="text-xs font-semibold text-neutral-400">
                       {platformSettings.PINTEREST?.caption?.length || 0} / 500 chars
                     </span>
                   </div>
 
                   <div>
-                    <label className="block text-xs md:text-sm font-bold text-slate-300 mb-1.5">
+                    <label className="block text-xs md:text-sm font-bold text-neutral-300 mb-1.5">
                       Caption / Description
                     </label>
                     <textarea
@@ -1834,19 +1834,19 @@ export default function CreatePostPage() {
                       value={platformSettings.PINTEREST?.caption}
                       onChange={(e) => updatePlatformSetting('PINTEREST', 'caption', e.target.value)}
                       placeholder="Custom Pinterest description..."
-                      className="w-full p-3.5 text-sm bg-slate-950 border border-slate-800 rounded-xl text-white placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-red-500 disabled:opacity-60 leading-relaxed"
+                      className="w-full p-3.5 text-sm bg-[#050202] border border-[#2a1010] rounded-xl text-white placeholder-neutral-600 focus:outline-none focus:ring-1 focus:ring-red-500 disabled:opacity-60 leading-relaxed"
                     />
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-xs md:text-sm font-bold text-slate-300 mb-1.5">
+                      <label className="block text-xs md:text-sm font-bold text-neutral-300 mb-1.5">
                         Board
                       </label>
                       <select
                           value={platformSettings.PINTEREST?.boardName || ''}
                           onChange={(e) => updatePlatformSetting('PINTEREST', 'boardName', e.target.value)}
-                          className="w-full p-3 text-sm bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:ring-1 focus:ring-red-500"
+                          className="w-full p-3 text-sm bg-[#050202] border border-[#2a1010] rounded-xl text-white focus:outline-none focus:ring-1 focus:ring-red-500"
                         >
                           <option value="">-- Select a Board --</option>
                           {pinterestBoards.map(b => (
@@ -1857,7 +1857,7 @@ export default function CreatePostPage() {
                     </div>
 
                     <div>
-                      <label className="block text-xs md:text-sm font-bold text-slate-300 mb-1.5">
+                      <label className="block text-xs md:text-sm font-bold text-neutral-300 mb-1.5">
                         Optional Link
                       </label>
                       <input
@@ -1865,7 +1865,7 @@ export default function CreatePostPage() {
                         value={platformSettings.PINTEREST?.linkUrl}
                         onChange={(e) => updatePlatformSetting('PINTEREST', 'linkUrl', e.target.value)}
                         placeholder="https://yourwebsite.com"
-                        className="w-full p-3 text-sm bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:ring-1 focus:ring-red-500"
+                        className="w-full p-3 text-sm bg-[#050202] border border-[#2a1010] rounded-xl text-white focus:outline-none focus:ring-1 focus:ring-red-500"
                       />
                     </div>
                   </div>
@@ -1876,19 +1876,19 @@ export default function CreatePostPage() {
 
               {/* SNAPCHAT */}
               {(activeTab === 'ALL' || activeTab === 'SNAPCHAT') && (
-                <div className="p-6 rounded-2xl bg-slate-900/70 border border-slate-800 space-y-4">
+                <div className="p-6 rounded-2xl bg-[#0f0505]/70 border border-[#2a1010] space-y-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2.5">
                       <PlatformIcon platform="SNAPCHAT" size={22} className="w-5.5 h-5.5 rounded-lg" />
                       <span className="text-base font-bold text-white">Snapchat Settings</span>
                     </div>
-                    <span className="text-xs font-semibold text-slate-400">
+                    <span className="text-xs font-semibold text-neutral-400">
                       {platformSettings.SNAPCHAT?.caption?.length || 0} / 250 chars
                     </span>
                   </div>
 
                   <div>
-                    <label className="block text-xs md:text-sm font-bold text-slate-300 mb-1.5">
+                    <label className="block text-xs md:text-sm font-bold text-neutral-300 mb-1.5">
                       Caption
                     </label>
                     <textarea
@@ -1897,7 +1897,7 @@ export default function CreatePostPage() {
                       value={platformSettings.SNAPCHAT?.caption}
                       onChange={(e) => updatePlatformSetting('SNAPCHAT', 'caption', e.target.value)}
                       placeholder="Custom Snapchat caption..."
-                      className="w-full p-3.5 text-sm bg-slate-950 border border-slate-800 rounded-xl text-white placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-red-500 disabled:opacity-60 leading-relaxed"
+                      className="w-full p-3.5 text-sm bg-[#050202] border border-[#2a1010] rounded-xl text-white placeholder-neutral-600 focus:outline-none focus:ring-1 focus:ring-red-500 disabled:opacity-60 leading-relaxed"
                     />
                   </div>
 
@@ -1908,15 +1908,15 @@ export default function CreatePostPage() {
           </div>
 
           {/* PUBLISHING ACTIONS BAR */}
-          <div className="sticky bottom-4 md:bottom-6 z-20 p-4 md:p-6 rounded-3xl bg-[#050202]/95 backdrop-blur-xl border border-slate-800 shadow-2xl flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4">
+          <div className="sticky bottom-4 md:bottom-6 z-20 p-4 md:p-6 rounded-3xl bg-[#050202]/95 backdrop-blur-xl border border-[#2a1010] shadow-2xl flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4">
             <div className="flex items-center gap-3">
               <button
                 type="button"
                 onClick={handleSaveDraft}
                 disabled={publishing}
-                className="flex items-center justify-center gap-2 px-5 py-3 text-sm font-bold rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition-colors disabled:opacity-50 w-full sm:w-auto"
+                className="flex items-center justify-center gap-2 px-5 py-3 text-sm font-bold rounded-2xl bg-[#1a0a0a] hover:bg-[#2a1010] text-neutral-200 border border-[#3a1515] transition-colors disabled:opacity-50 w-full sm:w-auto"
               >
-                <Save className="w-4 h-4 text-slate-400" />
+                <Save className="w-4 h-4 text-neutral-400" />
                 <span>Save Draft</span>
               </button>
             </div>
@@ -1956,11 +1956,11 @@ export default function CreatePostPage() {
 
         {/* Right Live Preview Panel (5 Cols) */}
         <div className="lg:col-span-5 space-y-6">
-          <div className="sticky top-28 p-6 md:p-8 rounded-3xl bg-[#0d1322] border border-slate-800 shadow-md">
+          <div className="sticky top-28 p-6 md:p-8 rounded-3xl bg-[#0a0404] border border-[#2a1010] shadow-md">
             <div className="flex items-center justify-between mb-5">
               <div className="flex items-center gap-2.5">
                 <Eye className="w-5 h-5 text-red-500" />
-                <h3 className="text-sm font-bold text-slate-200 uppercase tracking-wider">
+                <h3 className="text-sm font-bold text-neutral-200 uppercase tracking-wider">
                   Live Platform Preview
                 </h3>
               </div>
@@ -1975,7 +1975,7 @@ export default function CreatePostPage() {
                     className={`p-2 rounded-xl transition-all ${
                       previewPlatform === plat
                         ? 'bg-red-600 text-white shadow-md'
-                        : 'bg-slate-900/70 text-slate-400 hover:text-slate-200'
+                        : 'bg-[#0f0505]/70 text-neutral-400 hover:text-neutral-200'
                     }`}
                   >
                     <PlatformIcon platform={plat} size={16} className="w-4 h-4 rounded" />
@@ -1985,10 +1985,10 @@ export default function CreatePostPage() {
             </div>
 
             {/* PREVIEW CONTAINER */}
-            <div className="p-5 rounded-2xl bg-slate-950 border border-slate-800 min-h-[460px] flex flex-col justify-between shadow-inner">
+            <div className="p-5 rounded-2xl bg-[#050202] border border-[#2a1010] min-h-[460px] flex flex-col justify-between shadow-inner">
               <div>
                 {/* Simulated Platform Header */}
-                <div className="flex items-center justify-between pb-3.5 border-b border-slate-900 mb-4">
+                <div className="flex items-center justify-between pb-3.5 border-b border-neutral-900 mb-4">
                   <div className="flex items-center gap-3">
                     <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-red-600 to-red-600 flex items-center justify-center text-white text-sm font-bold shrink-0">
                       {(selectedAccounts.find(a => a.platform === previewPlatform)?.name?.[0] || accounts.find(a => a.platform === previewPlatform)?.name?.[0] || 'Y').toUpperCase()}
@@ -1998,13 +1998,13 @@ export default function CreatePostPage() {
                         <span>{selectedAccounts.find(a => a.platform === previewPlatform)?.name || accounts.find(a => a.platform === previewPlatform)?.name || 'Your Channel'}</span>
                         <PlatformIcon platform={previewPlatform} size={14} className="w-3.5 h-3.5 rounded" />
                       </p>
-                      <p className="text-xs text-slate-500">
+                      <p className="text-xs text-neutral-500">
                         {selectedAccounts.find(a => a.platform === previewPlatform)?.username || accounts.find(a => a.platform === previewPlatform)?.username || '@yourchannel'} • Just now
                       </p>
                     </div>
                   </div>
 
-                  <span className="text-slate-600 font-bold text-sm">•••</span>
+                  <span className="text-neutral-600 font-bold text-sm">•••</span>
                 </div>
 
                 {/* YouTube Video Title if applicable */}
@@ -2017,7 +2017,7 @@ export default function CreatePostPage() {
                 )}
 
                 {/* Caption / Description Preview */}
-                <div className="text-sm md:text-base text-slate-200 mb-4 whitespace-pre-wrap leading-relaxed">
+                <div className="text-sm md:text-base text-neutral-200 mb-4 whitespace-pre-wrap leading-relaxed">
                   {currentPreviewText}
                   {currentPreviewHashtags && (
                     <span className="text-red-500 font-bold ml-2">
@@ -2027,13 +2027,13 @@ export default function CreatePostPage() {
                 </div>
 
                 {/* Media Preview Box */}
-                <div className="rounded-2xl overflow-hidden bg-slate-900 border border-slate-800 aspect-video flex items-center justify-center relative shadow-sm">
+                <div className="rounded-2xl overflow-hidden bg-[#0f0505] border border-[#2a1010] aspect-video flex items-center justify-center relative shadow-sm">
                   {mediaFile ? (
                     !mediaFile.url ? (
                       <div className="text-center p-6">
                         <AlertCircle className="w-10 h-10 text-amber-400 mx-auto mb-2" />
                         <p className="text-xs font-semibold text-amber-300">Media file unavailable</p>
-                        <p className="text-[11px] text-slate-500 mt-1">Invalid storage URL. Please re-upload video.</p>
+                        <p className="text-[11px] text-neutral-500 mt-1">Invalid storage URL. Please re-upload video.</p>
                       </div>
                     ) : mediaFile.mimeType.startsWith('video/') ? (
                       <video
@@ -2051,22 +2051,22 @@ export default function CreatePostPage() {
                     )
                   ) : (
                     <div className="text-center p-6">
-                      <ImageIcon className="w-10 h-10 text-slate-700 mx-auto mb-2" />
-                      <p className="text-xs font-semibold text-slate-500">No media attached</p>
+                      <ImageIcon className="w-10 h-10 text-neutral-700 mx-auto mb-2" />
+                      <p className="text-xs font-semibold text-neutral-500">No media attached</p>
                     </div>
                   )}
                 </div>
               </div>
 
               {/* Simulated Action Bar */}
-              <div className="pt-4 mt-4 border-t border-slate-900 flex items-center justify-between text-xs font-bold text-slate-500">
+              <div className="pt-4 mt-4 border-t border-neutral-900 flex items-center justify-between text-xs font-bold text-neutral-500">
                 <span>❤️ 248 Likes</span>
                 <span>💬 32 Comments</span>
                 <span>↗ 18 Shares</span>
               </div>
             </div>
 
-            <div className="mt-4 text-center text-xs text-slate-500 font-medium">
+            <div className="mt-4 text-center text-xs text-neutral-500 font-medium">
               Interactive preview rendering simulation for {previewPlatform}
             </div>
           </div>
@@ -2076,17 +2076,17 @@ export default function CreatePostPage() {
       {/* CONFIRM RE-SYNC MODAL */}
       {showSyncWarningModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-md">
-          <div className="w-full max-w-lg max-h-[calc(100vh-2rem)] overflow-y-auto bg-[#0d1322] border border-slate-800 rounded-3xl p-8 shadow-2xl">
+          <div className="w-full max-w-lg max-h-[calc(100vh-2rem)] overflow-y-auto bg-[#0a0404] border border-[#2a1010] rounded-3xl p-8 shadow-2xl">
             <h4 className="text-base font-bold text-white mb-2">
               Replace platform-specific captions with the Master Caption?
             </h4>
-            <p className="text-sm text-slate-400 mb-8 leading-relaxed">
+            <p className="text-sm text-neutral-400 mb-8 leading-relaxed">
               Enabling synchronization will overwrite custom edits on all platform cards with your current Master Caption.
             </p>
             <div className="flex items-center justify-end gap-3.5">
               <button
                 onClick={() => setShowSyncWarningModal(false)}
-                className="px-5 py-2.5 text-sm font-semibold text-slate-300 hover:bg-slate-800 rounded-xl transition-colors"
+                className="px-5 py-2.5 text-sm font-semibold text-neutral-300 hover:bg-[#1a0a0a] rounded-xl transition-colors"
               >
                 Cancel
               </button>
@@ -2104,11 +2104,11 @@ export default function CreatePostPage() {
       {/* POST NOW CONFIRMATION MODAL */}
       {showPublishConfirmModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-md">
-          <div className="w-full max-w-lg max-h-[calc(100vh-2rem)] overflow-y-auto bg-[#0d1322] border border-slate-800 rounded-3xl p-8 shadow-2xl">
+          <div className="w-full max-w-lg max-h-[calc(100vh-2rem)] overflow-y-auto bg-[#0a0404] border border-[#2a1010] rounded-3xl p-8 shadow-2xl">
             <h4 className="text-base font-bold text-white mb-2">
               Publish this content to {selectedAccounts.length} account(s)?
             </h4>
-            <p className="text-sm text-slate-400 mb-5">
+            <p className="text-sm text-neutral-400 mb-5">
               Your post will immediately be broadcast across:
             </p>
 
@@ -2118,11 +2118,11 @@ export default function CreatePostPage() {
                   key={acc.id}
                   data-publish-confirm-account="true"
                   data-account-platform={acc.platform}
-                  className="flex items-center gap-3 p-3 rounded-xl bg-slate-900/80 border border-slate-800 text-sm"
+                  className="flex items-center gap-3 p-3 rounded-xl bg-[#0f0505]/80 border border-[#2a1010] text-sm"
                 >
                   <PlatformIcon platform={acc.platform} size={20} className="w-5 h-5 rounded" />
                   <span className="font-bold text-white">{acc.name}</span>
-                  <span className="text-xs text-slate-400">(@{acc.username})</span>
+                  <span className="text-xs text-neutral-400">(@{acc.username})</span>
                 </div>
               ))}
             </div>
@@ -2130,7 +2130,7 @@ export default function CreatePostPage() {
             <div className="flex items-center justify-end gap-3.5">
               <button
                 onClick={() => setShowPublishConfirmModal(false)}
-                className="px-5 py-2.5 text-sm font-semibold text-slate-300 hover:bg-slate-800 rounded-xl transition-colors"
+                className="px-5 py-2.5 text-sm font-semibold text-neutral-300 hover:bg-[#1a0a0a] rounded-xl transition-colors"
               >
                 Cancel
               </button>
@@ -2149,10 +2149,10 @@ export default function CreatePostPage() {
       {/* SCHEDULING MODAL */}
       {showScheduleModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-md">
-          <div className="w-full max-w-lg max-h-[calc(100vh-2rem)] overflow-y-auto bg-[#0d1322] border border-slate-800 rounded-3xl p-8 shadow-2xl">
+          <div className="w-full max-w-lg max-h-[calc(100vh-2rem)] overflow-y-auto bg-[#0a0404] border border-[#2a1010] rounded-3xl p-8 shadow-2xl">
             {scheduleStep === 'FORM' ? (
               <>
-                <div className="flex items-center gap-3 mb-6 pb-4 border-b border-slate-800">
+                <div className="flex items-center gap-3 mb-6 pb-4 border-b border-[#2a1010]">
                   <Clock className="w-6 h-6 text-red-500" />
                   <h4 className="text-base font-bold text-white">Schedule Content Broadcast</h4>
                 </div>
@@ -2166,7 +2166,7 @@ export default function CreatePostPage() {
 
                 <div className="space-y-5 mb-8">
                   <div>
-                    <label className="block text-xs md:text-sm font-bold text-slate-300 mb-2">
+                    <label className="block text-xs md:text-sm font-bold text-neutral-300 mb-2">
                       Publish Date
                     </label>
                     <input
@@ -2175,12 +2175,12 @@ export default function CreatePostPage() {
                       required
                       value={scheduledDate}
                       onChange={(e) => setScheduledDate(e.target.value)}
-                      className="w-full p-3 text-sm bg-slate-900 border border-slate-800 rounded-xl text-white focus:outline-none focus:ring-1 focus:ring-red-500"
+                      className="w-full p-3 text-sm bg-[#0f0505] border border-[#2a1010] rounded-xl text-white focus:outline-none focus:ring-1 focus:ring-red-500"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-xs md:text-sm font-bold text-slate-300 mb-2">
+                    <label className="block text-xs md:text-sm font-bold text-neutral-300 mb-2">
                       Publish Time
                     </label>
                     <input
@@ -2189,18 +2189,18 @@ export default function CreatePostPage() {
                       required
                       value={scheduledTime}
                       onChange={(e) => setScheduledTime(e.target.value)}
-                      className="w-full p-3 text-sm bg-slate-900 border border-slate-800 rounded-xl text-white focus:outline-none focus:ring-1 focus:ring-red-500"
+                      className="w-full p-3 text-sm bg-[#0f0505] border border-[#2a1010] rounded-xl text-white focus:outline-none focus:ring-1 focus:ring-red-500"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-xs md:text-sm font-bold text-slate-300 mb-2">
+                    <label className="block text-xs md:text-sm font-bold text-neutral-300 mb-2">
                       Timezone
                     </label>
                     <select
                       value={timezone}
                       onChange={(e) => setTimezone(e.target.value)}
-                      className="w-full p-3 text-sm bg-slate-900 border border-slate-800 rounded-xl text-white focus:outline-none focus:ring-1 focus:ring-red-500"
+                      className="w-full p-3 text-sm bg-[#0f0505] border border-[#2a1010] rounded-xl text-white focus:outline-none focus:ring-1 focus:ring-red-500"
                     >
                       {TIMEZONE_OPTIONS.map((option) => (
                         <option key={option.value} value={option.value}>
@@ -2214,7 +2214,7 @@ export default function CreatePostPage() {
                 <div className="flex items-center justify-end gap-3.5">
                   <button
                     onClick={closeScheduleModal}
-                    className="px-5 py-2.5 text-sm font-semibold text-slate-300 hover:bg-slate-800 rounded-xl transition-colors"
+                    className="px-5 py-2.5 text-sm font-semibold text-neutral-300 hover:bg-[#1a0a0a] rounded-xl transition-colors"
                   >
                     Cancel
                   </button>
@@ -2229,11 +2229,11 @@ export default function CreatePostPage() {
               </>
             ) : (
               <>
-                <div className="flex items-center justify-between gap-3 mb-6 pb-4 border-b border-slate-800">
+                <div className="flex items-center justify-between gap-3 mb-6 pb-4 border-b border-[#2a1010]">
                   <button
                     type="button"
                     onClick={() => setScheduleStep('FORM')}
-                    className="inline-flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-bold text-slate-300 bg-slate-900 hover:bg-slate-800 border border-slate-800"
+                    className="inline-flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-bold text-neutral-300 bg-[#0f0505] hover:bg-[#1a0a0a] border border-[#2a1010]"
                   >
                     <ArrowLeft className="w-4 h-4" />
                     <span>Back</span>
@@ -2249,8 +2249,8 @@ export default function CreatePostPage() {
                 )}
 
                 <div className="space-y-5 mb-8">
-                  <div className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800">
-                    <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+                  <div className="p-5 rounded-2xl bg-[#0f0505]/80 border border-[#2a1010]">
+                    <span className="text-xs font-bold text-neutral-400 uppercase tracking-wider">
                       Scheduled for
                     </span>
                     <p className="text-lg font-black text-white mt-1.5">
@@ -2258,8 +2258,8 @@ export default function CreatePostPage() {
                     </p>
                   </div>
 
-                  <div className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800">
-                    <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+                  <div className="p-5 rounded-2xl bg-[#0f0505]/80 border border-[#2a1010]">
+                    <span className="text-xs font-bold text-neutral-400 uppercase tracking-wider">
                       Timezone
                     </span>
                     <p className="text-base font-bold text-red-400 mt-1.5">
@@ -2268,7 +2268,7 @@ export default function CreatePostPage() {
                   </div>
 
                   <div>
-                    <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+                    <span className="text-xs font-bold text-neutral-400 uppercase tracking-wider">
                       Platforms
                     </span>
                     <div className="space-y-2.5 mt-2.5">
@@ -2277,11 +2277,11 @@ export default function CreatePostPage() {
                           key={acc.id}
                           data-schedule-review-account="true"
                           data-account-platform={acc.platform}
-                          className="flex items-center gap-3 p-3 rounded-xl bg-slate-900/80 border border-slate-800 text-sm"
+                          className="flex items-center gap-3 p-3 rounded-xl bg-[#0f0505]/80 border border-[#2a1010] text-sm"
                         >
                           <PlatformIcon platform={acc.platform} size={20} className="w-5 h-5 rounded" />
                           <span className="font-bold text-white">{acc.platform}</span>
-                          <span className="text-xs text-slate-400">(@{acc.username})</span>
+                          <span className="text-xs text-neutral-400">(@{acc.username})</span>
                         </div>
                       ))}
                     </div>
@@ -2292,7 +2292,7 @@ export default function CreatePostPage() {
                   <button
                     onClick={closeScheduleModal}
                     disabled={publishing}
-                    className="px-5 py-2.5 text-sm font-semibold text-slate-300 hover:bg-slate-800 rounded-xl transition-colors disabled:opacity-50"
+                    className="px-5 py-2.5 text-sm font-semibold text-neutral-300 hover:bg-[#1a0a0a] rounded-xl transition-colors disabled:opacity-50"
                   >
                     Cancel
                   </button>
@@ -2318,19 +2318,19 @@ export default function CreatePostPage() {
       {/* Modal: Confirm Clear / Discard Form */}
       {showClearConfirmModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-          <div className="w-full max-w-md bg-[#0d1322] border border-slate-800 rounded-3xl p-6 md:p-8 shadow-2xl">
+          <div className="w-full max-w-md bg-[#0a0404] border border-[#2a1010] rounded-3xl p-6 md:p-8 shadow-2xl">
             <div className="flex items-center gap-3 text-amber-400 mb-4">
               <AlertCircle className="w-6 h-6" />
               <h4 className="text-lg font-bold text-white">Discard In-Progress Post?</h4>
             </div>
-            <p className="text-sm text-slate-300 leading-relaxed mb-6">
+            <p className="text-sm text-neutral-300 leading-relaxed mb-6">
               You have unsaved content in the composer. Starting a fresh post will clear your caption, media, and platform customizations.
             </p>
             <div className="flex items-center justify-end gap-3">
               <button
                 type="button"
                 onClick={() => setShowClearConfirmModal(false)}
-                className="px-4 py-2 text-sm font-semibold text-slate-300 hover:bg-slate-800 rounded-xl"
+                className="px-4 py-2 text-sm font-semibold text-neutral-300 hover:bg-[#1a0a0a] rounded-xl"
               >
                 Keep Editing
               </button>

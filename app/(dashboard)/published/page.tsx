@@ -117,20 +117,20 @@ export default function PublishedPostsPage() {
           <h1 className="text-2xl md:text-3xl font-black text-white tracking-tight">
             Published History ({posts.length})
           </h1>
-          <p className="text-sm md:text-base text-slate-400 mt-1.5">
+          <p className="text-sm md:text-base text-neutral-400 mt-1.5">
             Live broadcasts, external URLs, and publishing audit trails across all connected channels.
           </p>
         </div>
 
         <div className="flex items-center gap-3">
           <div className="relative">
-            <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+            <Search className="w-4 h-4 absolute left-3.5 top-1/2 -tranneutral-y-1/2 text-neutral-400" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search published posts..."
-              className="pl-10 pr-4 py-2 text-sm bg-slate-900 border border-slate-800 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-red-500"
+              className="pl-10 pr-4 py-2 text-sm bg-[#0f0505] border border-[#2a1010] rounded-xl text-white placeholder-neutral-500 focus:outline-none focus:ring-1 focus:ring-red-500"
             />
           </div>
         </div>
@@ -139,13 +139,13 @@ export default function PublishedPostsPage() {
       {loading ? (
         <div className="py-20 text-center">
           <div className="w-10 h-10 border-2 border-red-500 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-          <p className="text-sm text-slate-400 font-semibold">Loading published records...</p>
+          <p className="text-sm text-neutral-400 font-semibold">Loading published records...</p>
         </div>
       ) : filteredPosts.length === 0 ? (
-        <div className="p-16 text-center bg-[#0d1322] border border-slate-800 rounded-3xl">
-          <CheckCircle2 className="w-12 h-12 text-slate-600 mx-auto mb-4" />
+        <div className="p-16 text-center bg-[#0a0404] border border-[#2a1010] rounded-3xl">
+          <CheckCircle2 className="w-12 h-12 text-neutral-600 mx-auto mb-4" />
           <h3 className="text-lg font-bold text-white">No published posts found</h3>
-          <p className="text-sm text-slate-400 mt-1.5 max-w-md mx-auto">
+          <p className="text-sm text-neutral-400 mt-1.5 max-w-md mx-auto">
             Once your scheduled or instant posts are broadcast to social platforms, they will appear here with live permalinks.
           </p>
           <Link
@@ -160,11 +160,11 @@ export default function PublishedPostsPage() {
           {filteredPosts.map((post) => (
             <div
               key={post.id}
-              className="bg-[#0d1322] border border-slate-800 rounded-3xl p-6 md:p-8 shadow-md hover:border-slate-700 transition-all"
+              className="bg-[#0a0404] border border-[#2a1010] rounded-3xl p-6 md:p-8 shadow-md hover:border-[#3a1515] transition-all"
             >
               <div className="flex flex-col md:flex-row md:items-start justify-between gap-5 mb-5">
                 <div className="flex items-start gap-5 overflow-hidden">
-                  <div className="w-20 h-20 rounded-2xl bg-slate-800 overflow-hidden shrink-0 border border-slate-700 flex items-center justify-center">
+                  <div className="w-20 h-20 rounded-2xl bg-[#1a0a0a] overflow-hidden shrink-0 border border-[#3a1515] flex items-center justify-center">
                     {post.mediaAsset?.thumbnailUrl || post.mediaAsset?.url ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img
@@ -173,7 +173,7 @@ export default function PublishedPostsPage() {
                         className="w-full h-full object-cover"
                       />
                     ) : (
-                      <FileText className="w-8 h-8 text-slate-600" />
+                      <FileText className="w-8 h-8 text-neutral-600" />
                     )}
                   </div>
 
@@ -181,7 +181,7 @@ export default function PublishedPostsPage() {
                     <p className="text-base md:text-lg font-bold text-white leading-relaxed">
                       {post.masterCaption}
                     </p>
-                    <div className="flex items-center gap-3 mt-3 text-xs md:text-sm text-slate-400">
+                    <div className="flex items-center gap-3 mt-3 text-xs md:text-sm text-neutral-400">
                       <span className="flex items-center gap-1.5 font-medium">
                         <Calendar className="w-4 h-4 text-red-500" />
                         {post.publishedAt
@@ -234,7 +234,7 @@ export default function PublishedPostsPage() {
                   </button>
                   <Link
                     href={`/create-post?duplicate=${post.id}`}
-                    className="flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-sm font-bold transition-colors"
+                    className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#1a0a0a] hover:bg-[#2a1010] text-neutral-200 border border-[#3a1515] text-sm font-bold transition-colors"
                   >
                     <Copy className="w-4 h-4" />
                     <span>Duplicate</span>
@@ -243,11 +243,11 @@ export default function PublishedPostsPage() {
               </div>
 
               {/* Platform breakdown cards */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3.5 pt-4 border-t border-slate-800">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3.5 pt-4 border-t border-[#2a1010]">
                 {post.platformPosts.map((p) => (
                   <div
                     key={p.id}
-                    className="p-4 rounded-2xl bg-slate-900/70 border border-slate-800 flex flex-col justify-between gap-2.5"
+                    className="p-4 rounded-2xl bg-[#0f0505]/70 border border-[#2a1010] flex flex-col justify-between gap-2.5"
                   >
                     <div className="flex items-center justify-between gap-3">
                       <div className="flex items-center gap-3 overflow-hidden">
@@ -255,7 +255,7 @@ export default function PublishedPostsPage() {
                         <div className="truncate">
                           <p className="text-sm font-bold text-white truncate">{p.platform}</p>
                           {p.socialAccount && (
-                            <p className="text-xs text-slate-400 truncate">@{p.socialAccount.username}</p>
+                            <p className="text-xs text-neutral-400 truncate">@{p.socialAccount.username}</p>
                           )}
                         </div>
                       </div>
@@ -289,9 +289,9 @@ export default function PublishedPostsPage() {
                     )}
 
                     {p.platform === 'TIKTOK' && (p.status === 'INBOX_DRAFT' || p.status === 'PROCESSING') && (
-                      <div className="mt-2.5 p-3 rounded-xl bg-slate-950 border border-slate-800 space-y-2">
+                      <div className="mt-2.5 p-3 rounded-xl bg-[#050202] border border-[#2a1010] space-y-2">
                         <div className="flex items-center justify-between gap-2">
-                          <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                          <span className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">
                             Caption & Hashtags:
                           </span>
                           <button
@@ -316,11 +316,11 @@ export default function PublishedPostsPage() {
                             )}
                           </button>
                         </div>
-                        <p className="text-xs text-slate-300 bg-slate-900/80 p-2 rounded-lg font-mono line-clamp-2">
+                        <p className="text-xs text-neutral-300 bg-[#0f0505]/80 p-2 rounded-lg font-mono line-clamp-2">
                           {`${p.customCaption || post.masterCaption || ''} ${p.hashtags || ''}`.trim() || 'No caption set'}
                         </p>
-                        <p className="text-[11px] text-slate-400 leading-relaxed italic">
-                          💡 <strong className="text-slate-300">TikTok Note:</strong> Creator Inbox transfers video files to your mobile app. TikTok's Creator Inbox API does not pre-fill captions automatically. Copy caption above & paste into TikTok before sharing.
+                        <p className="text-[11px] text-neutral-400 leading-relaxed italic">
+                          💡 <strong className="text-neutral-300">TikTok Note:</strong> Creator Inbox transfers video files to your mobile app. TikTok's Creator Inbox API does not pre-fill captions automatically. Copy caption above & paste into TikTok before sharing.
                         </p>
                       </div>
                     )}

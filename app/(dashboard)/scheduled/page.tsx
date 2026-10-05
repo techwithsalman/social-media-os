@@ -282,7 +282,7 @@ export default function ScheduledPostsPage() {
           <h1 className="text-2xl md:text-3xl font-black text-white tracking-tight">
             Scheduled Posts ({posts.length})
           </h1>
-          <p className="text-sm md:text-base text-slate-400 mt-1.5">
+          <p className="text-sm md:text-base text-neutral-400 mt-1.5">
             Manage, reschedule, or immediately broadcast content queued in your automated calendar.
           </p>
         </div>
@@ -318,13 +318,13 @@ export default function ScheduledPostsPage() {
       {loading ? (
         <div className="py-20 text-center">
           <div className="w-10 h-10 border-2 border-red-500 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-          <p className="text-sm text-slate-400 font-semibold">Loading scheduled queue...</p>
+          <p className="text-sm text-neutral-400 font-semibold">Loading scheduled queue...</p>
         </div>
       ) : posts.length === 0 ? (
-        <div className="p-16 text-center bg-[#0d1322] border border-slate-800 rounded-3xl">
-          <Clock className="w-12 h-12 text-slate-600 mx-auto mb-4" />
+        <div className="p-16 text-center bg-[#0a0404] border border-[#2a1010] rounded-3xl">
+          <Clock className="w-12 h-12 text-neutral-600 mx-auto mb-4" />
           <h3 className="text-lg font-bold text-white">No posts in the schedule queue</h3>
-          <p className="text-sm text-slate-400 mt-1.5 max-w-md mx-auto">
+          <p className="text-sm text-neutral-400 mt-1.5 max-w-md mx-auto">
             You don&apos;t have any posts queued for future broadcast. Create a post or seed sample demo data.
           </p>
           <Link
@@ -336,8 +336,8 @@ export default function ScheduledPostsPage() {
           </Link>
         </div>
       ) : (
-        <div className="bg-[#0d1322] border border-slate-800 rounded-3xl overflow-hidden shadow-md">
-          <div className="divide-y divide-slate-800">
+        <div className="bg-[#0a0404] border border-[#2a1010] rounded-3xl overflow-hidden shadow-md">
+          <div className="divide-y divide-[#2a1010]">
             {posts.map((post) => {
               const postTimezone = getPostTimezone(post);
               const disabled = actionLoadingId === post.id;
@@ -346,10 +346,10 @@ export default function ScheduledPostsPage() {
                 <div
                   key={post.id}
                   data-scheduled-post-row={post.id}
-                  className="p-6 md:p-8 flex flex-col xl:flex-row xl:items-center justify-between gap-6 hover:bg-slate-900/40 transition-colors"
+                  className="p-6 md:p-8 flex flex-col xl:flex-row xl:items-center justify-between gap-6 hover:bg-[#0f0505]/40 transition-colors"
                 >
                   <div className="flex items-start gap-5 min-w-0">
-                    <div className="w-24 h-24 rounded-2xl bg-slate-800 overflow-hidden shrink-0 border border-slate-700 flex items-center justify-center">
+                    <div className="w-24 h-24 rounded-2xl bg-[#1a0a0a] overflow-hidden shrink-0 border border-[#3a1515] flex items-center justify-center">
                       {post.mediaAsset?.thumbnailUrl || post.mediaAsset?.url ? (
                         // eslint-disable-next-line @next/next/no-img-element
                         <img
@@ -358,7 +358,7 @@ export default function ScheduledPostsPage() {
                           className="w-full h-full object-cover"
                         />
                       ) : (
-                        <FileText className="w-8 h-8 text-slate-600" />
+                        <FileText className="w-8 h-8 text-neutral-600" />
                       )}
                     </div>
 
@@ -370,7 +370,7 @@ export default function ScheduledPostsPage() {
                         {post.platformPosts.map((platformPost) => (
                           <span
                             key={platformPost.id}
-                            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-800 text-xs font-bold text-slate-200"
+                            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#0f0505] border border-[#2a1010] text-xs font-bold text-neutral-200"
                           >
                             <PlatformIcon
                               platform={platformPost.platform}
@@ -383,8 +383,8 @@ export default function ScheduledPostsPage() {
                       </div>
 
                       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mt-4">
-                        <div className="p-3 rounded-xl bg-slate-900/70 border border-slate-800">
-                          <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                        <div className="p-3 rounded-xl bg-[#0f0505]/70 border border-[#2a1010]">
+                          <span className="text-[11px] font-bold text-neutral-500 uppercase tracking-wider">
                             Date
                           </span>
                           <p className="text-sm font-bold text-white mt-0.5">
@@ -393,8 +393,8 @@ export default function ScheduledPostsPage() {
                               : 'N/A'}
                           </p>
                         </div>
-                        <div className="p-3 rounded-xl bg-slate-900/70 border border-slate-800">
-                          <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                        <div className="p-3 rounded-xl bg-[#0f0505]/70 border border-[#2a1010]">
+                          <span className="text-[11px] font-bold text-neutral-500 uppercase tracking-wider">
                             Time
                           </span>
                           <p className="text-sm font-bold text-red-400 mt-0.5">
@@ -403,16 +403,16 @@ export default function ScheduledPostsPage() {
                               : 'N/A'}
                           </p>
                         </div>
-                        <div className="p-3 rounded-xl bg-slate-900/70 border border-slate-800">
-                          <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                        <div className="p-3 rounded-xl bg-[#0f0505]/70 border border-[#2a1010]">
+                          <span className="text-[11px] font-bold text-neutral-500 uppercase tracking-wider">
                             Timezone
                           </span>
-                          <p className="text-sm font-bold text-slate-200 mt-0.5">
+                          <p className="text-sm font-bold text-neutral-200 mt-0.5">
                             {getTimezoneLabel(postTimezone)}
                           </p>
                         </div>
-                        <div className="p-3 rounded-xl bg-slate-900/70 border border-slate-800">
-                          <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                        <div className="p-3 rounded-xl bg-[#0f0505]/70 border border-[#2a1010]">
+                          <span className="text-[11px] font-bold text-neutral-500 uppercase tracking-wider">
                             Status
                           </span>
                           <p className="text-sm font-black text-emerald-300 mt-0.5">
@@ -423,12 +423,12 @@ export default function ScheduledPostsPage() {
                     </div>
                   </div>
 
-                  <div className="flex flex-wrap xl:justify-end gap-2.5 shrink-0 pt-5 xl:pt-0 border-t xl:border-t-0 border-slate-800">
+                  <div className="flex flex-wrap xl:justify-end gap-2.5 shrink-0 pt-5 xl:pt-0 border-t xl:border-t-0 border-[#2a1010]">
                     <button
                       data-post-action="edit"
                       onClick={() => router.push(`/create-post?edit=${post.id}`)}
                       disabled={disabled}
-                      className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs md:text-sm font-bold transition-colors disabled:opacity-50"
+                      className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-[#1a0a0a] hover:bg-[#2a1010] text-neutral-200 border border-[#3a1515] text-xs md:text-sm font-bold transition-colors disabled:opacity-50"
                     >
                       <Pencil className="w-4 h-4" />
                       <span>Edit</span>
@@ -448,7 +448,7 @@ export default function ScheduledPostsPage() {
                       data-post-action="duplicate"
                       onClick={() => handleDuplicate(post)}
                       disabled={disabled}
-                      className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs md:text-sm font-bold transition-colors disabled:opacity-50"
+                      className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-[#1a0a0a] hover:bg-[#2a1010] text-neutral-200 border border-[#3a1515] text-xs md:text-sm font-bold transition-colors disabled:opacity-50"
                     >
                       <Copy className="w-4 h-4" />
                       <span>Duplicate</span>
@@ -478,7 +478,7 @@ export default function ScheduledPostsPage() {
                       data-post-action="view-calendar"
                       onClick={() => router.push(`/calendar?date=${getPostCalendarDate(post)}`)}
                       disabled={disabled}
-                      className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs md:text-sm font-bold transition-colors disabled:opacity-50"
+                      className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-[#1a0a0a] hover:bg-[#2a1010] text-neutral-200 border border-[#3a1515] text-xs md:text-sm font-bold transition-colors disabled:opacity-50"
                     >
                       <Calendar className="w-4 h-4" />
                       <span>View in Calendar</span>
@@ -488,7 +488,7 @@ export default function ScheduledPostsPage() {
                       data-post-action="delete"
                       onClick={() => handleDelete(post.id)}
                       disabled={disabled}
-                      className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl text-slate-400 hover:text-red-400 hover:bg-red-500/10 border border-transparent text-xs md:text-sm font-bold transition-colors disabled:opacity-50"
+                      className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl text-neutral-400 hover:text-red-400 hover:bg-red-500/10 border border-transparent text-xs md:text-sm font-bold transition-colors disabled:opacity-50"
                     >
                       <Trash2 className="w-4 h-4" />
                       <span>Delete</span>
@@ -503,8 +503,8 @@ export default function ScheduledPostsPage() {
 
       {reschedulePostId && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-md">
-          <div className="w-full max-w-lg bg-[#0d1322] border border-slate-800 rounded-3xl p-8 shadow-2xl">
-            <div className="flex items-center justify-between pb-4 border-b border-slate-800 mb-6">
+          <div className="w-full max-w-lg bg-[#0a0404] border border-[#2a1010] rounded-3xl p-8 shadow-2xl">
+            <div className="flex items-center justify-between pb-4 border-b border-[#2a1010] mb-6">
               <div className="flex items-center gap-3">
                 <Clock className="w-5 h-5 text-red-500" />
                 <h4 className="text-base md:text-lg font-bold text-white">Reschedule Content</h4>
@@ -514,7 +514,7 @@ export default function ScheduledPostsPage() {
                   setReschedulePostId(null);
                   setRescheduleError('');
                 }}
-                className="text-slate-400 hover:text-white"
+                className="text-neutral-400 hover:text-white"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -529,7 +529,7 @@ export default function ScheduledPostsPage() {
 
             <div className="space-y-5 mb-8">
               <div>
-                <label className="block text-xs md:text-sm font-bold text-slate-300 mb-2">
+                <label className="block text-xs md:text-sm font-bold text-neutral-300 mb-2">
                   Publish Date
                 </label>
                 <input
@@ -538,11 +538,11 @@ export default function ScheduledPostsPage() {
                   required
                   value={newDate}
                   onChange={(e) => setNewDate(e.target.value)}
-                  className="w-full p-3 text-sm bg-slate-900 border border-slate-800 rounded-xl text-white focus:outline-none focus:ring-1 focus:ring-red-500"
+                  className="w-full p-3 text-sm bg-[#0f0505] border border-[#2a1010] rounded-xl text-white focus:outline-none focus:ring-1 focus:ring-red-500"
                 />
               </div>
               <div>
-                <label className="block text-xs md:text-sm font-bold text-slate-300 mb-2">
+                <label className="block text-xs md:text-sm font-bold text-neutral-300 mb-2">
                   Publish Time
                 </label>
                 <input
@@ -551,18 +551,18 @@ export default function ScheduledPostsPage() {
                   required
                   value={newTime}
                   onChange={(e) => setNewTime(e.target.value)}
-                  className="w-full p-3 text-sm bg-slate-900 border border-slate-800 rounded-xl text-white focus:outline-none focus:ring-1 focus:ring-red-500"
+                  className="w-full p-3 text-sm bg-[#0f0505] border border-[#2a1010] rounded-xl text-white focus:outline-none focus:ring-1 focus:ring-red-500"
                 />
               </div>
               <div>
-                <label className="block text-xs md:text-sm font-bold text-slate-300 mb-2">
+                <label className="block text-xs md:text-sm font-bold text-neutral-300 mb-2">
                   Timezone
                 </label>
                 <select
                   ref={rescheduleTimezoneSelectRef}
                   value={newTimezone}
                   onChange={(e) => setNewTimezone(e.target.value)}
-                  className="w-full p-3 text-sm bg-slate-900 border border-slate-800 rounded-xl text-white focus:outline-none focus:ring-1 focus:ring-red-500"
+                  className="w-full p-3 text-sm bg-[#0f0505] border border-[#2a1010] rounded-xl text-white focus:outline-none focus:ring-1 focus:ring-red-500"
                 >
                   {TIMEZONE_OPTIONS.map((option) => (
                     <option key={option.value} value={option.value}>
@@ -579,7 +579,7 @@ export default function ScheduledPostsPage() {
                   setReschedulePostId(null);
                   setRescheduleError('');
                 }}
-                className="px-5 py-2.5 text-sm font-semibold text-slate-400 hover:bg-slate-800 rounded-xl"
+                className="px-5 py-2.5 text-sm font-semibold text-neutral-400 hover:bg-[#1a0a0a] rounded-xl"
               >
                 Cancel
               </button>

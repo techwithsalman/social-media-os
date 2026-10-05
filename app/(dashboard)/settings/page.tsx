@@ -46,7 +46,7 @@ export default function SettingsPage() {
           <h1 className="text-2xl md:text-3xl font-black text-white tracking-tight">
             Settings & Preferences
           </h1>
-          <p className="text-sm md:text-base text-slate-400 mt-1.5">
+          <p className="text-sm md:text-base text-neutral-400 mt-1.5">
             Configure your user profile, timezone preferences, workspace branding, and security policies.
           </p>
         </div>
@@ -61,7 +61,7 @@ export default function SettingsPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         {/* Left Navigation Tabs (4 Cols) */}
-        <div className="lg:col-span-4 space-y-2 bg-[#0d1322] border border-slate-800 rounded-3xl p-4 shadow-md h-fit">
+        <div className="lg:col-span-4 space-y-2 bg-[#0a0404] border border-[#2a1010] rounded-3xl p-4 shadow-md h-fit">
           {tabs.map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
@@ -72,10 +72,10 @@ export default function SettingsPage() {
                 className={`w-full flex items-center gap-3.5 px-5 py-3.5 rounded-2xl text-sm font-bold transition-all ${
                   isActive
                     ? 'bg-red-600/20 text-red-400 border border-red-500/30 shadow-md'
-                    : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+                    : 'text-neutral-400 hover:text-white hover:bg-[#1a0a0a]/60'
                 }`}
               >
-                <Icon className={`w-5 h-5 ${isActive ? 'text-red-500' : 'text-slate-500'}`} />
+                <Icon className={`w-5 h-5 ${isActive ? 'text-red-500' : 'text-neutral-500'}`} />
                 <span>{tab.label}</span>
               </button>
             );
@@ -84,39 +84,39 @@ export default function SettingsPage() {
 
         {/* Right Settings Form (8 Cols) */}
         <div className="lg:col-span-8">
-          <form onSubmit={handleSave} className="bg-[#0d1322] border border-slate-800 rounded-3xl p-7 md:p-10 shadow-md space-y-8">
+          <form onSubmit={handleSave} className="bg-[#0a0404] border border-[#2a1010] rounded-3xl p-7 md:p-10 shadow-md space-y-8">
             {activeTab === 'PROFILE' && (
               <div className="space-y-6">
-                <h3 className="text-base md:text-lg font-bold text-white border-b border-slate-800 pb-4">
+                <h3 className="text-base md:text-lg font-bold text-white border-b border-[#2a1010] pb-4">
                   Personal Information
                 </h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                   <div>
-                    <label className="block text-xs md:text-sm font-bold text-slate-300 mb-2">First Name</label>
+                    <label className="block text-xs md:text-sm font-bold text-neutral-300 mb-2">First Name</label>
                     <input
                       type="text"
                       value={firstName}
                       onChange={(e) => setFirstName(e.target.value)}
-                      className="w-full p-3.5 text-sm bg-slate-900 border border-slate-800 rounded-xl text-white focus:outline-none focus:ring-1 focus:ring-red-500"
+                      className="w-full p-3.5 text-sm bg-[#0f0505] border border-[#2a1010] rounded-xl text-white focus:outline-none focus:ring-1 focus:ring-red-500"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs md:text-sm font-bold text-slate-300 mb-2">Last Name</label>
+                    <label className="block text-xs md:text-sm font-bold text-neutral-300 mb-2">Last Name</label>
                     <input
                       type="text"
                       value={lastName}
                       onChange={(e) => setLastName(e.target.value)}
-                      className="w-full p-3.5 text-sm bg-slate-900 border border-slate-800 rounded-xl text-white focus:outline-none focus:ring-1 focus:ring-red-500"
+                      className="w-full p-3.5 text-sm bg-[#0f0505] border border-[#2a1010] rounded-xl text-white focus:outline-none focus:ring-1 focus:ring-red-500"
                     />
                   </div>
                 </div>
                 <div>
-                  <label className="block text-xs md:text-sm font-bold text-slate-300 mb-2">Email Address</label>
+                  <label className="block text-xs md:text-sm font-bold text-neutral-300 mb-2">Email Address</label>
                   <input
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="w-full p-3.5 text-sm bg-slate-900 border border-slate-800 rounded-xl text-white focus:outline-none focus:ring-1 focus:ring-red-500"
+                    className="w-full p-3.5 text-sm bg-[#0f0505] border border-[#2a1010] rounded-xl text-white focus:outline-none focus:ring-1 focus:ring-red-500"
                   />
                 </div>
               </div>
@@ -124,21 +124,21 @@ export default function SettingsPage() {
 
             {activeTab === 'WORKSPACE' && (
               <div className="space-y-6">
-                <h3 className="text-base md:text-lg font-bold text-white border-b border-slate-800 pb-4">
+                <h3 className="text-base md:text-lg font-bold text-white border-b border-[#2a1010] pb-4">
                   Workspace Configuration
                 </h3>
                 <div>
-                  <label className="block text-xs md:text-sm font-bold text-slate-300 mb-2">Workspace Name</label>
+                  <label className="block text-xs md:text-sm font-bold text-neutral-300 mb-2">Workspace Name</label>
                   <input
                     type="text"
                     value={workspaceName}
                     onChange={(e) => setWorkspaceName(e.target.value)}
-                    className="w-full p-3.5 text-sm bg-slate-900 border border-slate-800 rounded-xl text-white focus:outline-none focus:ring-1 focus:ring-red-500"
+                    className="w-full p-3.5 text-sm bg-[#0f0505] border border-[#2a1010] rounded-xl text-white focus:outline-none focus:ring-1 focus:ring-red-500"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs md:text-sm font-bold text-slate-300 mb-2">Storage Mode</label>
-                  <select className="w-full p-3.5 text-sm bg-slate-900 border border-slate-800 rounded-xl text-white">
+                  <label className="block text-xs md:text-sm font-bold text-neutral-300 mb-2">Storage Mode</label>
+                  <select className="w-full p-3.5 text-sm bg-[#0f0505] border border-[#2a1010] rounded-xl text-white">
                     <option value="local">Local Development Storage (/public/uploads)</option>
                     <option value="s3">Amazon Web Services S3</option>
                     <option value="r2">Cloudflare R2 Bucket</option>
@@ -149,15 +149,15 @@ export default function SettingsPage() {
 
             {activeTab === 'TIMEZONE' && (
               <div className="space-y-6">
-                <h3 className="text-base md:text-lg font-bold text-white border-b border-slate-800 pb-4">
+                <h3 className="text-base md:text-lg font-bold text-white border-b border-[#2a1010] pb-4">
                   Timezone & Scheduling Defaults
                 </h3>
                 <div>
-                  <label className="block text-xs md:text-sm font-bold text-slate-300 mb-2">Default Workspace Timezone</label>
+                  <label className="block text-xs md:text-sm font-bold text-neutral-300 mb-2">Default Workspace Timezone</label>
                   <select
                     value={timezone}
                     onChange={(e) => setTimezone(e.target.value)}
-                    className="w-full p-3.5 text-sm bg-slate-900 border border-slate-800 rounded-xl text-white"
+                    className="w-full p-3.5 text-sm bg-[#0f0505] border border-[#2a1010] rounded-xl text-white"
                   >
                     <option value="Asia/Karachi">Asia/Karachi (PKT UTC+05:00)</option>
                     <option value="UTC">UTC (Coordinated Universal Time)</option>
@@ -171,7 +171,7 @@ export default function SettingsPage() {
 
             {activeTab === 'NOTIFICATIONS' && (
               <div className="space-y-6">
-                <h3 className="text-base md:text-lg font-bold text-white border-b border-slate-800 pb-4">
+                <h3 className="text-base md:text-lg font-bold text-white border-b border-[#2a1010] pb-4">
                   Alert Preferences
                 </h3>
                 <div className="space-y-4">
@@ -180,11 +180,11 @@ export default function SettingsPage() {
                       type="checkbox"
                       checked={emailAlerts}
                       onChange={(e) => setEmailAlerts(e.target.checked)}
-                      className="rounded border-slate-700 bg-slate-900 text-indigo-600 w-5 h-5 mt-0.5"
+                      className="rounded border-[#3a1515] bg-[#0f0505] text-red-600 w-5 h-5 mt-0.5"
                     />
                     <div>
                       <p className="text-sm font-bold text-white">Publishing Notifications</p>
-                      <p className="text-xs md:text-sm text-slate-400 mt-0.5">Receive alerts whenever scheduled content is broadcast.</p>
+                      <p className="text-xs md:text-sm text-neutral-400 mt-0.5">Receive alerts whenever scheduled content is broadcast.</p>
                     </div>
                   </label>
 
@@ -193,11 +193,11 @@ export default function SettingsPage() {
                       type="checkbox"
                       checked={failedPostAlerts}
                       onChange={(e) => setFailedPostAlerts(e.target.checked)}
-                      className="rounded border-slate-700 bg-slate-900 text-indigo-600 w-5 h-5 mt-0.5"
+                      className="rounded border-[#3a1515] bg-[#0f0505] text-red-600 w-5 h-5 mt-0.5"
                     />
                     <div>
                       <p className="text-sm font-bold text-white">Failed Post Alerts & Token Expiry</p>
-                      <p className="text-xs md:text-sm text-slate-400 mt-0.5">Immediate high-priority notification if any platform API rejects a post.</p>
+                      <p className="text-xs md:text-sm text-neutral-400 mt-0.5">Immediate high-priority notification if any platform API rejects a post.</p>
                     </div>
                   </label>
                 </div>
@@ -206,22 +206,22 @@ export default function SettingsPage() {
 
             {activeTab === 'SECURITY' && (
               <div className="space-y-6">
-                <h3 className="text-base md:text-lg font-bold text-white border-b border-slate-800 pb-4">
+                <h3 className="text-base md:text-lg font-bold text-white border-b border-[#2a1010] pb-4">
                   Security & Token Encryption
                 </h3>
-                <div className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-2">
+                <div className="p-5 rounded-2xl bg-[#0f0505]/80 border border-[#2a1010] space-y-2">
                   <div className="flex items-center gap-2.5 text-emerald-400 text-sm font-bold">
                     <Shield className="w-5 h-5" />
                     <span>AES-256-CBC Token Encryption Active</span>
                   </div>
-                  <p className="text-xs md:text-sm text-slate-300 leading-relaxed">
+                  <p className="text-xs md:text-sm text-neutral-300 leading-relaxed">
                     All connected social platform OAuth tokens are encrypted at rest with server-side keys before writing to the database.
                   </p>
                 </div>
               </div>
             )}
 
-            <div className="pt-6 border-t border-slate-800 flex justify-end">
+            <div className="pt-6 border-t border-[#2a1010] flex justify-end">
               <button
                 type="submit"
                 className="flex items-center gap-2 px-6 py-3 rounded-2xl bg-gradient-to-r from-red-700 to-red-600 hover:from-red-600 hover:to-red-500 text-white text-sm font-bold shadow-lg shadow-red-600/30 transition-all active:scale-[0.98]"

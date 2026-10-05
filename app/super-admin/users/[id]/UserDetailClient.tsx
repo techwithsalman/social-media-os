@@ -71,12 +71,12 @@ export function UserDetailClient({ detail, plans }: { detail: any, plans: any[] 
   return (
     <div className="space-y-8">
       <div>
-        <Link href="/super-admin/users" className="inline-flex items-center text-sm font-semibold text-slate-400 hover:text-indigo-400 mb-4">
+        <Link href="/super-admin/users" className="inline-flex items-center text-sm font-semibold text-neutral-400 hover:text-red-400 mb-4">
           <ArrowLeft className="w-4 h-4 mr-1" /> Back to Users
         </Link>
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-4">
-            <div className="w-16 h-16 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400 text-2xl font-black">
+            <div className="w-16 h-16 rounded-2xl bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-400 text-2xl font-black">
               {detail.user.firstName[0]}{detail.user.lastName[0]}
             </div>
             <div>
@@ -86,7 +86,7 @@ export function UserDetailClient({ detail, plans }: { detail: any, plans: any[] 
                   <Shield className="w-6 h-6 text-amber-400" />
                 )}
               </h1>
-              <p className="text-slate-400 font-medium">{detail.user.email}</p>
+              <p className="text-neutral-400 font-medium">{detail.user.email}</p>
             </div>
           </div>
           <div className="flex items-center gap-3">
@@ -120,45 +120,45 @@ export function UserDetailClient({ detail, plans }: { detail: any, plans: any[] 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Workspace & Plan Info */}
         <div className="lg:col-span-2 space-y-6">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6">
+          <div className="bg-[#0f0505] border border-[#2a1010] rounded-2xl p-6">
             <h2 className="text-lg font-black text-white mb-6 flex items-center gap-2">
-              <Box className="w-5 h-5 text-indigo-400" /> Workspace Details
+              <Box className="w-5 h-5 text-red-400" /> Workspace Details
             </h2>
             {detail.workspace ? (
               <div className="grid grid-cols-2 gap-6">
                 <div>
-                  <p className="text-xs text-slate-500 font-bold uppercase mb-1">Name</p>
-                  <p className="text-base font-bold text-slate-200">{detail.workspace.name}</p>
+                  <p className="text-xs text-neutral-500 font-bold uppercase mb-1">Name</p>
+                  <p className="text-base font-bold text-neutral-200">{detail.workspace.name}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-slate-500 font-bold uppercase mb-1">Status</p>
-                  <p className="text-base font-bold text-slate-200">{detail.workspace.status}</p>
+                  <p className="text-xs text-neutral-500 font-bold uppercase mb-1">Status</p>
+                  <p className="text-base font-bold text-neutral-200">{detail.workspace.status}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-slate-500 font-bold uppercase mb-1">Effective Plan</p>
-                  <p className="text-base font-bold text-indigo-400">{detail.entitlements?.plan.name || 'Free'}</p>
+                  <p className="text-xs text-neutral-500 font-bold uppercase mb-1">Effective Plan</p>
+                  <p className="text-base font-bold text-red-400">{detail.entitlements?.plan.name || 'Free'}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-slate-500 font-bold uppercase mb-1">Entitlement Source</p>
+                  <p className="text-xs text-neutral-500 font-bold uppercase mb-1">Entitlement Source</p>
                   <p className="text-base font-bold text-amber-400">{detail.entitlements?.source || 'FREE'}</p>
                 </div>
               </div>
             ) : (
-              <p className="text-slate-500 text-sm font-medium">No workspace associated.</p>
+              <p className="text-neutral-500 text-sm font-medium">No workspace associated.</p>
             )}
           </div>
 
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6">
+          <div className="bg-[#0f0505] border border-[#2a1010] rounded-2xl p-6">
             <h2 className="text-lg font-black text-white mb-6 flex items-center gap-2">
               <CreditCard className="w-5 h-5 text-emerald-400" /> Administrative Actions
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="p-4 rounded-xl bg-slate-950 border border-slate-800">
+              <div className="p-4 rounded-xl bg-[#050202] border border-[#2a1010]">
                 <h3 className="text-sm font-bold text-white mb-2">Change Plan</h3>
                 <div className="flex gap-2">
                   <select 
                     id="planSelect"
-                    className="flex-1 bg-slate-900 border border-slate-700 rounded-lg text-sm px-3 py-2 text-white"
+                    className="flex-1 bg-[#0f0505] border border-[#3a1515] rounded-lg text-sm px-3 py-2 text-white"
                   >
                     {plans.map(p => <option key={p.code} value={p.code}>{p.name}</option>)}
                   </select>
@@ -168,14 +168,14 @@ export function UserDetailClient({ detail, plans }: { detail: any, plans: any[] 
                       handleAction('change_plan', { planCode: sel.value });
                     }}
                     disabled={!!loadingAction}
-                    className="px-3 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-bold rounded-lg"
+                    className="px-3 py-2 bg-red-600 hover:bg-red-500 text-white text-sm font-bold rounded-lg"
                   >
                     Assign
                   </button>
                 </div>
               </div>
 
-              <div className="p-4 rounded-xl bg-slate-950 border border-slate-800">
+              <div className="p-4 rounded-xl bg-[#050202] border border-[#2a1010]">
                 <h3 className="text-sm font-bold text-white mb-2">Complimentary Access</h3>
                 <div className="flex gap-2">
                   <button 
@@ -196,7 +196,7 @@ export function UserDetailClient({ detail, plans }: { detail: any, plans: any[] 
                 </div>
               </div>
 
-              <div className="p-4 rounded-xl bg-slate-950 border border-slate-800">
+              <div className="p-4 rounded-xl bg-[#050202] border border-[#2a1010]">
                 <h3 className="text-sm font-bold text-white mb-2">Starter Plan</h3>
                 <button 
                   onClick={() => handleAction('change_plan', { planCode: 'STARTER' })}
@@ -207,7 +207,7 @@ export function UserDetailClient({ detail, plans }: { detail: any, plans: any[] 
                 </button>
               </div>
 
-              <div className="p-4 rounded-xl bg-slate-950 border border-slate-800">
+              <div className="p-4 rounded-xl bg-[#050202] border border-[#2a1010]">
                 <h3 className="text-sm font-bold text-white mb-2">Trial Extension</h3>
                 <button 
                   onClick={() => handleAction('extend_trial', { planCode: 'STARTER', days: 14 })}
@@ -223,24 +223,24 @@ export function UserDetailClient({ detail, plans }: { detail: any, plans: any[] 
 
         {/* Sidebar Activity */}
         <div className="space-y-6">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6">
+          <div className="bg-[#0f0505] border border-[#2a1010] rounded-2xl p-6">
             <h2 className="text-lg font-black text-white mb-4 flex items-center gap-2">
-              <Activity className="w-5 h-5 text-sky-400" /> Recent Activity
+              <Activity className="w-5 h-5 text-red-400" /> Recent Activity
             </h2>
             {detail.recentActivity?.length > 0 ? (
               <div className="space-y-4">
                 {detail.recentActivity.slice(0, 5).map((act: any) => (
-                  <div key={act.id} className="pb-4 border-b border-slate-800/50 last:border-0 last:pb-0">
-                    <p className="text-sm font-bold text-slate-200">{act.action}</p>
-                    <p className="text-xs text-slate-400 mt-1">{act.details}</p>
-                    <p className="text-[10px] text-slate-500 font-semibold mt-1">
+                  <div key={act.id} className="pb-4 border-b border-[#2a1010]/50 last:border-0 last:pb-0">
+                    <p className="text-sm font-bold text-neutral-200">{act.action}</p>
+                    <p className="text-xs text-neutral-400 mt-1">{act.details}</p>
+                    <p className="text-[10px] text-neutral-500 font-semibold mt-1">
                       {new Date(act.createdAt).toLocaleString()}
                     </p>
                   </div>
                 ))}
               </div>
             ) : (
-              <p className="text-sm text-slate-500 font-medium">No recent activity.</p>
+              <p className="text-sm text-neutral-500 font-medium">No recent activity.</p>
             )}
           </div>
         </div>

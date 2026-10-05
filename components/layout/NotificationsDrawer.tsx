@@ -85,9 +85,9 @@ export const NotificationsDrawer: React.FC<NotificationsDrawerProps> = ({
     <div className="fixed inset-0 z-50 overflow-hidden bg-black/60 backdrop-blur-sm">
       <div className="absolute inset-0" onClick={onClose} />
       <div className="absolute inset-y-0 right-0 max-w-full flex pl-10">
-        <div className="w-screen max-w-md bg-[#0d1322] border-l border-slate-800 shadow-2xl flex flex-col">
+        <div className="w-screen max-w-md bg-[#0a0404] border-l border-[#2a1010] shadow-2xl flex flex-col">
           {/* Header */}
-          <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800 bg-[#090d16]">
+          <div className="flex items-center justify-between px-6 py-4 border-b border-[#2a1010] bg-[#050202]">
             <div className="flex items-center gap-2.5">
               <Bell className="w-5 h-5 text-red-500" />
               <h3 className="text-sm font-bold text-white">Notifications</h3>
@@ -95,13 +95,13 @@ export const NotificationsDrawer: React.FC<NotificationsDrawerProps> = ({
             <div className="flex items-center gap-2">
               <button
                 onClick={handleMarkAllRead}
-                className="text-xs text-slate-400 hover:text-red-500 font-medium transition-colors"
+                className="text-xs text-neutral-400 hover:text-red-500 font-medium transition-colors"
               >
                 Mark all read
               </button>
               <button
                 onClick={onClose}
-                className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+                className="p-1 rounded-lg text-neutral-400 hover:text-white hover:bg-[#1a0a0a] transition-colors"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -115,7 +115,7 @@ export const NotificationsDrawer: React.FC<NotificationsDrawerProps> = ({
                 <div className="w-6 h-6 border-2 border-red-500 border-t-transparent rounded-full animate-spin" />
               </div>
             ) : notifications.length === 0 ? (
-              <div className="text-center py-12 text-slate-400 text-xs">
+              <div className="text-center py-12 text-neutral-400 text-xs">
                 No notifications right now.
               </div>
             ) : (
@@ -124,7 +124,7 @@ export const NotificationsDrawer: React.FC<NotificationsDrawerProps> = ({
                   key={item.id}
                   className={`p-3.5 rounded-xl border transition-all ${
                     item.isRead
-                      ? 'bg-slate-900/40 border-slate-800/80 text-slate-300'
+                      ? 'bg-[#0f0505]/40 border-[#2a1010]/80 text-neutral-300'
                       : 'bg-red-950/20 border-red-500/30 text-white'
                   }`}
                 >
@@ -133,14 +133,14 @@ export const NotificationsDrawer: React.FC<NotificationsDrawerProps> = ({
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between gap-2">
                         <p className="text-xs font-semibold">{item.title}</p>
-                        <span className="text-[10px] text-slate-400 shrink-0">
+                        <span className="text-[10px] text-neutral-400 shrink-0">
                           {new Date(item.createdAt).toLocaleTimeString([], {
                             hour: '2-digit',
                             minute: '2-digit',
                           })}
                         </span>
                       </div>
-                      <p className="text-[11px] text-slate-400 mt-1 leading-relaxed">
+                      <p className="text-[11px] text-neutral-400 mt-1 leading-relaxed">
                         {item.message}
                       </p>
                       {item.link && (
