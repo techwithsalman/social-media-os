@@ -75,8 +75,8 @@ export default function SignupPage() {
 
       {/* Brand Area */}
       <div className="sm:mx-auto sm:w-full sm:max-w-md relative z-10 text-center flex flex-col items-center">
-        <div className="w-20 h-20 sm:w-28 sm:h-28 mb-4 relative drop-shadow-[0_0_25px_rgba(220,38,38,0.4)] hover:scale-105 transition-transform duration-500">
-          <img src="/Tech-With-Salman-TikTok-Icon-1024x1024.png" alt="Tech With Salman" className="w-full h-full object-contain" />
+        <div className="w-24 sm:w-[130px] h-auto mb-4 relative drop-shadow-[0_0_25px_rgba(220,38,38,0.4)] hover:scale-105 transition-transform duration-500">
+          <img src="/tws-logo-transparent.png" alt="Tech With Salman" className="w-full h-auto object-contain" />
         </div>
         <h1 className="text-3xl font-black tracking-tight text-white uppercase drop-shadow-lg">
           <span className="text-red-600">TECH</span> <span className="text-slate-200">WITH</span> <span className="text-red-600">SALMAN</span>
