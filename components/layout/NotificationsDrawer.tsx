@@ -75,7 +75,7 @@ export const NotificationsDrawer: React.FC<NotificationsDrawerProps> = ({
       case 'ERROR':
         return <XCircle className="w-4 h-4 text-red-400 shrink-0" />;
       default:
-        return <Info className="w-4 h-4 text-indigo-400 shrink-0" />;
+        return <Info className="w-4 h-4 text-red-500 shrink-0" />;
     }
   };
 
@@ -89,13 +89,13 @@ export const NotificationsDrawer: React.FC<NotificationsDrawerProps> = ({
           {/* Header */}
           <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800 bg-[#090d16]">
             <div className="flex items-center gap-2.5">
-              <Bell className="w-5 h-5 text-indigo-400" />
+              <Bell className="w-5 h-5 text-red-500" />
               <h3 className="text-sm font-bold text-white">Notifications</h3>
             </div>
             <div className="flex items-center gap-2">
               <button
                 onClick={handleMarkAllRead}
-                className="text-xs text-slate-400 hover:text-indigo-400 font-medium transition-colors"
+                className="text-xs text-slate-400 hover:text-red-500 font-medium transition-colors"
               >
                 Mark all read
               </button>
@@ -112,7 +112,7 @@ export const NotificationsDrawer: React.FC<NotificationsDrawerProps> = ({
           <div className="flex-1 overflow-y-auto p-4 space-y-2.5">
             {loading ? (
               <div className="flex items-center justify-center py-12">
-                <div className="w-6 h-6 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+                <div className="w-6 h-6 border-2 border-red-500 border-t-transparent rounded-full animate-spin" />
               </div>
             ) : notifications.length === 0 ? (
               <div className="text-center py-12 text-slate-400 text-xs">
@@ -125,7 +125,7 @@ export const NotificationsDrawer: React.FC<NotificationsDrawerProps> = ({
                   className={`p-3.5 rounded-xl border transition-all ${
                     item.isRead
                       ? 'bg-slate-900/40 border-slate-800/80 text-slate-300'
-                      : 'bg-indigo-950/20 border-indigo-500/30 text-white'
+                      : 'bg-red-950/20 border-red-500/30 text-white'
                   }`}
                 >
                   <div className="flex items-start gap-3">
@@ -147,7 +147,7 @@ export const NotificationsDrawer: React.FC<NotificationsDrawerProps> = ({
                         <Link
                           href={item.link}
                           onClick={onClose}
-                          className="inline-block mt-2 text-[11px] font-semibold text-indigo-400 hover:text-indigo-300 transition-colors"
+                          className="inline-block mt-2 text-[11px] font-semibold text-red-500 hover:text-red-400 transition-colors"
                         >
                           View Details &rarr;
                         </Link>

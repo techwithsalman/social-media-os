@@ -182,7 +182,7 @@ export default function BulkUploadPage() {
         {/* Left: Schedule Matrix Generator (1 Col) */}
         <div className="bg-[#0d1322] border border-slate-800 rounded-3xl p-6 md:p-8 shadow-md space-y-5">
           <div className="flex items-center gap-3 pb-4 border-b border-slate-800">
-            <Sliders className="w-5 h-5 text-indigo-400" />
+            <Sliders className="w-5 h-5 text-red-500" />
             <h3 className="text-sm font-bold text-white uppercase tracking-wider">
               Automatic Matrix Config
             </h3>
@@ -244,7 +244,7 @@ export default function BulkUploadPage() {
                     key={plat}
                     className={`flex items-center gap-2.5 p-2.5 rounded-xl border text-xs md:text-sm font-semibold cursor-pointer ${
                       isChecked
-                        ? 'bg-indigo-950/40 border-indigo-500/50 text-white'
+                        ? 'bg-red-950/40 border-red-500/50 text-white'
                         : 'bg-slate-900/40 border-slate-800 text-slate-400'
                     }`}
                   >
@@ -256,7 +256,7 @@ export default function BulkUploadPage() {
                           prev.includes(plat) ? prev.filter((p) => p !== plat) : [...prev, plat]
                         );
                       }}
-                      className="rounded border-slate-700 bg-slate-950 text-indigo-600 w-4 h-4"
+                      className="rounded border-slate-700 bg-slate-950 text-red-600 w-4 h-4"
                     />
                     <PlatformIcon platform={plat} size={16} className="w-4 h-4 rounded" />
                     <span>{plat}</span>
@@ -268,7 +268,7 @@ export default function BulkUploadPage() {
 
           <button
             onClick={handleGenerateSchedule}
-            className="w-full mt-3 py-3 px-5 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-bold shadow-md shadow-indigo-600/30 transition-all flex items-center justify-center gap-2"
+            className="w-full mt-3 py-3 px-5 rounded-2xl bg-red-600 hover:bg-red-500 text-white text-sm font-bold shadow-md shadow-red-600/30 transition-all flex items-center justify-center gap-2"
           >
             <Sparkles className="w-4 h-4" />
             <span>Generate Schedule Matrix</span>
@@ -286,7 +286,7 @@ export default function BulkUploadPage() {
               value={bulkMasterCaption}
               onChange={(e) => setBulkMasterCaption(e.target.value)}
               placeholder="Enter master caption to apply across all uploaded items in this batch..."
-              className="w-full p-4 text-sm md:text-base bg-slate-900 border border-slate-800 rounded-2xl text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 leading-relaxed"
+              className="w-full p-4 text-sm md:text-base bg-slate-900 border border-slate-800 rounded-2xl text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-red-500 leading-relaxed"
             />
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mt-4 pt-4 border-t border-slate-800">
               <label className="flex items-center gap-3 text-sm font-semibold text-slate-200 cursor-pointer">
@@ -294,14 +294,14 @@ export default function BulkUploadPage() {
                   type="checkbox"
                   checked={applyToAllVideos}
                   onChange={(e) => setApplyToAllVideos(e.target.checked)}
-                  className="rounded-md border-slate-700 bg-slate-900 text-indigo-600 w-4 h-4"
+                  className="rounded-md border-slate-700 bg-slate-900 text-red-600 w-4 h-4"
                 />
                 <span>Apply caption to all batch videos & platforms</span>
               </label>
 
               <button
                 onClick={handleApplyBulkCaption}
-                className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-sm font-bold text-indigo-300 border border-slate-700 transition-colors"
+                className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-sm font-bold text-red-400 border border-slate-700 transition-colors"
               >
                 Apply to List
               </button>
@@ -311,7 +311,7 @@ export default function BulkUploadPage() {
           {/* Multi-Dropzone */}
           <div
             onClick={() => fileInputRef.current?.click()}
-            className="cursor-pointer border-2 border-dashed border-slate-700 hover:border-indigo-500/80 rounded-3xl p-8 text-center bg-[#0d1322]/80 hover:bg-[#0d1322] transition-all group"
+            className="cursor-pointer border-2 border-dashed border-slate-700 hover:border-red-500/80 rounded-3xl p-8 text-center bg-[#0d1322]/80 hover:bg-[#0d1322] transition-all group"
           >
             <input
               ref={fileInputRef}
@@ -321,7 +321,7 @@ export default function BulkUploadPage() {
               onChange={(e) => handleBatchUpload(e.target.files)}
               className="hidden"
             />
-            <div className="w-12 h-12 rounded-2xl bg-indigo-500/10 text-indigo-400 flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform">
+            <div className="w-12 h-12 rounded-2xl bg-red-500/10 text-red-500 flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform">
               <Upload className="w-6 h-6" />
             </div>
             <p className="text-base font-bold text-white">
@@ -338,7 +338,7 @@ export default function BulkUploadPage() {
       <div className="bg-[#0d1322] border border-slate-800 rounded-3xl p-6 md:p-8 shadow-md">
         <div className="flex items-center justify-between mb-6 pb-4 border-b border-slate-800">
           <div className="flex items-center gap-3">
-            <Layers className="w-5 h-5 text-indigo-400" />
+            <Layers className="w-5 h-5 text-red-500" />
             <h3 className="text-lg md:text-xl font-bold text-white">
               Queued Content Items ({items.length})
             </h3>
@@ -347,7 +347,7 @@ export default function BulkUploadPage() {
           <button
             onClick={handleSaveAllBulk}
             disabled={saving || items.length === 0}
-            className="flex items-center gap-2 px-6 py-3 rounded-2xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white text-sm font-black shadow-lg shadow-indigo-600/30 transition-all disabled:opacity-50"
+            className="flex items-center gap-2 px-6 py-3 rounded-2xl bg-gradient-to-r from-red-700 to-red-600 hover:from-red-600 hover:to-red-500 text-white text-sm font-black shadow-lg shadow-red-600/30 transition-all disabled:opacity-50"
           >
             {saving ? (
               <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />

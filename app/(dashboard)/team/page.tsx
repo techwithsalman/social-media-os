@@ -84,8 +84,8 @@ export default function TeamPage() {
   };
 
   const rolePermissions = [
-    { role: 'OWNER', desc: 'Full workspace ownership, billing, account & team control', color: 'text-purple-400 bg-purple-500/10' },
-    { role: 'ADMIN', desc: 'Can manage accounts, publishing, schedules, and members', color: 'text-indigo-400 bg-indigo-500/10' },
+    { role: 'OWNER', desc: 'Full workspace ownership, billing, account & team control', color: 'text-red-500 bg-red-500/10' },
+    { role: 'ADMIN', desc: 'Can manage accounts, publishing, schedules, and members', color: 'text-red-500 bg-red-500/10' },
     { role: 'EDITOR', desc: 'Can create, edit, schedule, and publish content', color: 'text-emerald-400 bg-emerald-500/10' },
     { role: 'VIEWER', desc: 'Read-only access to calendar, content library, and analytics', color: 'text-slate-400 bg-slate-500/10' },
   ];
@@ -104,7 +104,7 @@ export default function TeamPage() {
 
         <button
           onClick={() => setShowInviteModal(true)}
-          className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white text-sm font-bold shadow-lg shadow-indigo-600/30 transition-all"
+          className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-red-700 to-red-600 hover:from-red-600 hover:to-red-500 text-white text-sm font-bold shadow-lg shadow-red-600/30 transition-all"
         >
           <UserPlus className="w-4 h-4" />
           <span>Invite Member</span>
@@ -127,7 +127,7 @@ export default function TeamPage() {
               className="py-5 first:pt-0 last:pb-0 flex flex-col sm:flex-row sm:items-center justify-between gap-4 sm:gap-5"
             >
               <div className="flex items-center gap-4 overflow-hidden">
-                <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-indigo-500 to-purple-600 text-white flex items-center justify-center font-bold text-base shrink-0 shadow-md">
+                <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-red-600 to-red-600 text-white flex items-center justify-center font-bold text-base shrink-0 shadow-md">
                   {member.user.firstName?.charAt(0) || 'U'}
                 </div>
                 <div className="overflow-hidden">
@@ -142,9 +142,9 @@ export default function TeamPage() {
                 <span
                   className={`px-3 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider ${
                     member.role === 'OWNER'
-                      ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30'
+                      ? 'bg-red-500/20 text-purple-300 border border-red-500/30'
                       : member.role === 'ADMIN'
-                      ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30'
+                      ? 'bg-red-500/20 text-red-400 border border-red-500/30'
                       : 'bg-slate-800 text-slate-300 border border-slate-700'
                   }`}
                 >
@@ -162,7 +162,7 @@ export default function TeamPage() {
       {/* Roles & Permissions Matrix */}
       <div className="bg-[#0d1322] border border-slate-800 rounded-3xl p-6 md:p-8 shadow-md">
         <h3 className="text-base md:text-lg font-bold text-white mb-6 flex items-center gap-2.5 pb-4 border-b border-slate-800">
-          <Shield className="w-5 h-5 text-indigo-400" />
+          <Shield className="w-5 h-5 text-red-500" />
           <span>Role Permissions Matrix</span>
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
@@ -197,7 +197,7 @@ export default function TeamPage() {
                   value={inviteEmail}
                   onChange={(e) => setInviteEmail(e.target.value)}
                   placeholder="colleague@company.com"
-                  className="w-full p-3 text-sm bg-slate-900 border border-slate-800 rounded-xl text-white focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                  className="w-full p-3 text-sm bg-slate-900 border border-slate-800 rounded-xl text-white focus:outline-none focus:ring-1 focus:ring-red-500"
                 />
               </div>
 
@@ -206,7 +206,7 @@ export default function TeamPage() {
                 <select
                   value={inviteRole}
                   onChange={(e) => setInviteRole(e.target.value)}
-                  className="w-full p-3 text-sm bg-slate-900 border border-slate-800 rounded-xl text-white focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                  className="w-full p-3 text-sm bg-slate-900 border border-slate-800 rounded-xl text-white focus:outline-none focus:ring-1 focus:ring-red-500"
                 >
                   <option value="ADMIN">Admin (Full Management)</option>
                   <option value="EDITOR">Editor (Create & Publish)</option>
@@ -225,7 +225,7 @@ export default function TeamPage() {
                 <button
                   type="submit"
                   disabled={inviting}
-                  className="px-6 py-2.5 text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-500 rounded-xl transition-all shadow-md disabled:opacity-50"
+                  className="px-6 py-2.5 text-sm font-bold text-white bg-red-600 hover:bg-red-500 rounded-xl transition-all shadow-md disabled:opacity-50"
                 >
                   {inviting ? 'Sending...' : 'Send Invitation'}
                 </button>

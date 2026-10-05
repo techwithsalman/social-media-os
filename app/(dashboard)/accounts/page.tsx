@@ -322,10 +322,7 @@ export default function ConnectedAccountsPage() {
         </div>
 
         <div className="flex items-center gap-2">
-          <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs md:text-sm font-bold">
-            <Sparkles className="w-4 h-4 text-amber-400" />
-            <span>Development Simulation Ready</span>
-          </div>
+          
         </div>
       </div>
 
@@ -384,7 +381,7 @@ export default function ConnectedAccountsPage() {
 
                 {/* Profile Card if connected */}
                 {connected && (
-                  <div className="mb-5 p-4 rounded-2xl bg-slate-900/90 border border-slate-800 flex items-center justify-between">
+                  <div className="mb-5 p-4 rounded-2xl bg-[#100606]/90 border border-slate-800 flex items-center justify-between">
                     <div className="flex items-center gap-3.5 overflow-hidden">
                       <div className="w-10 h-10 rounded-xl overflow-hidden bg-slate-800 shrink-0 border border-slate-700">
                         {connected.profileImageUrl ? (
@@ -425,7 +422,7 @@ export default function ConnectedAccountsPage() {
                   onClick={() =>
                     setActiveDocPlatform(activeDocPlatform === plat.id ? null : plat.id)
                   }
-                  className="text-xs md:text-sm text-slate-400 hover:text-indigo-400 font-semibold flex items-center gap-1.5 transition-colors"
+                  className="text-xs md:text-sm text-slate-400 hover:text-red-500 font-semibold flex items-center gap-1.5 transition-colors"
                 >
                   <HelpCircle className="w-4 h-4" />
                   <span>API Specs</span>
@@ -473,7 +470,7 @@ export default function ConnectedAccountsPage() {
                       <button
                         onClick={() => handleConnect(plat.id)}
                         disabled={isActing}
-                        className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-bold shadow-md shadow-indigo-600/30 transition-all active:scale-[0.98] disabled:opacity-50"
+                        className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white text-sm font-bold shadow-md shadow-red-600/30 transition-all active:scale-[0.98] disabled:opacity-50"
                       >
                         {isActing ? (
                           <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -501,7 +498,7 @@ export default function ConnectedAccountsPage() {
                       href={requirements[plat.id].developerPortalUrl}
                       target="_blank"
                       rel="noreferrer"
-                      className="text-indigo-400 hover:underline flex items-center gap-1.5 text-xs font-bold"
+                      className="text-red-500 hover:underline flex items-center gap-1.5 text-xs font-bold"
                     >
                       <span>Developer Portal</span>
                       <ExternalLink className="w-3.5 h-3.5" />
@@ -511,7 +508,7 @@ export default function ConnectedAccountsPage() {
                     <span className="text-xs text-slate-400 font-bold uppercase">Required Scopes:</span>
                     <div className="flex flex-wrap gap-1.5 mt-1.5">
                       {requirements[plat.id].requiredScopes.map((sc) => (
-                        <span key={sc} className="px-2 py-0.5 rounded-md bg-slate-900 text-xs text-slate-300 font-mono">
+                        <span key={sc} className="px-2 py-0.5 rounded-md bg-[#100606] text-xs text-slate-300 font-mono">
                           {sc}
                         </span>
                       ))}
@@ -529,4 +526,5 @@ export default function ConnectedAccountsPage() {
     </AppLayout>
   );
 }
+
 

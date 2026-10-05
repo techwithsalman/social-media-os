@@ -125,7 +125,7 @@ export default function MetaAccountSelectionPage() {
     <AppLayout title="Connected Social Channels">
       <div className="max-w-3xl mx-auto">
         <div className="mb-8">
-          <p className="text-xs font-black uppercase tracking-wider text-indigo-300">Meta OAuth</p>
+          <p className="text-xs font-black uppercase tracking-wider text-red-400">Meta OAuth</p>
           <h1 className="text-2xl md:text-3xl font-black text-white tracking-tight mt-1">
             Choose accounts to connect
           </h1>
@@ -143,7 +143,7 @@ export default function MetaAccountSelectionPage() {
 
         {loading ? (
           <div className="rounded-3xl bg-[#0d1322] border border-slate-800 p-10 flex items-center justify-center gap-3 text-slate-300">
-            <Loader2 className="w-5 h-5 animate-spin text-indigo-300" />
+            <Loader2 className="w-5 h-5 animate-spin text-red-400" />
             <span className="text-sm font-bold">Loading Meta accounts...</span>
           </div>
         ) : accounts.length === 0 ? (
@@ -151,7 +151,7 @@ export default function MetaAccountSelectionPage() {
             <p className="text-sm font-bold text-slate-300">No eligible Meta accounts were returned.</p>
             <button
               onClick={() => router.push('/accounts')}
-              className="mt-5 px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-black"
+              className="mt-5 px-5 py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white text-sm font-black"
             >
               Back to Accounts
             </button>
@@ -179,7 +179,7 @@ export default function MetaAccountSelectionPage() {
                             disabled={account.alreadyConnected}
                             className={`w-full flex items-center justify-between gap-4 rounded-2xl border px-4 py-3.5 text-left transition-all ${
                               selected
-                                ? 'bg-indigo-950/40 border-indigo-500/60 shadow-md'
+                                ? 'bg-red-950/40 border-red-500/60 shadow-md'
                                 : account.alreadyConnected
                                 ? 'bg-slate-900/40 border-slate-800 opacity-60 cursor-not-allowed'
                                 : 'bg-slate-900/60 border-slate-800 hover:border-slate-700'
@@ -213,7 +213,7 @@ export default function MetaAccountSelectionPage() {
                               <span
                                 className={`w-5 h-5 rounded-md border flex items-center justify-center ${
                                   selected
-                                    ? 'bg-indigo-600 border-indigo-500 text-white'
+                                    ? 'bg-red-600 border-red-500 text-white'
                                     : 'bg-slate-950 border-slate-700'
                                 }`}
                               >
@@ -243,7 +243,7 @@ export default function MetaAccountSelectionPage() {
                 <button
                   onClick={connectSelectedAccounts}
                   disabled={saving || selectedIds.length === 0}
-                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-black disabled:opacity-50"
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white text-sm font-black disabled:opacity-50"
                 >
                   {saving && <Loader2 className="w-4 h-4 animate-spin" />}
                   <span>Connect Selected</span>

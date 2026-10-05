@@ -48,7 +48,7 @@ export function SuperAdminShell({ children, user }: SuperAdminShellProps) {
 
   return (
     <div className="min-h-screen bg-[#070b14] text-slate-100 flex">
-      <aside className="fixed left-0 top-0 bottom-0 z-40 w-72 bg-[#080d18] border-r border-slate-800 flex flex-col shadow-2xl">
+      <aside className="fixed left-0 top-0 bottom-0 z-40 w-72 bg-[#050202] border-r border-slate-800 flex flex-col shadow-2xl">
         <div className="h-20 px-6 flex items-center gap-3 border-b border-slate-800 bg-[#060a12]">
           <div className="w-11 h-11 rounded-2xl bg-amber-500/15 text-amber-300 flex items-center justify-center border border-amber-500/30 shadow-lg">
             <ShieldCheck className="w-6 h-6" />
@@ -97,7 +97,7 @@ export function SuperAdminShell({ children, user }: SuperAdminShellProps) {
       </aside>
 
       <main className="flex-1 min-w-0 pl-72">
-        <div className="sticky top-0 z-20 h-20 px-8 flex items-center justify-between border-b border-slate-800 bg-[#080d18]/92 backdrop-blur-xl">
+        <div className="sticky top-0 z-20 h-20 px-8 flex items-center justify-between border-b border-slate-800 bg-[#050202]/92 backdrop-blur-xl">
           <div>
             <p className="text-xs font-black uppercase tracking-wider text-amber-300">System Control</p>
             <h1 className="text-2xl font-black text-white tracking-tight">SaaS Administration</h1>

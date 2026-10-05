@@ -226,7 +226,7 @@ export default function BillingPage() {
   return (
     <AppLayout title="Subscription & Billing">
       <div className="text-center max-w-3xl mx-auto mb-12">
-        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-indigo-500/20 border border-indigo-500/30 text-indigo-300 text-sm font-bold mb-4">
+        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-red-500/20 border border-red-500/30 text-red-400 text-sm font-bold mb-4">
           <Sparkles className="w-4 h-4" />
           <span>Flexible SaaS Plans</span>
         </div>
@@ -243,7 +243,7 @@ export default function BillingPage() {
             onClick={() => setBillingCycle('MONTHLY')}
             className={`px-5 py-2 rounded-xl transition-all ${
               billingCycle === 'MONTHLY'
-                ? 'bg-indigo-600 text-white shadow-md'
+                ? 'bg-red-600 text-white shadow-md'
                 : 'text-slate-400 hover:text-slate-200'
             }`}
           >
@@ -253,7 +253,7 @@ export default function BillingPage() {
             onClick={() => setBillingCycle('YEARLY')}
             className={`flex items-center gap-2 px-5 py-2 rounded-xl transition-all ${
               billingCycle === 'YEARLY'
-                ? 'bg-indigo-600 text-white shadow-md'
+                ? 'bg-red-600 text-white shadow-md'
                 : 'text-slate-400 hover:text-slate-200'
             }`}
           >
@@ -282,12 +282,12 @@ export default function BillingPage() {
               data-current-plan={isCurrent || undefined}
               className={`rounded-3xl p-7 md:p-8 flex flex-col justify-between transition-all relative ${
                 plan.code === 'PRO'
-                  ? 'bg-[#0f172a] border-2 border-indigo-500 shadow-2xl shadow-indigo-500/20 scale-[1.02]'
+                  ? 'bg-[#0f172a] border-2 border-red-500 shadow-2xl shadow-red-500/20 scale-[1.02]'
                   : 'bg-[#0d1322] border border-slate-800 shadow-md'
               }`}
             >
               {plan.code === 'PRO' && (
-                <span className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full bg-gradient-to-r from-indigo-500 to-purple-500 text-white text-xs font-black uppercase tracking-wider shadow-lg">
+                <span className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full bg-gradient-to-r from-red-600 to-red-500 text-white text-xs font-black uppercase tracking-wider shadow-lg">
                   {badge}
                 </span>
               )}
@@ -345,8 +345,8 @@ export default function BillingPage() {
                   isCurrent
                     ? 'bg-slate-800 text-slate-500 border border-slate-700 cursor-default'
                     : plan.code === 'PRO'
-                    ? 'bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white shadow-xl shadow-indigo-600/40 hover:scale-[1.02]'
-                    : 'bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-300 border border-indigo-500/30'
+                    ? 'bg-gradient-to-r from-red-700 to-red-600 hover:from-red-600 hover:to-red-500 text-white shadow-xl shadow-red-600/40 hover:scale-[1.02]'
+                    : 'bg-red-600/20 hover:bg-red-600/30 text-red-400 border border-red-500/30'
                 }`}
               >
                 {getPlanButtonText(plan, isCurrent)}

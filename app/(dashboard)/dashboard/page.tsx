@@ -96,12 +96,12 @@ export default async function DashboardPage() {
       title="Dashboard Overview"
     >
       {/* Premium Spacious Hero Banner */}
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-indigo-900/50 via-purple-900/30 to-slate-900/80 border border-indigo-500/25 p-8 md:p-12 mb-10 shadow-2xl backdrop-blur-2xl">
-        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-indigo-500/15 rounded-full blur-3xl pointer-events-none" />
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-red-900/50 via-red-900/30 to-slate-900/80 border border-red-500/25 p-8 md:p-12 mb-10 shadow-2xl backdrop-blur-2xl">
+        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-red-500/15 rounded-full blur-3xl pointer-events-none" />
         <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-8">
           <div className="max-w-3xl">
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-indigo-500/20 border border-indigo-500/30 text-indigo-300 text-sm font-bold mb-4 shadow-sm">
-              <Sparkles className="w-4 h-4 text-indigo-400" />
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-red-500/20 border border-red-500/30 text-red-400 text-sm font-bold mb-4 shadow-sm">
+              <Sparkles className="w-4 h-4 text-red-500" />
               <span>Unified Command Center</span>
             </div>
             <h1 className="text-3xl md:text-5xl font-black text-white tracking-tight leading-tight">
@@ -115,7 +115,7 @@ export default async function DashboardPage() {
           <div className="flex flex-wrap items-center gap-4 shrink-0">
             <Link
               href="/create-post"
-              className="flex items-center gap-2.5 px-6 py-3.5 rounded-2xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white text-base font-bold shadow-xl shadow-indigo-600/30 transition-all hover:scale-[1.02] active:scale-[0.98]"
+              className="flex items-center gap-2.5 px-6 py-3.5 rounded-2xl bg-gradient-to-r from-red-700 to-red-600 hover:from-red-500 hover:to-red-500 text-white text-base font-bold shadow-xl shadow-red-600/30 transition-all hover:scale-[1.02] active:scale-[0.98]"
             >
               <Plus className="w-5 h-5" />
               <span>Compose Post</span>
@@ -124,7 +124,7 @@ export default async function DashboardPage() {
               href="/bulk-upload"
               className="flex items-center gap-2.5 px-6 py-3.5 rounded-2xl bg-slate-800/90 hover:bg-slate-700 text-slate-100 border border-slate-700 text-base font-bold transition-all hover:border-slate-600 shadow-md"
             >
-              <Layers className="w-5 h-5 text-indigo-400" />
+              <Layers className="w-5 h-5 text-red-500" />
               <span>Bulk Upload</span>
             </Link>
           </div>
@@ -138,7 +138,7 @@ export default async function DashboardPage() {
             <span className="text-xs md:text-sm font-bold text-slate-400 uppercase tracking-wider">
               Connected
             </span>
-            <div className="p-2.5 rounded-xl bg-indigo-500/10 text-indigo-400">
+            <div className="p-2.5 rounded-xl bg-red-500/10 text-red-500">
               <Share2 className="w-5 h-5" />
             </div>
           </div>
@@ -232,7 +232,7 @@ export default async function DashboardPage() {
           </div>
           <Link
             href="/accounts"
-            className="text-sm md:text-base font-bold text-indigo-400 hover:text-indigo-300 flex items-center gap-1.5 transition-colors"
+            className="text-sm md:text-base font-bold text-red-500 hover:text-red-400 flex items-center gap-1.5 transition-colors"
           >
             <span>Manage All Channels</span>
             <ArrowUpRight className="w-4 h-4" />
@@ -252,7 +252,7 @@ export default async function DashboardPage() {
                 className={`p-6 rounded-2xl border transition-all flex flex-col justify-between min-h-[160px] ${
                   isConnected
                     ? 'bg-[#0d1322] border-slate-800 hover:border-slate-700 shadow-md'
-                    : 'bg-[#0a0f1c]/70 border-slate-800/70 opacity-80'
+                    : 'bg-[#080303]/70 border-slate-800/70 opacity-80'
                 }`}
               >
                 <div>
@@ -288,9 +288,7 @@ export default async function DashboardPage() {
 
                 {isConnected && (
                   <div className="mt-4 pt-3.5 border-t border-slate-800/80 flex items-center justify-between text-xs text-slate-400">
-                    <span className="text-amber-400 font-semibold">
-                      Development Simulation
-                    </span>
+                    <span></span>
                     <Link
                       href="/accounts"
                       className="text-slate-300 hover:text-white font-semibold transition-colors"
@@ -312,14 +310,14 @@ export default async function DashboardPage() {
           <div>
             <div className="flex items-center justify-between mb-6 pb-4 border-b border-slate-800">
               <div className="flex items-center gap-3">
-                <CalendarIcon className="w-5 h-5 text-indigo-400" />
+                <CalendarIcon className="w-5 h-5 text-red-500" />
                 <h3 className="text-xl font-bold text-white tracking-tight">
                   Upcoming Scheduled Broadcasts
                 </h3>
               </div>
               <Link
                 href="/scheduled"
-                className="text-sm font-bold text-indigo-400 hover:text-indigo-300 flex items-center gap-1.5"
+                className="text-sm font-bold text-red-500 hover:text-red-400 flex items-center gap-1.5"
               >
                 <span>View Queue ({scheduledPostsCount})</span>
                 <ArrowUpRight className="w-4 h-4" />
@@ -327,7 +325,7 @@ export default async function DashboardPage() {
             </div>
 
             {upcomingPosts.length === 0 ? (
-              <div className="text-center py-14 px-6 border border-dashed border-slate-800 rounded-2xl bg-slate-900/30">
+              <div className="text-center py-14 px-6 border border-dashed border-slate-800 rounded-2xl bg-[#100606]/30">
                 <Clock className="w-10 h-10 text-slate-600 mx-auto mb-3" />
                 <p className="text-sm font-bold text-slate-200">
                   No upcoming posts scheduled
@@ -337,7 +335,7 @@ export default async function DashboardPage() {
                 </p>
                 <Link
                   href="/create-post"
-                  className="inline-flex items-center gap-2 mt-5 px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-bold shadow-md transition-colors"
+                  className="inline-flex items-center gap-2 mt-5 px-5 py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white text-sm font-bold shadow-md transition-colors"
                 >
                   <Plus className="w-4 h-4" />
                   <span>Schedule First Post</span>
@@ -348,7 +346,7 @@ export default async function DashboardPage() {
                 {upcomingPosts.map((post) => (
                   <div
                     key={post.id}
-                    className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 md:p-5 rounded-2xl bg-slate-900/70 border border-slate-800/90 hover:border-slate-700 transition-all shadow-sm"
+                    className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 md:p-5 rounded-2xl bg-[#100606]/70 border border-slate-800/90 hover:border-slate-700 transition-all shadow-sm"
                   >
                     <div className="flex items-center gap-4 overflow-hidden">
                       {/* Media Thumbnail */}
@@ -399,7 +397,7 @@ export default async function DashboardPage() {
                               )
                             : 'N/A'}
                         </p>
-                        <p className="text-xs md:text-sm text-indigo-400 font-bold">
+                        <p className="text-xs md:text-sm text-red-500 font-bold">
                           {post.scheduledFor
                             ? formatTimeInTimeZone(
                                 post.scheduledFor,
@@ -423,7 +421,7 @@ export default async function DashboardPage() {
 
           <div className="mt-6 pt-4 border-t border-slate-800 flex items-center justify-between text-sm text-slate-400 font-medium">
             <span>Automated Queue Engine: Active</span>
-            <Link href="/calendar" className="text-indigo-400 hover:text-indigo-300 font-semibold">
+            <Link href="/calendar" className="text-red-500 hover:text-red-400 font-semibold">
               Open Content Calendar &rarr;
             </Link>
           </div>
@@ -433,7 +431,7 @@ export default async function DashboardPage() {
         <div className="bg-[#0d1322] border border-slate-800 rounded-3xl p-6 md:p-8 shadow-md flex flex-col justify-between">
           <div>
             <div className="flex items-center gap-3 mb-6 pb-4 border-b border-slate-800">
-              <Activity className="w-5 h-5 text-indigo-400" />
+              <Activity className="w-5 h-5 text-red-500" />
               <h3 className="text-xl font-bold text-white tracking-tight">
                 Recent Activity
               </h3>
@@ -448,10 +446,10 @@ export default async function DashboardPage() {
                 {recentActivity.map((act) => (
                   <div
                     key={act.id}
-                    className="p-4 rounded-2xl bg-slate-900/70 border border-slate-800/80 text-sm shadow-sm"
+                    className="p-4 rounded-2xl bg-[#100606]/70 border border-slate-800/80 text-sm shadow-sm"
                   >
                     <div className="flex items-center justify-between gap-2">
-                      <span className="text-xs font-black text-indigo-400 uppercase tracking-wider">
+                      <span className="text-xs font-black text-red-500 uppercase tracking-wider">
                         {act.action.replace('_', ' ')}
                       </span>
                       <span className="text-xs text-slate-400">
@@ -478,3 +476,4 @@ export default async function DashboardPage() {
     </AppLayout>
   );
 }
+

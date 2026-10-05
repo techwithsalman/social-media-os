@@ -19,12 +19,12 @@ export default function AnalyticsPage() {
   const [dateRange, setDateRange] = useState('30D');
 
   const metrics = [
-    { label: 'Total Impressions', value: "--", change: "--", icon: Eye, color: 'text-indigo-400' },
+    { label: 'Total Impressions', value: "--", change: "--", icon: Eye, color: 'text-red-500' },
     { label: 'Total Reach', value: "--", change: "--", icon: Users, color: 'text-blue-400' },
     { label: 'Engagement Rate', value: "--", change: "--", icon: TrendingUp, color: 'text-emerald-400' },
     { label: 'Total Likes', value: "--", change: "--", icon: Heart, color: 'text-rose-400' },
     { label: 'Comments', value: "--", change: "--", icon: MessageCircle, color: 'text-amber-400' },
-    { label: 'Shares / Retweets', value: "--", change: "--", icon: Share2, color: 'text-purple-400' },
+    { label: 'Shares / Retweets', value: "--", change: "--", icon: Share2, color: 'text-red-500' },
   ];
 
   const platformBreakdown = [
@@ -56,7 +56,7 @@ export default function AnalyticsPage() {
               onClick={() => setDateRange(range)}
               className={`px-4 py-1.5 rounded-xl transition-all ${
                 dateRange === range
-                  ? 'bg-indigo-600 text-white shadow-md'
+                  ? 'bg-red-600 text-white shadow-md'
                   : 'text-slate-400 hover:text-slate-200'
               }`}
             >
@@ -94,7 +94,7 @@ export default function AnalyticsPage() {
       <div className="bg-[#0d1322] border border-slate-800 rounded-3xl p-6 md:p-8 shadow-md mb-10">
         <div className="flex items-center justify-between mb-6 pb-4 border-b border-slate-800">
           <div className="flex items-center gap-3">
-            <BarChart3 className="w-5 h-5 text-indigo-400" />
+            <BarChart3 className="w-5 h-5 text-red-500" />
             <h3 className="text-lg md:text-xl font-bold text-white">Platform Performance Breakdown</h3>
           </div>
           <span className="text-xs font-bold text-amber-300 bg-amber-500/10 px-3 py-1 rounded-lg border border-amber-500/20">

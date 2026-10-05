@@ -130,7 +130,7 @@ export default function PublishedPostsPage() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search published posts..."
-              className="pl-10 pr-4 py-2 text-sm bg-slate-900 border border-slate-800 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+              className="pl-10 pr-4 py-2 text-sm bg-slate-900 border border-slate-800 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-red-500"
             />
           </div>
         </div>
@@ -138,7 +138,7 @@ export default function PublishedPostsPage() {
 
       {loading ? (
         <div className="py-20 text-center">
-          <div className="w-10 h-10 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+          <div className="w-10 h-10 border-2 border-red-500 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
           <p className="text-sm text-slate-400 font-semibold">Loading published records...</p>
         </div>
       ) : filteredPosts.length === 0 ? (
@@ -150,7 +150,7 @@ export default function PublishedPostsPage() {
           </p>
           <Link
             href="/create-post"
-            className="inline-flex items-center gap-2 mt-6 px-6 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-bold shadow-md"
+            className="inline-flex items-center gap-2 mt-6 px-6 py-3 rounded-xl bg-red-600 hover:bg-red-500 text-white text-sm font-bold shadow-md"
           >
             <span>Publish New Post</span>
           </Link>
@@ -183,7 +183,7 @@ export default function PublishedPostsPage() {
                     </p>
                     <div className="flex items-center gap-3 mt-3 text-xs md:text-sm text-slate-400">
                       <span className="flex items-center gap-1.5 font-medium">
-                        <Calendar className="w-4 h-4 text-indigo-400" />
+                        <Calendar className="w-4 h-4 text-red-500" />
                         {post.publishedAt
                           ? new Date(post.publishedAt).toLocaleString([], {
                               month: 'short',
@@ -200,7 +200,7 @@ export default function PublishedPostsPage() {
                           post.status === 'PUBLISHED'
                             ? 'text-emerald-400'
                             : post.status === 'INBOX_DRAFT'
-                            ? 'text-indigo-400'
+                            ? 'text-red-500'
                             : post.status === 'PROCESSING'
                             ? 'text-amber-400'
                             : post.status === 'PARTIALLY_FAILED'
@@ -227,7 +227,7 @@ export default function PublishedPostsPage() {
                     onClick={() => handleRefreshPostStatus(post.id)}
                     disabled={refreshingPostId === post.id}
                     title="Refresh Live Status from TikTok API"
-                    className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-300 border border-indigo-500/20 text-xs font-bold transition-colors disabled:opacity-50"
+                    className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 text-xs font-bold transition-colors disabled:opacity-50"
                   >
                     <RotateCw className={`w-3.5 h-3.5 ${refreshingPostId === post.id ? 'animate-spin' : ''}`} />
                     <span>Check Status</span>
@@ -264,7 +264,7 @@ export default function PublishedPostsPage() {
                           p.status === 'PUBLISHED'
                             ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
                             : p.status === 'PROCESSING' || p.status === 'INBOX_DRAFT'
-                            ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30'
+                            ? 'bg-red-500/20 text-red-400 border border-red-500/30'
                             : 'bg-red-500/20 text-red-300 border border-red-500/30'
                         }`}
                       >
@@ -275,7 +275,7 @@ export default function PublishedPostsPage() {
                     {p.status === 'PUBLISHED' ? (
                       <p className="text-xs text-emerald-400 font-medium">Live broadcast verified</p>
                     ) : p.status === 'INBOX_DRAFT' ? (
-                      <p className="text-xs text-indigo-300 leading-relaxed bg-indigo-950/40 p-2.5 rounded-lg border border-indigo-900/50 break-words font-medium">
+                      <p className="text-xs text-red-400 leading-relaxed bg-red-950/40 p-2.5 rounded-lg border border-red-900/50 break-words font-medium">
                         {p.errorMessage || 'Sent to TikTok Creator Inbox (Draft)'}
                       </p>
                     ) : p.status === 'PROCESSING' ? (
@@ -301,7 +301,7 @@ export default function PublishedPostsPage() {
                                 p.id
                               )
                             }
-                            className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-300 border border-indigo-500/30 text-xs font-bold transition-all"
+                            className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-red-600/20 hover:bg-red-600/30 text-red-400 border border-red-500/30 text-xs font-bold transition-all"
                           >
                             {copiedId === p.id ? (
                               <>
@@ -330,7 +330,7 @@ export default function PublishedPostsPage() {
                         href={p.externalPostUrl}
                         target="_blank"
                         rel="noreferrer"
-                        className="p-2 rounded-xl bg-indigo-500/15 hover:bg-indigo-500/25 text-indigo-300 text-xs font-bold flex items-center gap-1.5 shrink-0 transition-colors border border-indigo-500/20 self-start mt-1"
+                        className="p-2 rounded-xl bg-red-500/15 hover:bg-red-500/25 text-red-400 text-xs font-bold flex items-center gap-1.5 shrink-0 transition-colors border border-red-500/20 self-start mt-1"
                       >
                         <span>View</span>
                         <ExternalLink className="w-3.5 h-3.5" />

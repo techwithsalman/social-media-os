@@ -77,7 +77,7 @@ export const Header: React.FC<HeaderProps> = ({
   };
 
   return (
-    <header className="sticky top-0 z-30 flex items-center justify-between h-20 px-6 md:px-10 bg-[#080d18]/90 backdrop-blur-xl border-b border-slate-800 shadow-sm">
+    <header className="sticky top-0 z-30 flex items-center justify-between h-20 px-6 md:px-10 bg-[#050202]/90 backdrop-blur-xl border-b border-slate-800 shadow-sm">
       <div className="flex items-center gap-4">
         <button
           onClick={onOpenMobileSidebar}
@@ -89,7 +89,7 @@ export const Header: React.FC<HeaderProps> = ({
           <button
             type="button"
             onClick={handleInternalBack}
-            className="inline-flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-bold text-slate-300 bg-slate-900/80 hover:bg-slate-800 hover:text-white border border-slate-800 transition-colors"
+            className="inline-flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-bold text-slate-300 bg-[#100606]/80 hover:bg-slate-800 hover:text-white border border-slate-800 transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
             <span>Back</span>
@@ -104,10 +104,7 @@ export const Header: React.FC<HeaderProps> = ({
 
       <div className="flex items-center gap-3 sm:gap-4">
         {/* Mock Mode Pill */}
-        <div className="hidden sm:flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-bold tracking-wide">
-          <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
-          <span>Development Simulation</span>
-        </div>
+        
 
         {process.env.NODE_ENV !== 'production' && (
         <>
@@ -119,11 +116,11 @@ export const Header: React.FC<HeaderProps> = ({
           className="flex items-center justify-center gap-2 px-2.5 sm:px-4 py-2 text-sm font-semibold rounded-xl bg-slate-800/90 hover:bg-slate-700 text-slate-200 border border-slate-700/90 transition-all duration-150 shadow-sm disabled:opacity-50"
         >
           {seeding ? (
-            <div className="w-4 h-4 border-2 border-indigo-400 border-t-transparent rounded-full animate-spin" />
+            <div className="w-4 h-4 border-2 border-red-400 border-t-transparent rounded-full animate-spin" />
           ) : seedSuccess ? (
             <Check className="w-4 h-4 text-emerald-400" />
           ) : (
-            <Database className="w-4 h-4 text-indigo-400" />
+            <Database className="w-4 h-4 text-red-500" />
           )}
           <span className="hidden md:inline">
             {seeding ? 'Seeding...' : seedSuccess ? 'Data Loaded!' : 'Seed Demo Data'}
@@ -141,8 +138,8 @@ export const Header: React.FC<HeaderProps> = ({
           <Bell className="w-5 h-5" />
           {unreadCount > 0 && (
             <span className="absolute top-1.5 sm:top-2 right-1.5 sm:right-2 flex h-2.5 w-2.5">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-indigo-500"></span>
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500"></span>
             </span>
           )}
         </button>
@@ -150,7 +147,7 @@ export const Header: React.FC<HeaderProps> = ({
         {/* Fast Action: Create Post */}
         <Link
           href="/create-post"
-          className="flex items-center justify-center gap-2 px-2.5 sm:px-5 py-2.5 text-sm font-bold rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white shadow-lg shadow-indigo-600/25 transition-all hover:scale-[1.02] active:scale-[0.98]"
+          className="flex items-center justify-center gap-2 px-2.5 sm:px-5 py-2.5 text-sm font-bold rounded-xl bg-gradient-to-r from-red-700 to-red-600 hover:from-red-500 hover:to-red-500 text-white shadow-lg shadow-red-600/25 transition-all hover:scale-[1.02] active:scale-[0.98]"
         >
           <Plus className="w-5 h-5 sm:w-4 sm:h-4" />
           <span className="hidden sm:inline">Create Post</span>
@@ -159,3 +156,4 @@ export const Header: React.FC<HeaderProps> = ({
     </header>
   );
 };
+

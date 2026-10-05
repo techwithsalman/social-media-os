@@ -289,7 +289,7 @@ export default function ScheduledPostsPage() {
 
         <Link
           href="/create-post"
-          className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white text-sm font-bold shadow-lg shadow-indigo-600/30 transition-all"
+          className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-red-700 to-red-600 hover:from-red-600 hover:to-red-500 text-white text-sm font-bold shadow-lg shadow-red-600/30 transition-all"
         >
           <Plus className="w-4 h-4" />
           <span>New Scheduled Post</span>
@@ -317,7 +317,7 @@ export default function ScheduledPostsPage() {
 
       {loading ? (
         <div className="py-20 text-center">
-          <div className="w-10 h-10 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+          <div className="w-10 h-10 border-2 border-red-500 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
           <p className="text-sm text-slate-400 font-semibold">Loading scheduled queue...</p>
         </div>
       ) : posts.length === 0 ? (
@@ -329,7 +329,7 @@ export default function ScheduledPostsPage() {
           </p>
           <Link
             href="/create-post"
-            className="inline-flex items-center gap-2 mt-6 px-6 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-bold shadow-md"
+            className="inline-flex items-center gap-2 mt-6 px-6 py-3 rounded-xl bg-red-600 hover:bg-red-500 text-white text-sm font-bold shadow-md"
           >
             <Plus className="w-4 h-4" />
             <span>Create Scheduled Post</span>
@@ -397,7 +397,7 @@ export default function ScheduledPostsPage() {
                           <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
                             Time
                           </span>
-                          <p className="text-sm font-bold text-indigo-300 mt-0.5">
+                          <p className="text-sm font-bold text-red-400 mt-0.5">
                             {post.scheduledFor
                               ? formatTimeInTimeZone(post.scheduledFor, postTimezone)
                               : 'N/A'}
@@ -438,7 +438,7 @@ export default function ScheduledPostsPage() {
                       data-post-action="reschedule"
                       onClick={() => openRescheduleModal(post)}
                       disabled={disabled}
-                      className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-indigo-950/60 hover:bg-indigo-900/70 text-indigo-300 border border-indigo-500/30 text-xs md:text-sm font-bold transition-colors disabled:opacity-50"
+                      className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-red-950/60 hover:bg-red-900/70 text-red-400 border border-red-500/30 text-xs md:text-sm font-bold transition-colors disabled:opacity-50"
                     >
                       <Clock className="w-4 h-4" />
                       <span>Reschedule</span>
@@ -506,7 +506,7 @@ export default function ScheduledPostsPage() {
           <div className="w-full max-w-lg bg-[#0d1322] border border-slate-800 rounded-3xl p-8 shadow-2xl">
             <div className="flex items-center justify-between pb-4 border-b border-slate-800 mb-6">
               <div className="flex items-center gap-3">
-                <Clock className="w-5 h-5 text-indigo-400" />
+                <Clock className="w-5 h-5 text-red-500" />
                 <h4 className="text-base md:text-lg font-bold text-white">Reschedule Content</h4>
               </div>
               <button
@@ -538,7 +538,7 @@ export default function ScheduledPostsPage() {
                   required
                   value={newDate}
                   onChange={(e) => setNewDate(e.target.value)}
-                  className="w-full p-3 text-sm bg-slate-900 border border-slate-800 rounded-xl text-white focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                  className="w-full p-3 text-sm bg-slate-900 border border-slate-800 rounded-xl text-white focus:outline-none focus:ring-1 focus:ring-red-500"
                 />
               </div>
               <div>
@@ -551,7 +551,7 @@ export default function ScheduledPostsPage() {
                   required
                   value={newTime}
                   onChange={(e) => setNewTime(e.target.value)}
-                  className="w-full p-3 text-sm bg-slate-900 border border-slate-800 rounded-xl text-white focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                  className="w-full p-3 text-sm bg-slate-900 border border-slate-800 rounded-xl text-white focus:outline-none focus:ring-1 focus:ring-red-500"
                 />
               </div>
               <div>
@@ -562,7 +562,7 @@ export default function ScheduledPostsPage() {
                   ref={rescheduleTimezoneSelectRef}
                   value={newTimezone}
                   onChange={(e) => setNewTimezone(e.target.value)}
-                  className="w-full p-3 text-sm bg-slate-900 border border-slate-800 rounded-xl text-white focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                  className="w-full p-3 text-sm bg-slate-900 border border-slate-800 rounded-xl text-white focus:outline-none focus:ring-1 focus:ring-red-500"
                 >
                   {TIMEZONE_OPTIONS.map((option) => (
                     <option key={option.value} value={option.value}>
@@ -586,7 +586,7 @@ export default function ScheduledPostsPage() {
               <button
                 onClick={handleRescheduleSubmit}
                 disabled={actionLoadingId === reschedulePostId}
-                className="px-5 py-2.5 text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-500 rounded-xl shadow-md disabled:opacity-50"
+                className="px-5 py-2.5 text-sm font-bold text-white bg-red-600 hover:bg-red-500 rounded-xl shadow-md disabled:opacity-50"
               >
                 Save New Time
               </button>
