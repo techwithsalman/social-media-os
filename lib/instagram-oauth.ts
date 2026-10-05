@@ -24,7 +24,7 @@ export function getInstagramConfig(requireSecret: boolean) {
   const appSecret = process.env.INSTAGRAM_APP_SECRET?.trim() || process.env.META_APP_SECRET?.trim();
   
   const appUrl = process.env.NODE_ENV === "production"
-    ? "https://social-media-os.netlify.app"
+    ? (process.env.APP_URL || process.env.NEXT_PUBLIC_APP_URL || "https://app.techwithsalman.online")
     : "http://localhost:3000";
     
   const redirectUri = `${appUrl}/api/oauth/instagram/callback`;

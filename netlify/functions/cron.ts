@@ -12,7 +12,7 @@ export default async function reqHandler(req: Request) {
   const rawBaseUrl =
     process.env.URL ||
     process.env.DEPLOY_PRIME_URL ||
-    'https://social-media-os.netlify.app';
+    (process.env.APP_URL || process.env.NEXT_PUBLIC_APP_URL || 'https://app.techwithsalman.online');
 
   const baseUrl = rawBaseUrl.replace(/\/$/, '');
 

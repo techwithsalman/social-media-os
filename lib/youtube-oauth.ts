@@ -28,7 +28,7 @@ export function getYouTubeConfig() {
   const redirectUri = process.env.YOUTUBE_REDIRECT_URI || 
     (process.env.NODE_ENV === "development" 
       ? "http://localhost:3000/api/oauth/youtube/callback" 
-      : "https://social-media-os.netlify.app/api/oauth/youtube/callback");
+      : ((process.env.APP_URL || process.env.NEXT_PUBLIC_APP_URL || "https://app.techwithsalman.online") + "/api/oauth/youtube/callback"));
 
   if (!clientId || !clientSecret) {
     throw new YouTubeOAuthError(

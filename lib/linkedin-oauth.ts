@@ -23,7 +23,7 @@ export function getLinkedInRedirectUri(): string {
   const envUri = process.env.LINKEDIN_REDIRECT_URI?.trim();
   if (envUri) return envUri;
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.APP_URL || 'http://localhost:3000';
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.APP_URL || (process.env.NODE_ENV === 'production' ? 'https://app.techwithsalman.online' : 'http://localhost:3000');
   return `${appUrl.trim()}/api/oauth/linkedin/callback`;
 }
 

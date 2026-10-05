@@ -12,7 +12,7 @@ export async function GET(req: NextRequest) {
   const error = searchParams.get('error');
 
   const appUrl = process.env.NODE_ENV === "production"
-    ? "https://social-media-os.netlify.app"
+    ? (process.env.APP_URL || process.env.NEXT_PUBLIC_APP_URL || "https://app.techwithsalman.online")
     : "http://localhost:3000";
 
   if (error || !code) {

@@ -32,7 +32,7 @@ export function getTikTokRedirectUri(): string {
     return `${cleanAppUrl}/tiktok/callback/`;
   }
 
-  return 'http://localhost:3000/tiktok/callback/';
+  return (process.env.NODE_ENV === 'production' ? 'https://app.techwithsalman.online/tiktok/callback/' : 'http://localhost:3000/tiktok/callback/');
 }
 
 export function maskCredential(val: string): string {
