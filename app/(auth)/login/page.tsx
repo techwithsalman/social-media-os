@@ -3,12 +3,13 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Sparkles, Lock, Mail, ArrowRight, CheckCircle2 } from 'lucide-react';
+import { Lock, Mail, ArrowRight, Eye, EyeOff } from 'lucide-react';
 
 export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -48,7 +49,6 @@ export default function LoginPage() {
     setError('');
 
     try {
-      // Attempt login
       let res = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -59,7 +59,6 @@ export default function LoginPage() {
         }),
       });
 
-      // If demo user does not exist yet, auto-register
       if (!res.ok) {
         await fetch('/api/auth/signup', {
           method: 'POST',
@@ -73,7 +72,6 @@ export default function LoginPage() {
           }),
         });
 
-        // Seed demo accounts
         await fetch('/api/seed', { method: 'POST' });
 
         res = await fetch('/api/auth/login', {
@@ -99,28 +97,40 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#070b14] flex flex-col justify-center py-12 sm:px-6 lg:px-8 relative overflow-hidden">
-      {/* Background glow accents */}
-      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-indigo-600/15 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-purple-600/10 rounded-full blur-3xl pointer-events-none" />
+    <div className="min-h-screen bg-[#050000] flex flex-col justify-center py-12 sm:px-6 lg:px-8 relative overflow-hidden font-sans">
+      
+      {/* Background Orbit & Glow Effects */}
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[900px] h-[900px] border border-red-600/10 rounded-full pointer-events-none" />
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[650px] h-[650px] border border-red-500/30 rounded-full shadow-[0_0_120px_rgba(220,38,38,0.15)] pointer-events-none" />
+      <div className="absolute top-[20%] left-[30%] w-3 h-3 bg-red-500 rounded-full shadow-[0_0_20px_red] pointer-events-none" />
+      <div className="absolute top-[70%] right-[30%] w-4 h-4 bg-red-500 rounded-full shadow-[0_0_25px_red] pointer-events-none" />
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-[60%] w-[800px] h-[800px] bg-red-900/20 rounded-full blur-[120px] pointer-events-none" />
+      
+      {/* Faint Tech Grid */}
+      <div 
+        className="absolute inset-0 opacity-10 pointer-events-none" 
+        style={{ backgroundImage: 'linear-gradient(rgba(220,38,38,0.3) 1px, transparent 1px), linear-gradient(90deg, rgba(220,38,38,0.3) 1px, transparent 1px)', backgroundSize: '60px 60px' }} 
+      />
 
-      <div className="sm:mx-auto sm:w-full sm:max-w-md relative z-10 text-center">
-        <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-gradient-to-tr from-red-600 via-red-500 to-rose-500 text-white shadow-xl shadow-red-500/25 mb-4 overflow-hidden">
-          <img src="/tws-icon.svg" alt="Tech With Salman" className="w-full h-full object-cover" />
+      {/* Brand Area */}
+      <div className="sm:mx-auto sm:w-full sm:max-w-md relative z-10 text-center flex flex-col items-center">
+        <div className="w-24 h-24 mb-6 relative overflow-hidden rounded-full shadow-[0_0_50px_rgba(220,38,38,0.5)] border border-red-500/40 bg-black/50 p-2">
+          <img src="/icon.svg" alt="Tech With Salman" className="w-full h-full object-contain" />
         </div>
-        <h1 className="text-2xl font-black tracking-tight text-white">
-          Tech With Salman
+        <h1 className="text-3xl font-black tracking-tight text-white uppercase">
+          <span className="text-red-600">TECH</span> <span className="text-slate-200">WITH</span> <span className="text-red-600">SALMAN</span>
         </h1>
-        <h2 className="mt-1 text-sm font-semibold text-indigo-400">
-          Social Media OS
+        <h2 className="mt-1 text-base font-bold text-slate-100">
+          Social Media <span className="text-red-600">OS</span>
         </h2>
-        <p className="mt-1.5 text-xs text-slate-400">
+        <p className="mt-2 text-xs text-slate-400">
           Sign in to your multi-platform command center
         </p>
       </div>
 
-      <div className="mt-6 sm:mx-auto sm:w-full sm:max-w-md relative z-10 px-4 sm:px-0">
-        <div className="bg-[#0d1322] py-8 px-6 sm:px-8 shadow-2xl rounded-2xl border border-slate-800 backdrop-blur-xl">
+      {/* Login Card */}
+      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-[420px] relative z-10 px-4 sm:px-0">
+        <div className="bg-[#0a0000]/80 py-8 px-6 sm:px-8 shadow-[0_0_40px_rgba(220,38,38,0.1)] rounded-2xl border border-red-600/30 backdrop-blur-xl">
           {error && (
             <div className="mb-5 p-3 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-xs flex items-center gap-2">
               <span className="w-1.5 h-1.5 rounded-full bg-red-400 shrink-0" />
@@ -128,9 +138,9 @@ export default function LoginPage() {
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-5">
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+              <label className="block text-xs font-bold text-slate-200 mb-1.5">
                 Email Address
               </label>
               <div className="relative">
@@ -143,13 +153,13 @@ export default function LoginPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="alex@company.com"
-                  className="block w-full pl-9 pr-3 py-2 text-xs bg-slate-900/90 border border-slate-800 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+                  className="block w-full pl-9 pr-3 py-2.5 text-sm bg-black/50 border border-red-500/20 rounded-xl text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-red-600/50 focus:border-red-500 transition-all shadow-inner shadow-black/50"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+              <label className="block text-xs font-bold text-slate-200 mb-1.5">
                 Password
               </label>
               <div className="relative">
@@ -157,25 +167,32 @@ export default function LoginPage() {
                   <Lock className="w-4 h-4" />
                 </div>
                 <input
-                  type="password"
+                  type={showPassword ? 'text' : 'password'}
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="block w-full pl-9 pr-3 py-2 text-xs bg-slate-900/90 border border-slate-800 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+                  className="block w-full pl-9 pr-10 py-2.5 text-sm bg-black/50 border border-red-500/20 rounded-xl text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-red-600/50 focus:border-red-500 transition-all shadow-inner shadow-black/50"
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-500 hover:text-slate-300 transition-colors"
+                >
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
               </div>
             </div>
 
             <div className="flex items-center justify-between text-xs pt-1">
-              <label className="flex items-center gap-2 text-slate-400 cursor-pointer">
+              <label className="flex items-center gap-2 text-slate-300 cursor-pointer hover:text-white transition-colors">
                 <input
                   type="checkbox"
                   checked={rememberMe}
                   onChange={(e) => setRememberMe(e.target.checked)}
-                  className="rounded border-slate-700 bg-slate-900 text-indigo-600 focus:ring-indigo-500 w-3.5 h-3.5"
+                  className="rounded border-red-900 bg-black text-red-600 focus:ring-red-600 focus:ring-offset-black w-3.5 h-3.5"
                 />
-                <span>Remember me</span>
+                <span className="font-medium">Remember me</span>
               </label>
 
               <a
@@ -184,7 +201,7 @@ export default function LoginPage() {
                   e.preventDefault();
                   alert('Password reset instructions will be sent to your email.');
                 }}
-                className="font-medium text-indigo-400 hover:text-indigo-300"
+                className="font-bold text-red-500 hover:text-red-400 transition-colors"
               >
                 Forgot password?
               </a>
@@ -193,30 +210,30 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full mt-2 flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white text-xs font-bold shadow-lg shadow-indigo-600/25 transition-all disabled:opacity-50 active:scale-[0.99]"
+              className="w-full mt-4 flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-gradient-to-r from-red-700 to-red-500 hover:from-red-600 hover:to-red-400 text-white text-sm font-bold shadow-[0_0_20px_rgba(220,38,38,0.4)] transition-all disabled:opacity-50 active:scale-[0.98]"
             >
               {loading ? (
                 <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
               ) : (
                 <>
-                  <span>Login</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
+                  <span>Sign In</span>
+                  <ArrowRight className="w-4 h-4" />
                 </>
               )}
             </button>
           </form>
 
-          {/* Quick Demo One-Click Access */}
-          <div className="mt-5 flex items-center">
+          {/* Divider */}
+          <div className="mt-7 flex items-center">
             <div className="w-full border-t border-slate-800"></div>
             <span className="px-3 text-xs text-slate-500 font-medium">OR</span>
             <div className="w-full border-t border-slate-800"></div>
           </div>
 
-          <div className="mt-5">
+          <div className="mt-7">
             <a
               href="/api/auth/google"
-              className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg bg-white hover:bg-slate-50 text-slate-900 text-xs font-bold transition-all"
+              className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-white hover:bg-slate-100 text-slate-900 text-sm font-bold transition-all shadow-sm active:scale-[0.98]"
             >
               <svg className="w-4 h-4" viewBox="0 0 24 24">
                 <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -234,19 +251,18 @@ export default function LoginPage() {
                 onClick={handleQuickDemo}
                 disabled={loading}
                 type="button"
-                className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-lg bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 text-xs font-semibold transition-all"
+                className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 text-xs font-semibold transition-all"
               >
-                <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
                 <span>1-Click Instant Demo Login (Dev Only)</span>
               </button>
             </div>
           )}
 
-          <div className="mt-6 text-center text-xs text-slate-400">
+          <div className="mt-8 text-center text-xs text-slate-400">
             Don&apos;t have an account?{' '}
             <Link
               href="/signup"
-              className="font-semibold text-indigo-400 hover:text-indigo-300"
+              className="font-bold text-red-500 hover:text-red-400 transition-colors"
             >
               Sign Up
             </Link>

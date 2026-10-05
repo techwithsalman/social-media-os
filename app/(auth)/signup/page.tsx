@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Sparkles, Lock, Mail, User, ArrowRight } from 'lucide-react';
+import { User, Lock, Mail, ArrowRight, Eye, EyeOff } from 'lucide-react';
 
 export default function SignupPage() {
   const router = useRouter();
@@ -12,6 +12,7 @@ export default function SignupPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -30,51 +31,69 @@ export default function SignupPage() {
       const res = await fetch('/api/auth/signup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          firstName,
-          lastName,
-          email,
-          password,
-          confirmPassword,
-        }),
+        body: JSON.stringify({ firstName, lastName, email, password, confirmPassword }),
       });
 
       const data = await res.json();
 
       if (!res.ok) {
-        throw new Error(data.error || 'Failed to create account');
+        throw new Error(data.error || 'Signup failed');
       }
 
-      router.push('/dashboard');
-      router.refresh();
+      const loginRes = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password, rememberMe: true }),
+      });
+
+      if (loginRes.ok) {
+        router.push('/dashboard');
+        router.refresh();
+      } else {
+        router.push('/login');
+      }
     } catch (err: any) {
-      setError(err.message || 'Registration failed');
+      setError(err.message || 'Something went wrong');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-[#070b14] flex flex-col justify-center py-12 sm:px-6 lg:px-8 relative overflow-hidden">
-      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-indigo-600/15 rounded-full blur-3xl pointer-events-none" />
+    <div className="min-h-screen bg-[#050000] flex flex-col justify-center py-12 sm:px-6 lg:px-8 relative overflow-hidden font-sans">
+      
+      {/* Background Orbit & Glow Effects */}
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[900px] h-[900px] border border-red-600/10 rounded-full pointer-events-none" />
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[650px] h-[650px] border border-red-500/30 rounded-full shadow-[0_0_120px_rgba(220,38,38,0.15)] pointer-events-none" />
+      <div className="absolute top-[20%] left-[30%] w-3 h-3 bg-red-500 rounded-full shadow-[0_0_20px_red] pointer-events-none" />
+      <div className="absolute top-[70%] right-[30%] w-4 h-4 bg-red-500 rounded-full shadow-[0_0_25px_red] pointer-events-none" />
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-[60%] w-[800px] h-[800px] bg-red-900/20 rounded-full blur-[120px] pointer-events-none" />
+      
+      {/* Faint Tech Grid */}
+      <div 
+        className="absolute inset-0 opacity-10 pointer-events-none" 
+        style={{ backgroundImage: 'linear-gradient(rgba(220,38,38,0.3) 1px, transparent 1px), linear-gradient(90deg, rgba(220,38,38,0.3) 1px, transparent 1px)', backgroundSize: '60px 60px' }} 
+      />
 
-      <div className="sm:mx-auto sm:w-full sm:max-w-md relative z-10 text-center">
-        <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-gradient-to-tr from-red-600 via-red-500 to-rose-500 text-white shadow-xl shadow-red-500/25 mb-4 overflow-hidden">
-          <img src="/tws-icon.svg" alt="Tech With Salman" className="w-full h-full object-cover" />
+      {/* Brand Area */}
+      <div className="sm:mx-auto sm:w-full sm:max-w-md relative z-10 text-center flex flex-col items-center">
+        <div className="w-24 h-24 mb-6 relative overflow-hidden rounded-full shadow-[0_0_50px_rgba(220,38,38,0.5)] border border-red-500/40 bg-black/50 p-2">
+          <img src="/icon.svg" alt="Tech With Salman" className="w-full h-full object-contain" />
         </div>
-        <h1 className="text-2xl font-black tracking-tight text-white">
-          Tech With Salman
+        <h1 className="text-3xl font-black tracking-tight text-white uppercase">
+          <span className="text-red-600">TECH</span> <span className="text-slate-200">WITH</span> <span className="text-red-600">SALMAN</span>
         </h1>
-        <h2 className="mt-1 text-sm font-semibold text-indigo-400">
-          Social Media OS
+        <h2 className="mt-1 text-base font-bold text-slate-100">
+          Social Media <span className="text-red-600">OS</span>
         </h2>
-        <p className="mt-1.5 text-xs text-slate-400">
+        <p className="mt-2 text-xs text-slate-400">
           Start publishing to every social platform from one dashboard
         </p>
       </div>
 
-      <div className="mt-6 sm:mx-auto sm:w-full sm:max-w-md relative z-10 px-4 sm:px-0">
-        <div className="bg-[#0d1322] py-8 px-6 sm:px-8 shadow-2xl rounded-2xl border border-slate-800 backdrop-blur-xl">
+      {/* Signup Card */}
+      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-[420px] relative z-10 px-4 sm:px-0">
+        <div className="bg-[#0a0000]/80 py-8 px-6 sm:px-8 shadow-[0_0_40px_rgba(220,38,38,0.1)] rounded-2xl border border-red-600/30 backdrop-blur-xl">
           {error && (
             <div className="mb-5 p-3 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-xs flex items-center gap-2">
               <span className="w-1.5 h-1.5 rounded-full bg-red-400 shrink-0" />
@@ -85,12 +104,12 @@ export default function SignupPage() {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                <label className="block text-xs font-bold text-slate-200 mb-1.5">
                   First Name
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-500">
-                    <User className="w-3.5 h-3.5" />
+                    <User className="w-4 h-4" />
                   </div>
                   <input
                     type="text"
@@ -98,13 +117,13 @@ export default function SignupPage() {
                     value={firstName}
                     onChange={(e) => setFirstName(e.target.value)}
                     placeholder="Alex"
-                    className="block w-full pl-8 pr-3 py-2 text-xs bg-slate-900/90 border border-slate-800 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+                    className="block w-full pl-9 pr-3 py-2.5 text-sm bg-black/50 border border-red-500/20 rounded-xl text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-red-600/50 focus:border-red-500 transition-all shadow-inner shadow-black/50"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                <label className="block text-xs font-bold text-slate-200 mb-1.5">
                   Last Name
                 </label>
                 <input
@@ -113,13 +132,13 @@ export default function SignupPage() {
                   value={lastName}
                   onChange={(e) => setLastName(e.target.value)}
                   placeholder="Rivera"
-                  className="block w-full px-3 py-2 text-xs bg-slate-900/90 border border-slate-800 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+                  className="block w-full px-3 py-2.5 text-sm bg-black/50 border border-red-500/20 rounded-xl text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-red-600/50 focus:border-red-500 transition-all shadow-inner shadow-black/50"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+              <label className="block text-xs font-bold text-slate-200 mb-1.5">
                 Email Address
               </label>
               <div className="relative">
@@ -132,13 +151,13 @@ export default function SignupPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="alex@company.com"
-                  className="block w-full pl-9 pr-3 py-2 text-xs bg-slate-900/90 border border-slate-800 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+                  className="block w-full pl-9 pr-3 py-2.5 text-sm bg-black/50 border border-red-500/20 rounded-xl text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-red-600/50 focus:border-red-500 transition-all shadow-inner shadow-black/50"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+              <label className="block text-xs font-bold text-slate-200 mb-1.5">
                 Password
               </label>
               <div className="relative">
@@ -146,18 +165,25 @@ export default function SignupPage() {
                   <Lock className="w-4 h-4" />
                 </div>
                 <input
-                  type="password"
+                  type={showPassword ? 'text' : 'password'}
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="block w-full pl-9 pr-3 py-2 text-xs bg-slate-900/90 border border-slate-800 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+                  className="block w-full pl-9 pr-10 py-2.5 text-sm bg-black/50 border border-red-500/20 rounded-xl text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-red-600/50 focus:border-red-500 transition-all shadow-inner shadow-black/50"
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-500 hover:text-slate-300 transition-colors"
+                >
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+              <label className="block text-xs font-bold text-slate-200 mb-1.5">
                 Confirm Password
               </label>
               <div className="relative">
@@ -165,12 +191,12 @@ export default function SignupPage() {
                   <Lock className="w-4 h-4" />
                 </div>
                 <input
-                  type="password"
+                  type={showPassword ? 'text' : 'password'}
                   required
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="block w-full pl-9 pr-3 py-2 text-xs bg-slate-900/90 border border-slate-800 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+                  className="block w-full pl-9 pr-3 py-2.5 text-sm bg-black/50 border border-red-500/20 rounded-xl text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-red-600/50 focus:border-red-500 transition-all shadow-inner shadow-black/50"
                 />
               </div>
             </div>
@@ -178,29 +204,30 @@ export default function SignupPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full mt-2 flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white text-xs font-bold shadow-lg shadow-indigo-600/25 transition-all disabled:opacity-50 active:scale-[0.99]"
+              className="w-full mt-4 flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-gradient-to-r from-red-700 to-red-500 hover:from-red-600 hover:to-red-400 text-white text-sm font-bold shadow-[0_0_20px_rgba(220,38,38,0.4)] transition-all disabled:opacity-50 active:scale-[0.98]"
             >
               {loading ? (
                 <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
               ) : (
                 <>
                   <span>Create Account</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
+                  <ArrowRight className="w-4 h-4" />
                 </>
               )}
             </button>
           </form>
 
-          <div className="mt-5 flex items-center">
+          {/* Divider */}
+          <div className="mt-7 flex items-center">
             <div className="w-full border-t border-slate-800"></div>
             <span className="px-3 text-xs text-slate-500 font-medium">OR</span>
             <div className="w-full border-t border-slate-800"></div>
           </div>
 
-          <div className="mt-5">
+          <div className="mt-7">
             <a
               href="/api/auth/google"
-              className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg bg-white hover:bg-slate-50 text-slate-900 text-xs font-bold transition-all"
+              className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-white hover:bg-slate-100 text-slate-900 text-sm font-bold transition-all shadow-sm active:scale-[0.98]"
             >
               <svg className="w-4 h-4" viewBox="0 0 24 24">
                 <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -212,13 +239,13 @@ export default function SignupPage() {
             </a>
           </div>
 
-          <div className="mt-6 text-center text-xs text-slate-400">
+          <div className="mt-8 text-center text-xs text-slate-400">
             Already have an account?{' '}
             <Link
               href="/login"
-              className="font-semibold text-indigo-400 hover:text-indigo-300"
+              className="font-bold text-red-500 hover:text-red-400 transition-colors"
             >
-              Login
+              Sign In
             </Link>
           </div>
         </div>
