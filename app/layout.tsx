@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'Social Media OS | One Content → Every Platform',
+  title: 'Tech With Salman | Social Media OS',
   description:
     'Full-stack modern multi-platform social media operating system for creators and brands.',
 };

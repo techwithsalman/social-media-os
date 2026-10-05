@@ -59,11 +59,14 @@ export default function SignupPage() {
       <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-indigo-600/15 rounded-full blur-3xl pointer-events-none" />
 
       <div className="sm:mx-auto sm:w-full sm:max-w-md relative z-10 text-center">
-        <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-purple-500 text-white shadow-xl shadow-indigo-500/25 mb-4">
-          <Sparkles className="w-6 h-6" />
+        <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-gradient-to-tr from-red-600 via-red-500 to-rose-500 text-white shadow-xl shadow-red-500/25 mb-4 overflow-hidden">
+          <img src="/tws-icon.svg" alt="Tech With Salman" className="w-full h-full object-cover" />
         </div>
-        <h2 className="text-2xl font-black tracking-tight text-white">
-          Create your account
+        <h1 className="text-2xl font-black tracking-tight text-white">
+          Tech With Salman
+        </h1>
+        <h2 className="mt-1 text-sm font-semibold text-indigo-400">
+          Social Media OS
         </h2>
         <p className="mt-1.5 text-xs text-slate-400">
           Start publishing to every social platform from one dashboard
