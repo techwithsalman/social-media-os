@@ -5,6 +5,7 @@ import { AppLayout } from '@/components/layout/AppLayout';
 import { PlatformIcon } from '@/components/ui/PlatformIcons';
 import { SUPPORTED_PLATFORM_CONFIGS } from '@/lib/platforms';
 import {
+  ChevronLeft,
   Share2,
   Check,
   RefreshCw,
@@ -311,18 +312,24 @@ export default function ConnectedAccountsPage() {
 
   return (
     <AppLayout title="Connected Social Channels">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
-        <div>
-          <h1 className="text-2xl md:text-3xl font-black text-white tracking-tight">
-            Connected Channels ({connectedPlatformCount} / {supportedPlatforms.length})
-          </h1>
-          <p className="text-sm md:text-base text-neutral-400 mt-1.5">
-            Connect your official social media accounts to manage and schedule content.
-          </p>
-        </div>
+      {/* Top Header */}
+      <div className="flex items-center gap-4 mb-6">
+        <button onClick={() => window.history.back()} className="flex items-center gap-2 px-3 py-1.5 text-sm font-semibold text-neutral-400 hover:text-white transition-colors border border-[#22222a] rounded-lg bg-[#0e0e12]">
+          <ChevronLeft className="w-4 h-4" />
+          Back
+        </button>
+        <h1 className="text-2xl font-black text-white tracking-tight">Connected Social Channels</h1>
+      </div>
 
-        <div className="flex items-center gap-2">
-          
+      {/* Hero Banner */}
+      <div className="p-6 md:p-8 rounded-[32px] bg-gradient-to-r from-[#170505] via-[#3a0508] to-[#120202] border border-red-500/20 shadow-[0_0_30px_rgba(220,38,38,0.1)] relative overflow-hidden mb-12 group">
+        <div className="absolute top-0 right-0 w-2/3 h-full bg-gradient-to-l from-red-600/15 to-transparent pointer-events-none blur-[50px] rounded-full" />
+        <div className="absolute -bottom-24 -right-24 w-[500px] h-[500px] bg-red-600/10 blur-[100px] rounded-full pointer-events-none" />
+        <div className="absolute inset-0 bg-[url('/noise.png')] opacity-[0.03] mix-blend-overlay pointer-events-none" />
+        
+        <div className="relative z-10">
+          <h2 className="text-3xl md:text-4xl font-black text-white tracking-tight drop-shadow-md mb-2">Connected Channels ({connectedPlatformCount} / {supportedPlatforms.length})</h2>
+          <p className="text-base md:text-lg text-neutral-300 font-medium">Connect your official social media accounts to manage and schedule content.</p>
         </div>
       </div>
 
@@ -526,6 +533,8 @@ export default function ConnectedAccountsPage() {
     </AppLayout>
   );
 }
+
+
 
 
 

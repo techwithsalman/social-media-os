@@ -148,6 +148,31 @@ export default function ContentCalendarPage() {
 
   return (
     <AppLayout title="Content Calendar">
+      {/* Top Header */}
+      <div className="flex items-center gap-4 mb-6">
+        <button onClick={() => router.back()} className="flex items-center gap-2 px-3 py-1.5 text-sm font-semibold text-neutral-400 hover:text-white transition-colors border border-[#22222a] rounded-lg bg-[#0e0e12]">
+          <ChevronLeft className="w-4 h-4" />
+          Back
+        </button>
+        <h1 className="text-2xl font-black text-white tracking-tight">Content Calendar</h1>
+      </div>
+
+      {/* Hero Banner */}
+      <div className="p-6 md:p-8 rounded-[32px] bg-gradient-to-r from-[#170505] via-[#3a0508] to-[#120202] border border-red-500/20 shadow-[0_0_30px_rgba(220,38,38,0.1)] relative overflow-hidden mb-8 group">
+        <div className="absolute top-0 right-0 w-2/3 h-full bg-gradient-to-l from-red-600/15 to-transparent pointer-events-none blur-[50px] rounded-full" />
+        <div className="absolute -bottom-24 -right-24 w-[500px] h-[500px] bg-red-600/10 blur-[100px] rounded-full pointer-events-none" />
+        
+        <div className="relative z-10 flex flex-col md:flex-row md:items-center gap-5">
+          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-red-600 to-red-800 flex items-center justify-center shadow-lg shadow-red-950/50 shrink-0 border border-red-400/20">
+            <CalendarIcon className="w-8 h-8 text-white" />
+          </div>
+          <div>
+            <h2 className="text-2xl md:text-3xl font-black text-white tracking-tight drop-shadow-md">Content Calendar</h2>
+            <p className="text-sm md:text-base text-neutral-300 font-medium mt-1">Plan, <span className="text-red-400">manage</span>, and schedule your content across all connected platforms.</p>
+          </div>
+        </div>
+      </div>
+
       <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4 mb-8">
         <div className="flex flex-wrap items-center gap-3">
           <button
@@ -206,8 +231,8 @@ export default function ContentCalendarPage() {
       </div>
 
       {viewMode === 'MONTH' && (
-        <div className="bg-[#0e0e12] border border-[#22222a] rounded-3xl overflow-hidden shadow-md">
-          <div className="grid grid-cols-7 border-b border-[#22222a] bg-[#0e0e12] text-xs md:text-sm font-bold text-neutral-400 text-center py-3.5">
+        <div className="bg-transparent border border-red-500/10 rounded-[32px] overflow-hidden shadow-md p-2">
+          <div className="grid grid-cols-7 text-xs md:text-sm font-bold text-neutral-400 text-center py-4 px-2">
             <span>Sun</span>
             <span>Mon</span>
             <span>Tue</span>
@@ -217,13 +242,13 @@ export default function ContentCalendarPage() {
             <span>Sat</span>
           </div>
 
-          <div className="grid grid-cols-7 auto-rows-fr bg-[#070b14] gap-[1px]">
+          <div className="grid grid-cols-7 auto-rows-fr gap-1 p-1">
             {calendarDays.map((dayNum, idx) => {
               if (!dayNum) {
                 return (
                   <div
                     key={`empty_${idx}`}
-                    className="min-h-[140px] bg-[#0e0e12]/40 p-3 opacity-40"
+                    className="min-h-[140px] p-3 opacity-40 bg-[#0b0c10]/20 rounded-2xl m-0.5"
                   />
                 );
               }
@@ -247,19 +272,24 @@ export default function ContentCalendarPage() {
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' || e.key === ' ') setCalendarDate(dateKey);
                   }}
-                  className={`min-h-[140px] bg-[#0e0e12] p-3 flex flex-col justify-between text-left hover:bg-[#0e0e12]/70 transition-colors border-t border-[#22222a]/50 ${
-                    hasPosts ? 'border-red-500/40' : ''
-                  } ${isToday ? 'ring-2 ring-inset ring-red-500/70' : ''} ${
-                    isSelected && !isToday ? 'ring-2 ring-inset ring-emerald-500/60' : ''
+                  className={`relative overflow-hidden min-h-[140px] p-3 flex flex-col justify-between text-left transition-all border border-red-500/10 rounded-2xl m-0.5 group ${
+                    isToday ? 'bg-[#180505] border-red-500/50 shadow-[0_0_15px_rgba(220,38,38,0.15)] ring-1 ring-red-500/50' 
+                    : isSelected ? 'bg-[#180505] border-red-500/30 ring-1 ring-red-500/30'
+                    : 'bg-[#0f0f13] hover:bg-[#15151a]'
                   }`}
                 >
-                  <div className="flex items-center justify-between mb-2">
+                  {isToday && (
+                    <div className="absolute -bottom-8 -right-8 w-24 h-24 bg-red-600/30 blur-[20px] rounded-full pointer-events-none" />
+                  )}
+                  <div className="absolute inset-0 bg-gradient-to-tr from-transparent to-red-500/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+
+                  <div className="relative z-10 flex items-center justify-between mb-2">
                     <span
                       className={`text-sm font-bold ${
                         isToday
-                          ? 'w-7 h-7 rounded-full bg-red-600 text-white flex items-center justify-center shadow-md'
+                          ? 'w-7 h-7 rounded-full bg-red-600 text-white flex items-center justify-center shadow-md shadow-red-900/50'
                           : isSelected
-                          ? 'w-7 h-7 rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-500/40 flex items-center justify-center'
+                          ? 'text-red-400'
                           : 'text-neutral-400'
                       }`}
                     >

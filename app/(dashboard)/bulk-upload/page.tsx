@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useRef } from 'react';
-import { useRouter } from 'next/navigation';
+import { Zap, useRouter } from 'next/navigation';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PlatformIcon } from '@/components/ui/PlatformIcons';
 import {
@@ -311,7 +311,7 @@ export default function BulkUploadPage() {
           {/* Multi-Dropzone */}
           <div
             onClick={() => fileInputRef.current?.click()}
-            className="cursor-pointer border-2 border-dashed border-[#33333e] hover:border-red-500/80 rounded-3xl p-8 text-center bg-[#0e0e12]/80 hover:bg-[#0e0e12] transition-all group"
+            className="cursor-pointer border-2 border-dashed border-red-500/30 hover:border-red-500/80 rounded-[32px] p-10 text-center bg-[#0c0c10] hover:bg-[#121216] transition-all group shadow-inner"
           >
             <input
               ref={fileInputRef}
