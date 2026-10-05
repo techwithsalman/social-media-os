@@ -119,7 +119,7 @@ export default function TeamPage() {
       )}
 
       {/* Team Members List */}
-      <div className="bg-[#0a0404] border border-[#2a1010] rounded-3xl p-6 md:p-8 shadow-md mb-10">
+      <div className="bg-[#0e0e12] border border-[#22222a] rounded-3xl p-6 md:p-8 shadow-md mb-10">
         <div className="divide-y divide-[#2a1010]">
           {members.map((member) => (
             <div
@@ -145,7 +145,7 @@ export default function TeamPage() {
                       ? 'bg-red-500/20 text-purple-300 border border-red-500/30'
                       : member.role === 'ADMIN'
                       ? 'bg-red-500/20 text-red-400 border border-red-500/30'
-                      : 'bg-[#1a0a0a] text-neutral-300 border border-[#3a1515]'
+                      : 'bg-[#18181f] text-neutral-300 border border-[#33333e]'
                   }`}
                 >
                   {member.role}
@@ -160,14 +160,14 @@ export default function TeamPage() {
       </div>
 
       {/* Roles & Permissions Matrix */}
-      <div className="bg-[#0a0404] border border-[#2a1010] rounded-3xl p-6 md:p-8 shadow-md">
-        <h3 className="text-base md:text-lg font-bold text-white mb-6 flex items-center gap-2.5 pb-4 border-b border-[#2a1010]">
+      <div className="bg-[#0e0e12] border border-[#22222a] rounded-3xl p-6 md:p-8 shadow-md">
+        <h3 className="text-base md:text-lg font-bold text-white mb-6 flex items-center gap-2.5 pb-4 border-b border-[#22222a]">
           <Shield className="w-5 h-5 text-red-500" />
           <span>Role Permissions Matrix</span>
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
           {rolePermissions.map((rp) => (
-            <div key={rp.role} className="p-5 rounded-2xl bg-[#0f0505]/70 border border-[#2a1010]">
+            <div key={rp.role} className="p-5 rounded-2xl bg-[#0e0e12]/70 border border-[#22222a]">
               <span className={`px-2.5 py-1 rounded-lg text-xs font-bold ${rp.color}`}>
                 {rp.role}
               </span>
@@ -180,8 +180,8 @@ export default function TeamPage() {
       {/* INVITE MODAL */}
       {showInviteModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-md">
-          <div className="w-full max-w-lg bg-[#0a0404] border border-[#2a1010] rounded-3xl p-8 shadow-2xl">
-            <div className="flex items-center justify-between pb-4 border-b border-[#2a1010] mb-6">
+          <div className="w-full max-w-lg bg-[#0e0e12] border border-[#22222a] rounded-3xl p-8 shadow-2xl">
+            <div className="flex items-center justify-between pb-4 border-b border-[#22222a] mb-6">
               <h4 className="text-base md:text-lg font-bold text-white">Invite Team Member</h4>
               <button onClick={() => setShowInviteModal(false)} className="text-neutral-400 hover:text-white">
                 <X className="w-5 h-5" />
@@ -197,7 +197,7 @@ export default function TeamPage() {
                   value={inviteEmail}
                   onChange={(e) => setInviteEmail(e.target.value)}
                   placeholder="colleague@company.com"
-                  className="w-full p-3 text-sm bg-[#0f0505] border border-[#2a1010] rounded-xl text-white focus:outline-none focus:ring-1 focus:ring-red-500"
+                  className="w-full p-3 text-sm bg-[#0e0e12] border border-[#22222a] rounded-xl text-white focus:outline-none focus:ring-1 focus:ring-red-500"
                 />
               </div>
 
@@ -206,7 +206,7 @@ export default function TeamPage() {
                 <select
                   value={inviteRole}
                   onChange={(e) => setInviteRole(e.target.value)}
-                  className="w-full p-3 text-sm bg-[#0f0505] border border-[#2a1010] rounded-xl text-white focus:outline-none focus:ring-1 focus:ring-red-500"
+                  className="w-full p-3 text-sm bg-[#0e0e12] border border-[#22222a] rounded-xl text-white focus:outline-none focus:ring-1 focus:ring-red-500"
                 >
                   <option value="ADMIN">Admin (Full Management)</option>
                   <option value="EDITOR">Editor (Create & Publish)</option>
@@ -218,7 +218,7 @@ export default function TeamPage() {
                 <button
                   type="button"
                   onClick={() => setShowInviteModal(false)}
-                  className="px-5 py-2.5 text-sm font-semibold text-neutral-400 hover:bg-[#1a0a0a] rounded-xl"
+                  className="px-5 py-2.5 text-sm font-semibold text-neutral-400 hover:bg-[#18181f] rounded-xl"
                 >
                   Cancel
                 </button>

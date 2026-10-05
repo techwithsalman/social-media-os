@@ -20,7 +20,7 @@ export default function AnalyticsPage() {
 
   const metrics = [
     { label: 'Total Impressions', value: "--", change: "--", icon: Eye, color: 'text-red-500' },
-    { label: 'Total Reach', value: "--", change: "--", icon: Users, color: 'text-blue-400' },
+    { label: 'Total Reach', value: "--", change: "--", icon: Users, color: 'text-amber-400' },
     { label: 'Engagement Rate', value: "--", change: "--", icon: TrendingUp, color: 'text-emerald-400' },
     { label: 'Total Likes', value: "--", change: "--", icon: Heart, color: 'text-rose-400' },
     { label: 'Comments', value: "--", change: "--", icon: MessageCircle, color: 'text-amber-400' },
@@ -49,7 +49,7 @@ export default function AnalyticsPage() {
         </div>
 
         {/* Date Filter */}
-        <div className="flex items-center bg-[#0a0404] border border-[#2a1010] rounded-2xl p-1.5 text-sm font-bold shadow-sm">
+        <div className="flex items-center bg-[#0e0e12] border border-[#22222a] rounded-2xl p-1.5 text-sm font-bold shadow-sm">
           {['7D', '30D', '90D', 'YTD'].map((range) => (
             <button
               key={range}
@@ -71,7 +71,7 @@ export default function AnalyticsPage() {
         {metrics.map((m) => {
           const Icon = m.icon;
           return (
-            <div key={m.label} className="p-5 md:p-6 rounded-2xl bg-[#0a0404] border border-[#2a1010] shadow-sm flex flex-col justify-between min-h-[140px]">
+            <div key={m.label} className="p-5 md:p-6 rounded-2xl bg-[#0e0e12] border border-[#22222a] shadow-sm flex flex-col justify-between min-h-[140px]">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold text-neutral-400 uppercase tracking-wider">
                   {m.label}
@@ -91,8 +91,8 @@ export default function AnalyticsPage() {
       </div>
 
       {/* Platform Performance Table */}
-      <div className="bg-[#0a0404] border border-[#2a1010] rounded-3xl p-6 md:p-8 shadow-md mb-10">
-        <div className="flex items-center justify-between mb-6 pb-4 border-b border-[#2a1010]">
+      <div className="bg-[#0e0e12] border border-[#22222a] rounded-3xl p-6 md:p-8 shadow-md mb-10">
+        <div className="flex items-center justify-between mb-6 pb-4 border-b border-[#22222a]">
           <div className="flex items-center gap-3">
             <BarChart3 className="w-5 h-5 text-red-500" />
             <h3 className="text-lg md:text-xl font-bold text-white">Platform Performance Breakdown</h3>
@@ -105,7 +105,7 @@ export default function AnalyticsPage() {
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm">
             <thead>
-              <tr className="border-b border-[#2a1010] text-neutral-400 uppercase text-xs font-bold">
+              <tr className="border-b border-[#22222a] text-neutral-400 uppercase text-xs font-bold">
                 <th className="pb-4">Channel</th>
                 <th className="pb-4">Audience / Followers</th>
                 <th className="pb-4">Total Views</th>
@@ -115,7 +115,7 @@ export default function AnalyticsPage() {
             </thead>
             <tbody className="divide-y divide-[#2a1010]/60">
               {platformBreakdown.map((item) => (
-                <tr key={item.platform} className="hover:bg-[#0f0505]/40 transition-colors">
+                <tr key={item.platform} className="hover:bg-[#0e0e12]/40 transition-colors">
                   <td className="py-4 flex items-center gap-3">
                     <PlatformIcon platform={item.platform} size={24} className="w-6 h-6 rounded-lg" />
                     <span className="font-bold text-white text-base">{item.platform}</span>
@@ -133,3 +133,4 @@ export default function AnalyticsPage() {
     </AppLayout>
   );
 }
+

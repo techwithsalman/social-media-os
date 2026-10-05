@@ -142,12 +142,12 @@ export default function MetaAccountSelectionPage() {
         )}
 
         {loading ? (
-          <div className="rounded-3xl bg-[#0a0404] border border-[#2a1010] p-10 flex items-center justify-center gap-3 text-neutral-300">
+          <div className="rounded-3xl bg-[#0e0e12] border border-[#22222a] p-10 flex items-center justify-center gap-3 text-neutral-300">
             <Loader2 className="w-5 h-5 animate-spin text-red-400" />
             <span className="text-sm font-bold">Loading Meta accounts...</span>
           </div>
         ) : accounts.length === 0 ? (
-          <div className="rounded-3xl bg-[#0a0404] border border-[#2a1010] p-8 text-center">
+          <div className="rounded-3xl bg-[#0e0e12] border border-[#22222a] p-8 text-center">
             <p className="text-sm font-bold text-neutral-300">No eligible Meta accounts were returned.</p>
             <button
               onClick={() => router.push('/accounts')}
@@ -157,7 +157,7 @@ export default function MetaAccountSelectionPage() {
             </button>
           </div>
         ) : (
-          <div className="rounded-3xl bg-[#0a0404] border border-[#2a1010] p-6 md:p-8 shadow-md">
+          <div className="rounded-3xl bg-[#0e0e12] border border-[#22222a] p-6 md:p-8 shadow-md">
             <div className="space-y-8">
               {(['FACEBOOK', 'INSTAGRAM'] as MetaPlatform[]).map((platform) => (
                 <section key={platform}>
@@ -181,12 +181,12 @@ export default function MetaAccountSelectionPage() {
                               selected
                                 ? 'bg-red-950/40 border-red-500/60 shadow-md'
                                 : account.alreadyConnected
-                                ? 'bg-[#0f0505]/40 border-[#2a1010] opacity-60 cursor-not-allowed'
-                                : 'bg-[#0f0505]/60 border-[#2a1010] hover:border-[#3a1515]'
+                                ? 'bg-[#0e0e12]/40 border-[#22222a] opacity-60 cursor-not-allowed'
+                                : 'bg-[#0e0e12]/60 border-[#22222a] hover:border-[#33333e]'
                             }`}
                           >
                             <div className="flex items-center gap-3.5 min-w-0">
-                              <div className="w-11 h-11 rounded-xl overflow-hidden bg-[#1a0a0a] shrink-0 border border-[#3a1515]">
+                              <div className="w-11 h-11 rounded-xl overflow-hidden bg-[#18181f] shrink-0 border border-[#33333e]">
                                 {account.profileImageUrl ? (
                                   // eslint-disable-next-line @next/next/no-img-element
                                   <img src={account.profileImageUrl} alt="" className="w-full h-full object-cover" />
@@ -206,7 +206,7 @@ export default function MetaAccountSelectionPage() {
 
                             <div className="flex items-center gap-3 shrink-0">
                               {account.alreadyConnected && (
-                                <span className="text-[10px] font-black text-neutral-400 bg-[#1a0a0a] px-2 py-0.5 rounded-md border border-[#3a1515]">
+                                <span className="text-[10px] font-black text-neutral-400 bg-[#18181f] px-2 py-0.5 rounded-md border border-[#33333e]">
                                   Already connected
                                 </span>
                               )}
@@ -214,7 +214,7 @@ export default function MetaAccountSelectionPage() {
                                 className={`w-5 h-5 rounded-md border flex items-center justify-center ${
                                   selected
                                     ? 'bg-red-600 border-red-500 text-white'
-                                    : 'bg-[#050202] border-[#3a1515]'
+                                    : 'bg-[#0e0e12] border-[#33333e]'
                                 }`}
                               >
                                 {selected && <Check className="w-3.5 h-3.5" />}
@@ -229,14 +229,14 @@ export default function MetaAccountSelectionPage() {
               ))}
             </div>
 
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mt-8 pt-6 border-t border-[#2a1010]">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mt-8 pt-6 border-t border-[#22222a]">
               <p className="text-xs text-neutral-500">
                 {selectableCount} available account{selectableCount === 1 ? '' : 's'}
               </p>
               <div className="flex items-center gap-3">
                 <button
                   onClick={() => router.push('/accounts')}
-                  className="px-5 py-2.5 rounded-xl bg-[#0f0505] hover:bg-[#1a0a0a] border border-[#3a1515] text-neutral-300 text-sm font-bold"
+                  className="px-5 py-2.5 rounded-xl bg-[#0e0e12] hover:bg-[#18181f] border border-[#33333e] text-neutral-300 text-sm font-bold"
                 >
                   Cancel
                 </button>

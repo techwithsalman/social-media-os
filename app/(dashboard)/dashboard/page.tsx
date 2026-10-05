@@ -122,7 +122,7 @@ export default async function DashboardPage() {
             </Link>
             <Link
               href="/bulk-upload"
-              className="flex items-center gap-2.5 px-6 py-3.5 rounded-2xl bg-[#1a0a0a]/90 hover:bg-[#2a1010] text-neutral-100 border border-[#3a1515] text-base font-bold transition-all hover:border-[#4a1a1a] shadow-md"
+              className="flex items-center gap-2.5 px-6 py-3.5 rounded-2xl bg-[#18181f]/90 hover:bg-[#2a1010] text-neutral-100 border border-[#33333e] text-base font-bold transition-all hover:border-[#4a1a1a] shadow-md"
             >
               <Layers className="w-5 h-5 text-red-500" />
               <span>Bulk Upload</span>
@@ -132,89 +132,105 @@ export default async function DashboardPage() {
       </div>
 
       {/* Spacious Stat Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-5 md:gap-6 mb-12">
-        <div className="p-6 rounded-2xl bg-[#0a0404] border border-[#2a1010] shadow-md hover:border-[#3a1515] transition-all flex flex-col justify-between min-h-[140px]">
-          <div className="flex items-center justify-between">
-            <span className="text-xs md:text-sm font-bold text-neutral-400 uppercase tracking-wider">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 md:gap-5 mb-12">
+        
+        {/* Connected Card */}
+        <div className="relative overflow-hidden p-5 md:p-6 rounded-2xl bg-[#0e0e12] border border-[#22222a] shadow-lg hover:border-[#33333e] transition-all flex flex-col justify-between min-h-[140px] group">
+          <div className="absolute -bottom-8 -right-8 w-32 h-32 bg-red-600/20 blur-[30px] rounded-full pointer-events-none group-hover:bg-red-600/30 transition-all duration-500" />
+          <div className="absolute bottom-0 right-0 w-full h-1/2 bg-gradient-to-tl from-red-500/10 to-transparent opacity-50 pointer-events-none rounded-br-2xl" />
+          <div className="relative z-10 flex items-center gap-3 mb-4">
+            <div className="p-2 rounded-xl bg-red-500/10 text-red-500 border border-red-500/20 shadow-inner">
+              <Share2 className="w-4 h-4" />
+            </div>
+            <span className="text-xs font-bold text-neutral-400 uppercase tracking-widest">
               Connected
             </span>
-            <div className="p-2.5 rounded-xl bg-red-500/10 text-red-500">
-              <Share2 className="w-5 h-5" />
-            </div>
           </div>
-          <div>
-            <p className="text-3xl md:text-4xl font-black text-white mt-3">
+          <div className="relative z-10">
+            <p className="text-3xl md:text-4xl font-black text-white drop-shadow-md">
               {connectedAccountsCount}
             </p>
-            <p className="text-sm text-neutral-400 mt-1">Active channels</p>
+            <p className="text-xs text-neutral-500 mt-1 font-medium">Active channels</p>
           </div>
         </div>
 
-        <div className="p-6 rounded-2xl bg-[#0a0404] border border-[#2a1010] shadow-md hover:border-[#3a1515] transition-all flex flex-col justify-between min-h-[140px]">
-          <div className="flex items-center justify-between">
-            <span className="text-xs md:text-sm font-bold text-neutral-400 uppercase tracking-wider">
+        {/* Scheduled Card */}
+        <div className="relative overflow-hidden p-5 md:p-6 rounded-2xl bg-[#0e0e12] border border-[#22222a] shadow-lg hover:border-[#33333e] transition-all flex flex-col justify-between min-h-[140px] group">
+          <div className="absolute -bottom-8 -right-8 w-32 h-32 bg-amber-500/20 blur-[30px] rounded-full pointer-events-none group-hover:bg-amber-500/30 transition-all duration-500" />
+          <div className="absolute bottom-0 right-0 w-full h-1/2 bg-gradient-to-tl from-amber-500/10 to-transparent opacity-50 pointer-events-none rounded-br-2xl" />
+          <div className="relative z-10 flex items-center gap-3 mb-4">
+            <div className="p-2 rounded-xl bg-amber-500/10 text-amber-500 border border-amber-500/20 shadow-inner">
+              <Clock className="w-4 h-4" />
+            </div>
+            <span className="text-xs font-bold text-neutral-400 uppercase tracking-widest">
               Scheduled
             </span>
-            <div className="p-2.5 rounded-xl bg-amber-500/10 text-amber-400">
-              <Clock className="w-5 h-5" />
-            </div>
           </div>
-          <div>
-            <p className="text-3xl md:text-4xl font-black text-white mt-3">
+          <div className="relative z-10">
+            <p className="text-3xl md:text-4xl font-black text-white drop-shadow-md">
               {scheduledPostsCount}
             </p>
-            <p className="text-sm text-neutral-400 mt-1">Ready in queue</p>
+            <p className="text-xs text-neutral-500 mt-1 font-medium">Ready in queue</p>
           </div>
         </div>
 
-        <div className="p-6 rounded-2xl bg-[#0a0404] border border-[#2a1010] shadow-md hover:border-[#3a1515] transition-all flex flex-col justify-between min-h-[140px]">
-          <div className="flex items-center justify-between">
-            <span className="text-xs md:text-sm font-bold text-neutral-400 uppercase tracking-wider">
+        {/* Published Card */}
+        <div className="relative overflow-hidden p-5 md:p-6 rounded-2xl bg-[#0e0e12] border border-[#22222a] shadow-lg hover:border-[#33333e] transition-all flex flex-col justify-between min-h-[140px] group">
+          <div className="absolute -bottom-8 -right-8 w-32 h-32 bg-emerald-500/20 blur-[30px] rounded-full pointer-events-none group-hover:bg-emerald-500/30 transition-all duration-500" />
+          <div className="absolute bottom-0 right-0 w-full h-1/2 bg-gradient-to-tl from-emerald-500/10 to-transparent opacity-50 pointer-events-none rounded-br-2xl" />
+          <div className="relative z-10 flex items-center gap-3 mb-4">
+            <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 shadow-inner">
+              <CheckCircle2 className="w-4 h-4" />
+            </div>
+            <span className="text-xs font-bold text-neutral-400 uppercase tracking-widest">
               Published
             </span>
-            <div className="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-400">
-              <CheckCircle2 className="w-5 h-5" />
-            </div>
           </div>
-          <div>
-            <p className="text-3xl md:text-4xl font-black text-white mt-3">
+          <div className="relative z-10">
+            <p className="text-3xl md:text-4xl font-black text-white drop-shadow-md">
               {publishedPostsCount}
             </p>
-            <p className="text-sm text-neutral-400 mt-1">Live broadcasts</p>
+            <p className="text-xs text-neutral-500 mt-1 font-medium">Live broadcasts</p>
           </div>
         </div>
 
-        <div className="p-6 rounded-2xl bg-[#0a0404] border border-[#2a1010] shadow-md hover:border-[#3a1515] transition-all flex flex-col justify-between min-h-[140px]">
-          <div className="flex items-center justify-between">
-            <span className="text-xs md:text-sm font-bold text-neutral-400 uppercase tracking-wider">
+        {/* Failed Card */}
+        <div className="relative overflow-hidden p-5 md:p-6 rounded-2xl bg-[#0e0e12] border border-[#22222a] shadow-lg hover:border-[#33333e] transition-all flex flex-col justify-between min-h-[140px] group">
+          <div className="absolute -bottom-8 -right-8 w-32 h-32 bg-red-600/20 blur-[30px] rounded-full pointer-events-none group-hover:bg-red-600/30 transition-all duration-500" />
+          <div className="absolute bottom-0 right-0 w-full h-1/2 bg-gradient-to-tl from-red-600/10 to-transparent opacity-50 pointer-events-none rounded-br-2xl" />
+          <div className="relative z-10 flex items-center gap-3 mb-4">
+            <div className="p-2 rounded-xl bg-red-500/10 text-red-500 border border-red-500/20 shadow-inner">
+              <AlertTriangle className="w-4 h-4" />
+            </div>
+            <span className="text-xs font-bold text-neutral-400 uppercase tracking-widest">
               Failed
             </span>
-            <div className="p-2.5 rounded-xl bg-red-500/10 text-red-400">
-              <AlertTriangle className="w-5 h-5" />
-            </div>
           </div>
-          <div>
-            <p className="text-3xl md:text-4xl font-black text-white mt-3">
+          <div className="relative z-10">
+            <p className="text-3xl md:text-4xl font-black text-white drop-shadow-md">
               {failedPostsCount}
             </p>
-            <p className="text-sm text-neutral-400 mt-1">Needs attention</p>
+            <p className="text-xs text-neutral-500 mt-1 font-medium">Needs attention</p>
           </div>
         </div>
 
-        <div className="col-span-2 sm:col-span-1 p-6 rounded-2xl bg-[#0a0404] border border-[#2a1010] shadow-md hover:border-[#3a1515] transition-all flex flex-col justify-between min-h-[140px]">
-          <div className="flex items-center justify-between">
-            <span className="text-xs md:text-sm font-bold text-neutral-400 uppercase tracking-wider">
+        {/* Drafts Card */}
+        <div className="col-span-2 sm:col-span-1 relative overflow-hidden p-5 md:p-6 rounded-2xl bg-[#0e0e12] border border-[#22222a] shadow-lg hover:border-[#33333e] transition-all flex flex-col justify-between min-h-[140px] group">
+          <div className="absolute -bottom-8 -right-8 w-32 h-32 bg-neutral-600/20 blur-[30px] rounded-full pointer-events-none group-hover:bg-neutral-600/30 transition-all duration-500" />
+          <div className="absolute bottom-0 right-0 w-full h-1/2 bg-gradient-to-tl from-neutral-600/10 to-transparent opacity-50 pointer-events-none rounded-br-2xl" />
+          <div className="relative z-10 flex items-center gap-3 mb-4">
+            <div className="p-2 rounded-xl bg-neutral-700/30 text-neutral-300 border border-neutral-600/30 shadow-inner">
+              <FileText className="w-4 h-4" />
+            </div>
+            <span className="text-xs font-bold text-neutral-400 uppercase tracking-widest">
               Drafts
             </span>
-            <div className="p-2.5 rounded-xl bg-neutral-500/10 text-neutral-400">
-              <FileText className="w-5 h-5" />
-            </div>
           </div>
-          <div>
-            <p className="text-3xl md:text-4xl font-black text-white mt-3">
+          <div className="relative z-10">
+            <p className="text-3xl md:text-4xl font-black text-white drop-shadow-md">
               {draftsCount}
             </p>
-            <p className="text-sm text-neutral-400 mt-1">Unpublished ideas</p>
+            <p className="text-xs text-neutral-500 mt-1 font-medium">Unpublished ideas</p>
           </div>
         </div>
       </div>
@@ -251,8 +267,8 @@ export default async function DashboardPage() {
                 key={plat.platform}
                 className={`p-6 rounded-2xl border transition-all flex flex-col justify-between min-h-[160px] ${
                   isConnected
-                    ? 'bg-[#0a0404] border-[#2a1010] hover:border-[#3a1515] shadow-md'
-                    : 'bg-[#080303]/70 border-[#2a1010]/70 opacity-80'
+                    ? 'bg-[#0e0e12] border-[#22222a] hover:border-[#33333e] hover:shadow-[0_4px_20px_rgba(0,0,0,0.5)] shadow-md'
+                    : 'bg-[#09090b] border-[#1a1a20] opacity-80'
                 }`}
               >
                 <div>
@@ -273,12 +289,12 @@ export default async function DashboardPage() {
                       className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold shrink-0 ${
                         isConnected
                           ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-                          : 'bg-[#1a0a0a] text-neutral-400 border border-[#3a1515]'
+                          : 'bg-[#18181f] text-neutral-400 border border-[#33333e]'
                       }`}
                     >
                       <span
                         className={`w-2 h-2 rounded-full ${
-                          isConnected ? 'bg-emerald-400' : 'bg-neutral-500'
+                          isConnected ? 'bg-emerald-400' : 'bg-red-500'
                         }`}
                       />
                       <span>{isConnected ? 'Connected' : 'Disconnected'}</span>
@@ -287,7 +303,7 @@ export default async function DashboardPage() {
                 </div>
 
                 {isConnected && (
-                  <div className="mt-4 pt-3.5 border-t border-[#2a1010]/80 flex items-center justify-between text-xs text-neutral-400">
+                  <div className="mt-4 pt-3.5 border-t border-[#22222a] flex items-center justify-between text-xs text-neutral-400">
                     <span></span>
                     <Link
                       href="/accounts"
@@ -306,9 +322,9 @@ export default async function DashboardPage() {
       {/* Grid: Upcoming Scheduled Posts & Recent Activity */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Upcoming Posts Feed (2 Cols) */}
-        <div className="lg:col-span-2 bg-[#0a0404] border border-[#2a1010] rounded-3xl p-6 md:p-8 shadow-md flex flex-col justify-between">
+        <div className="lg:col-span-2 bg-[#0e0e12] border border-[#22222a] rounded-3xl p-6 md:p-8 shadow-md flex flex-col justify-between">
           <div>
-            <div className="flex items-center justify-between mb-6 pb-4 border-b border-[#2a1010]">
+            <div className="flex items-center justify-between mb-6 pb-4 border-b border-[#22222a]">
               <div className="flex items-center gap-3">
                 <CalendarIcon className="w-5 h-5 text-red-500" />
                 <h3 className="text-xl font-bold text-white tracking-tight">
@@ -325,7 +341,7 @@ export default async function DashboardPage() {
             </div>
 
             {upcomingPosts.length === 0 ? (
-              <div className="text-center py-14 px-6 border border-dashed border-[#2a1010] rounded-2xl bg-[#100606]/30">
+              <div className="text-center py-14 px-6 border border-dashed border-[#22222a] rounded-2xl bg-[#100606]/30">
                 <Clock className="w-10 h-10 text-neutral-600 mx-auto mb-3" />
                 <p className="text-sm font-bold text-neutral-200">
                   No upcoming posts scheduled
@@ -346,11 +362,11 @@ export default async function DashboardPage() {
                 {upcomingPosts.map((post) => (
                   <div
                     key={post.id}
-                    className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 md:p-5 rounded-2xl bg-[#100606]/70 border border-[#2a1010]/90 hover:border-[#3a1515] transition-all shadow-sm"
+                    className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 md:p-5 rounded-2xl bg-[#100606]/70 border border-[#22222a]/90 hover:border-[#33333e] transition-all shadow-sm"
                   >
                     <div className="flex items-center gap-4 overflow-hidden">
                       {/* Media Thumbnail */}
-                      <div className="w-16 h-16 rounded-xl bg-[#1a0a0a] overflow-hidden shrink-0 border border-[#3a1515]/80 flex items-center justify-center">
+                      <div className="w-16 h-16 rounded-xl bg-[#18181f] overflow-hidden shrink-0 border border-[#33333e]/80 flex items-center justify-center">
                         {post.mediaAsset?.thumbnailUrl || post.mediaAsset?.url ? (
                           // eslint-disable-next-line @next/next/no-img-element
                           <img
@@ -387,7 +403,7 @@ export default async function DashboardPage() {
                     </div>
 
                     {/* Schedule Time & Action */}
-                    <div className="flex items-center justify-between sm:justify-end gap-4 shrink-0 pt-3 sm:pt-0 border-t sm:border-t-0 border-[#2a1010]">
+                    <div className="flex items-center justify-between sm:justify-end gap-4 shrink-0 pt-3 sm:pt-0 border-t sm:border-t-0 border-[#22222a]">
                       <div className="text-left sm:text-right">
                         <p className="text-sm md:text-base font-bold text-white">
                           {post.scheduledFor
@@ -408,7 +424,7 @@ export default async function DashboardPage() {
                       </div>
                       <Link
                         href="/scheduled"
-                        className="px-3.5 py-2 text-xs md:text-sm font-semibold rounded-xl bg-[#1a0a0a] hover:bg-[#2a1010] text-neutral-200 border border-[#3a1515] transition-colors"
+                        className="px-3.5 py-2 text-xs md:text-sm font-semibold rounded-xl bg-[#18181f] hover:bg-[#2a1010] text-neutral-200 border border-[#33333e] transition-colors"
                       >
                         Details
                       </Link>
@@ -419,7 +435,7 @@ export default async function DashboardPage() {
             )}
           </div>
 
-          <div className="mt-6 pt-4 border-t border-[#2a1010] flex items-center justify-between text-sm text-neutral-400 font-medium">
+          <div className="mt-6 pt-4 border-t border-[#22222a] flex items-center justify-between text-sm text-neutral-400 font-medium">
             <span>Automated Queue Engine: Active</span>
             <Link href="/calendar" className="text-red-500 hover:text-red-400 font-semibold">
               Open Content Calendar &rarr;
@@ -428,9 +444,9 @@ export default async function DashboardPage() {
         </div>
 
         {/* Recent Activity Log (1 Col) */}
-        <div className="bg-[#0a0404] border border-[#2a1010] rounded-3xl p-6 md:p-8 shadow-md flex flex-col justify-between">
+        <div className="bg-[#0e0e12] border border-[#22222a] rounded-3xl p-6 md:p-8 shadow-md flex flex-col justify-between">
           <div>
-            <div className="flex items-center gap-3 mb-6 pb-4 border-b border-[#2a1010]">
+            <div className="flex items-center gap-3 mb-6 pb-4 border-b border-[#22222a]">
               <Activity className="w-5 h-5 text-red-500" />
               <h3 className="text-xl font-bold text-white tracking-tight">
                 Recent Activity
@@ -446,7 +462,7 @@ export default async function DashboardPage() {
                 {recentActivity.map((act) => (
                   <div
                     key={act.id}
-                    className="p-4 rounded-2xl bg-[#100606]/70 border border-[#2a1010]/80 text-sm shadow-sm"
+                    className="p-4 rounded-2xl bg-[#100606]/70 border border-[#22222a]/80 text-sm shadow-sm"
                   >
                     <div className="flex items-center justify-between gap-2">
                       <span className="text-xs font-black text-red-500 uppercase tracking-wider">
@@ -468,7 +484,7 @@ export default async function DashboardPage() {
             )}
           </div>
 
-          <div className="mt-6 pt-4 border-t border-[#2a1010] text-xs text-neutral-400 font-semibold">
+          <div className="mt-6 pt-4 border-t border-[#22222a] text-xs text-neutral-400 font-semibold">
             Audit Trail Multi-Tenancy Active
           </div>
         </div>
@@ -476,4 +492,5 @@ export default async function DashboardPage() {
     </AppLayout>
   );
 }
+
 

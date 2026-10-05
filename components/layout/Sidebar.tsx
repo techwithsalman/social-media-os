@@ -104,12 +104,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
       )}
 
       <aside
-        className={`fixed top-0 bottom-0 left-0 z-50 flex flex-col w-72 bg-[#0a0505] border-r border-[#2a1010] shadow-2xl transition-transform duration-300 ease-in-out lg:tranneutral-x-0 ${
+        className={`fixed top-0 bottom-0 left-0 z-50 flex flex-col w-72 bg-[#0a0a0c] border-r border-[#2a1010] shadow-2xl transition-transform duration-300 ease-in-out lg:tranneutral-x-0 ${
           isOpenMobile ? 'tranneutral-x-0' : '-tranneutral-x-full'
         }`}
       >
         {/* Brand Header */}
-        <div className="flex items-center justify-between px-6 h-20 border-b border-[#2a1010]/90 bg-[#050202]">
+        <div className="flex items-center justify-between px-6 h-20 border-b border-[#2a1010]/90 bg-[#0a0a0c]">
           <div className="flex items-center gap-3.5">
             <div className="flex items-center justify-center w-[85px] h-auto shrink-0 mb-1"><img src="/tws-logo-transparent.png" alt="Logo" className="w-full h-auto object-contain" /></div><div className="flex flex-col justify-center"><h1 className="text-[13px] font-black tracking-tight text-white uppercase leading-tight"><span className="text-red-500">TECH</span> WITH <span className="text-red-500">SALMAN</span></h1><p className="text-[9px] font-bold text-neutral-300 uppercase tracking-widest leading-tight">Social Media <span className="text-red-500">OS</span></p></div>
           </div>
@@ -125,7 +125,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </div>
 
         {/* Workspace Quick Switcher */}
-        <div className="px-5 py-4 border-b border-[#2a1010]/80 bg-[#080303]/60">
+        <div className="px-5 py-4 border-b border-[#2a1010]/80 bg-[#0f0f13]/60">
           <div className="flex items-center justify-between p-3 rounded-xl bg-[#100606]/90 border border-[#2a1010]">
             <div className="flex items-center gap-3 overflow-hidden">
               <div className="w-8 h-8 rounded-lg bg-red-600/30 text-red-400 flex items-center justify-center text-sm font-bold shrink-0 border border-red-500/30">
@@ -149,14 +149,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = pathname === item.href;
-            return (
-              <Link
+              return (
+                <Link
                 key={item.href}
                 href={item.href}
                 onClick={onCloseMobile}
                 className={`group flex items-center justify-between px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-150 ${
                   isActive
-                    ? 'bg-red-600/20 text-red-400 border border-red-500/30 shadow-md shadow-red-950/40 font-bold'
+                    ? 'bg-gradient-to-r from-red-950/80 to-[#1f0a0a] border border-red-500/30 text-white shadow-[0_0_15px_rgba(220,38,38,0.15)] font-bold'
                     : 'text-neutral-400 hover:text-neutral-100 hover:bg-[#1a0a0a]/60'
                 }`}
               >
@@ -198,7 +198,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </div>
 
         {/* User Profile & Logout */}
-        <div className="p-4 border-t border-[#2a1010] bg-[#050202]/90">
+        <div className="p-4 border-t border-[#2a1010] bg-[#0a0a0c]/90">
           <div className="flex items-center justify-between p-3 rounded-xl bg-[#100606]/80 border border-[#2a1010]">
             <div className="flex items-center gap-3 overflow-hidden">
               <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-red-500 to-red-600 text-white flex items-center justify-center font-bold text-sm shrink-0 shadow-lg">
@@ -224,4 +224,5 @@ export const Sidebar: React.FC<SidebarProps> = ({
     </>
   );
 };
+
 

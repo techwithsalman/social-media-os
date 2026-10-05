@@ -61,7 +61,7 @@ export default function SettingsPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         {/* Left Navigation Tabs (4 Cols) */}
-        <div className="lg:col-span-4 space-y-2 bg-[#0a0404] border border-[#2a1010] rounded-3xl p-4 shadow-md h-fit">
+        <div className="lg:col-span-4 space-y-2 bg-[#0e0e12] border border-[#22222a] rounded-3xl p-4 shadow-md h-fit">
           {tabs.map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
@@ -72,7 +72,7 @@ export default function SettingsPage() {
                 className={`w-full flex items-center gap-3.5 px-5 py-3.5 rounded-2xl text-sm font-bold transition-all ${
                   isActive
                     ? 'bg-red-600/20 text-red-400 border border-red-500/30 shadow-md'
-                    : 'text-neutral-400 hover:text-white hover:bg-[#1a0a0a]/60'
+                    : 'text-neutral-400 hover:text-white hover:bg-[#18181f]/60'
                 }`}
               >
                 <Icon className={`w-5 h-5 ${isActive ? 'text-red-500' : 'text-neutral-500'}`} />
@@ -84,10 +84,10 @@ export default function SettingsPage() {
 
         {/* Right Settings Form (8 Cols) */}
         <div className="lg:col-span-8">
-          <form onSubmit={handleSave} className="bg-[#0a0404] border border-[#2a1010] rounded-3xl p-7 md:p-10 shadow-md space-y-8">
+          <form onSubmit={handleSave} className="bg-[#0e0e12] border border-[#22222a] rounded-3xl p-7 md:p-10 shadow-md space-y-8">
             {activeTab === 'PROFILE' && (
               <div className="space-y-6">
-                <h3 className="text-base md:text-lg font-bold text-white border-b border-[#2a1010] pb-4">
+                <h3 className="text-base md:text-lg font-bold text-white border-b border-[#22222a] pb-4">
                   Personal Information
                 </h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
@@ -97,7 +97,7 @@ export default function SettingsPage() {
                       type="text"
                       value={firstName}
                       onChange={(e) => setFirstName(e.target.value)}
-                      className="w-full p-3.5 text-sm bg-[#0f0505] border border-[#2a1010] rounded-xl text-white focus:outline-none focus:ring-1 focus:ring-red-500"
+                      className="w-full p-3.5 text-sm bg-[#0e0e12] border border-[#22222a] rounded-xl text-white focus:outline-none focus:ring-1 focus:ring-red-500"
                     />
                   </div>
                   <div>
@@ -106,7 +106,7 @@ export default function SettingsPage() {
                       type="text"
                       value={lastName}
                       onChange={(e) => setLastName(e.target.value)}
-                      className="w-full p-3.5 text-sm bg-[#0f0505] border border-[#2a1010] rounded-xl text-white focus:outline-none focus:ring-1 focus:ring-red-500"
+                      className="w-full p-3.5 text-sm bg-[#0e0e12] border border-[#22222a] rounded-xl text-white focus:outline-none focus:ring-1 focus:ring-red-500"
                     />
                   </div>
                 </div>
@@ -116,7 +116,7 @@ export default function SettingsPage() {
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="w-full p-3.5 text-sm bg-[#0f0505] border border-[#2a1010] rounded-xl text-white focus:outline-none focus:ring-1 focus:ring-red-500"
+                    className="w-full p-3.5 text-sm bg-[#0e0e12] border border-[#22222a] rounded-xl text-white focus:outline-none focus:ring-1 focus:ring-red-500"
                   />
                 </div>
               </div>
@@ -124,7 +124,7 @@ export default function SettingsPage() {
 
             {activeTab === 'WORKSPACE' && (
               <div className="space-y-6">
-                <h3 className="text-base md:text-lg font-bold text-white border-b border-[#2a1010] pb-4">
+                <h3 className="text-base md:text-lg font-bold text-white border-b border-[#22222a] pb-4">
                   Workspace Configuration
                 </h3>
                 <div>
@@ -133,12 +133,12 @@ export default function SettingsPage() {
                     type="text"
                     value={workspaceName}
                     onChange={(e) => setWorkspaceName(e.target.value)}
-                    className="w-full p-3.5 text-sm bg-[#0f0505] border border-[#2a1010] rounded-xl text-white focus:outline-none focus:ring-1 focus:ring-red-500"
+                    className="w-full p-3.5 text-sm bg-[#0e0e12] border border-[#22222a] rounded-xl text-white focus:outline-none focus:ring-1 focus:ring-red-500"
                   />
                 </div>
                 <div>
                   <label className="block text-xs md:text-sm font-bold text-neutral-300 mb-2">Storage Mode</label>
-                  <select className="w-full p-3.5 text-sm bg-[#0f0505] border border-[#2a1010] rounded-xl text-white">
+                  <select className="w-full p-3.5 text-sm bg-[#0e0e12] border border-[#22222a] rounded-xl text-white">
                     <option value="local">Local Development Storage (/public/uploads)</option>
                     <option value="s3">Amazon Web Services S3</option>
                     <option value="r2">Cloudflare R2 Bucket</option>
@@ -149,7 +149,7 @@ export default function SettingsPage() {
 
             {activeTab === 'TIMEZONE' && (
               <div className="space-y-6">
-                <h3 className="text-base md:text-lg font-bold text-white border-b border-[#2a1010] pb-4">
+                <h3 className="text-base md:text-lg font-bold text-white border-b border-[#22222a] pb-4">
                   Timezone & Scheduling Defaults
                 </h3>
                 <div>
@@ -157,7 +157,7 @@ export default function SettingsPage() {
                   <select
                     value={timezone}
                     onChange={(e) => setTimezone(e.target.value)}
-                    className="w-full p-3.5 text-sm bg-[#0f0505] border border-[#2a1010] rounded-xl text-white"
+                    className="w-full p-3.5 text-sm bg-[#0e0e12] border border-[#22222a] rounded-xl text-white"
                   >
                     <option value="Asia/Karachi">Asia/Karachi (PKT UTC+05:00)</option>
                     <option value="UTC">UTC (Coordinated Universal Time)</option>
@@ -171,7 +171,7 @@ export default function SettingsPage() {
 
             {activeTab === 'NOTIFICATIONS' && (
               <div className="space-y-6">
-                <h3 className="text-base md:text-lg font-bold text-white border-b border-[#2a1010] pb-4">
+                <h3 className="text-base md:text-lg font-bold text-white border-b border-[#22222a] pb-4">
                   Alert Preferences
                 </h3>
                 <div className="space-y-4">
@@ -180,7 +180,7 @@ export default function SettingsPage() {
                       type="checkbox"
                       checked={emailAlerts}
                       onChange={(e) => setEmailAlerts(e.target.checked)}
-                      className="rounded border-[#3a1515] bg-[#0f0505] text-red-600 w-5 h-5 mt-0.5"
+                      className="rounded border-[#33333e] bg-[#0e0e12] text-red-600 w-5 h-5 mt-0.5"
                     />
                     <div>
                       <p className="text-sm font-bold text-white">Publishing Notifications</p>
@@ -193,7 +193,7 @@ export default function SettingsPage() {
                       type="checkbox"
                       checked={failedPostAlerts}
                       onChange={(e) => setFailedPostAlerts(e.target.checked)}
-                      className="rounded border-[#3a1515] bg-[#0f0505] text-red-600 w-5 h-5 mt-0.5"
+                      className="rounded border-[#33333e] bg-[#0e0e12] text-red-600 w-5 h-5 mt-0.5"
                     />
                     <div>
                       <p className="text-sm font-bold text-white">Failed Post Alerts & Token Expiry</p>
@@ -206,10 +206,10 @@ export default function SettingsPage() {
 
             {activeTab === 'SECURITY' && (
               <div className="space-y-6">
-                <h3 className="text-base md:text-lg font-bold text-white border-b border-[#2a1010] pb-4">
+                <h3 className="text-base md:text-lg font-bold text-white border-b border-[#22222a] pb-4">
                   Security & Token Encryption
                 </h3>
-                <div className="p-5 rounded-2xl bg-[#0f0505]/80 border border-[#2a1010] space-y-2">
+                <div className="p-5 rounded-2xl bg-[#0e0e12]/80 border border-[#22222a] space-y-2">
                   <div className="flex items-center gap-2.5 text-emerald-400 text-sm font-bold">
                     <Shield className="w-5 h-5" />
                     <span>AES-256-CBC Token Encryption Active</span>
@@ -221,7 +221,7 @@ export default function SettingsPage() {
               </div>
             )}
 
-            <div className="pt-6 border-t border-[#2a1010] flex justify-end">
+            <div className="pt-6 border-t border-[#22222a] flex justify-end">
               <button
                 type="submit"
                 className="flex items-center gap-2 px-6 py-3 rounded-2xl bg-gradient-to-r from-red-700 to-red-600 hover:from-red-600 hover:to-red-500 text-white text-sm font-bold shadow-lg shadow-red-600/30 transition-all active:scale-[0.98]"

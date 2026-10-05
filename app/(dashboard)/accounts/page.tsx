@@ -73,14 +73,14 @@ function getStatusDisplay(status?: string) {
     case 'DISCONNECTED':
       return {
         label: 'Disconnected',
-        dotClass: 'bg-neutral-500',
-        pillClass: 'bg-[#1a0a0a] text-neutral-400 border border-[#3a1515]',
+          dotClass: 'bg-red-500',
+          pillClass: 'bg-red-500/10 text-red-400 border border-red-500/20',
       };
     default:
       return {
-        label: 'Unlinked',
-        dotClass: 'bg-neutral-500',
-        pillClass: 'bg-[#1a0a0a] text-neutral-400 border border-[#3a1515]',
+        label: 'Disconnected',
+          dotClass: 'bg-red-500/70',
+          pillClass: 'bg-[#18181f] text-neutral-400 border border-[#33333e]',
       };
   }
 }
@@ -356,8 +356,8 @@ export default function ConnectedAccountsPage() {
               key={plat.id}
               className={`rounded-3xl border p-7 md:p-8 flex flex-col justify-between transition-all min-h-[260px] ${
                 connected
-                  ? 'bg-[#0a0404] border-[#2a1010] hover:border-[#3a1515] shadow-md'
-                  : 'bg-[#050202]/70 border-[#2a1010]/70 hover:border-[#3a1515]/80'
+                  ? 'bg-[#0e0e12] border-[#22222a] hover:border-[#33333e] shadow-md'
+                  : 'bg-[#0e0e12]/70 border-[#22222a]/70 hover:border-[#33333e]/80'
               }`}
             >
               <div>
@@ -381,9 +381,9 @@ export default function ConnectedAccountsPage() {
 
                 {/* Profile Card if connected */}
                 {connected && (
-                  <div className="mb-5 p-4 rounded-2xl bg-[#100606]/90 border border-[#2a1010] flex items-center justify-between">
+                  <div className="mb-5 p-4 rounded-2xl bg-[#100606]/90 border border-[#22222a] flex items-center justify-between">
                     <div className="flex items-center gap-3.5 overflow-hidden">
-                      <div className="w-10 h-10 rounded-xl overflow-hidden bg-[#1a0a0a] shrink-0 border border-[#3a1515]">
+                      <div className="w-10 h-10 rounded-xl overflow-hidden bg-[#18181f] shrink-0 border border-[#33333e]">
                         {connected.profileImageUrl ? (
                           // eslint-disable-next-line @next/next/no-img-element
                           <img
@@ -417,7 +417,7 @@ export default function ConnectedAccountsPage() {
               </div>
 
               {/* Action Buttons */}
-              <div className="pt-4 border-t border-[#2a1010]/80 flex items-center justify-between gap-3">
+              <div className="pt-4 border-t border-[#22222a]/80 flex items-center justify-between gap-3">
                 <button
                   onClick={() =>
                     setActiveDocPlatform(activeDocPlatform === plat.id ? null : plat.id)
@@ -452,7 +452,7 @@ export default function ConnectedAccountsPage() {
                             onClick={() => handleRefreshAccount(connected.id, plat.id)}
                             disabled={isActing}
                             title="Refresh Profile"
-                            className="px-3.5 py-2 rounded-xl bg-[#1a0a0a] hover:bg-[#2a1010] text-neutral-200 text-sm font-semibold border border-[#3a1515] transition-colors"
+                            className="px-3.5 py-2 rounded-xl bg-[#18181f] hover:bg-[#2a1010] text-neutral-200 text-sm font-semibold border border-[#33333e] transition-colors"
                           >
                             <RefreshCw className={`w-4 h-4 ${isActing ? 'animate-spin' : ''}`} />
                           </button>
@@ -491,7 +491,7 @@ export default function ConnectedAccountsPage() {
 
               {/* Developer Requirements Drawer */}
               {activeDocPlatform === plat.id && requirements[plat.id] && (
-                <div className="mt-5 p-5 rounded-2xl bg-[#050202] border border-[#2a1010] text-sm space-y-3">
+                <div className="mt-5 p-5 rounded-2xl bg-[#0e0e12] border border-[#22222a] text-sm space-y-3">
                   <div className="flex items-center justify-between">
                     <span className="font-bold text-white">OAuth & API Specs</span>
                     <a
@@ -526,5 +526,6 @@ export default function ConnectedAccountsPage() {
     </AppLayout>
   );
 }
+
 
 

@@ -152,7 +152,7 @@ export default function ContentCalendarPage() {
         <div className="flex flex-wrap items-center gap-3">
           <button
             onClick={handlePrev}
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#0a0404] hover:bg-[#1a0a0a] text-sm font-bold text-neutral-200 border border-[#2a1010] transition-colors"
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#0e0e12] hover:bg-[#18181f] text-sm font-bold text-neutral-200 border border-[#22222a] transition-colors"
           >
             <ChevronLeft className="w-4 h-4" />
             <span>Previous</span>
@@ -160,18 +160,18 @@ export default function ContentCalendarPage() {
 
           <button
             onClick={handleToday}
-            className="px-4 py-2.5 rounded-xl bg-[#1a0a0a] hover:bg-[#2a1010] text-sm font-bold text-neutral-200 border border-[#3a1515] transition-colors"
+            className="px-4 py-2.5 rounded-xl bg-[#18181f] hover:bg-[#2a1010] text-sm font-bold text-neutral-200 border border-[#33333e] transition-colors"
           >
             Today
           </button>
 
-          <div className="px-5 py-2.5 rounded-xl bg-[#0a0404] border border-[#2a1010] text-base md:text-lg font-black text-white min-w-[190px] text-center shadow-sm">
+          <div className="px-5 py-2.5 rounded-xl bg-[#0e0e12] border border-[#22222a] text-base md:text-lg font-black text-white min-w-[190px] text-center shadow-sm">
             {monthNames[month]} {year}
           </div>
 
           <button
             onClick={handleNext}
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#0a0404] hover:bg-[#1a0a0a] text-sm font-bold text-neutral-200 border border-[#2a1010] transition-colors"
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#0e0e12] hover:bg-[#18181f] text-sm font-bold text-neutral-200 border border-[#22222a] transition-colors"
           >
             <span>Next</span>
             <ChevronRight className="w-4 h-4" />
@@ -179,7 +179,7 @@ export default function ContentCalendarPage() {
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
-          <div className="flex items-center bg-[#0a0404] border border-[#2a1010] rounded-2xl p-1.5 text-sm font-bold shadow-sm">
+          <div className="flex items-center bg-[#0e0e12] border border-[#22222a] rounded-2xl p-1.5 text-sm font-bold shadow-sm">
             {(['MONTH', 'WEEK', 'DAY'] as const).map((mode) => (
               <button
                 key={mode}
@@ -206,8 +206,8 @@ export default function ContentCalendarPage() {
       </div>
 
       {viewMode === 'MONTH' && (
-        <div className="bg-[#0a0404] border border-[#2a1010] rounded-3xl overflow-hidden shadow-md">
-          <div className="grid grid-cols-7 border-b border-[#2a1010] bg-[#050202] text-xs md:text-sm font-bold text-neutral-400 text-center py-3.5">
+        <div className="bg-[#0e0e12] border border-[#22222a] rounded-3xl overflow-hidden shadow-md">
+          <div className="grid grid-cols-7 border-b border-[#22222a] bg-[#0e0e12] text-xs md:text-sm font-bold text-neutral-400 text-center py-3.5">
             <span>Sun</span>
             <span>Mon</span>
             <span>Tue</span>
@@ -223,7 +223,7 @@ export default function ContentCalendarPage() {
                 return (
                   <div
                     key={`empty_${idx}`}
-                    className="min-h-[140px] bg-[#0a0404]/40 p-3 opacity-40"
+                    className="min-h-[140px] bg-[#0e0e12]/40 p-3 opacity-40"
                   />
                 );
               }
@@ -247,7 +247,7 @@ export default function ContentCalendarPage() {
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' || e.key === ' ') setCalendarDate(dateKey);
                   }}
-                  className={`min-h-[140px] bg-[#0a0404] p-3 flex flex-col justify-between text-left hover:bg-[#0f0505]/70 transition-colors border-t border-[#2a1010]/50 ${
+                  className={`min-h-[140px] bg-[#0e0e12] p-3 flex flex-col justify-between text-left hover:bg-[#0e0e12]/70 transition-colors border-t border-[#22222a]/50 ${
                     hasPosts ? 'border-red-500/40' : ''
                   } ${isToday ? 'ring-2 ring-inset ring-red-500/70' : ''} ${
                     isSelected && !isToday ? 'ring-2 ring-inset ring-emerald-500/60' : ''
@@ -280,7 +280,7 @@ export default function ContentCalendarPage() {
                           e.stopPropagation();
                           setSelectedPost(post);
                         }}
-                        className="cursor-pointer p-2 rounded-xl bg-[#100606]/90 border border-[#2a1010] hover:border-red-500/60 text-xs flex items-center gap-2 transition-all truncate shadow-sm"
+                        className="cursor-pointer p-2 rounded-xl bg-[#100606]/90 border border-[#22222a] hover:border-red-500/60 text-xs flex items-center gap-2 transition-all truncate shadow-sm"
                       >
                         <div className="flex items-center gap-1 shrink-0">
                           {post.platformPosts.slice(0, 3).map((p) => (
@@ -306,7 +306,7 @@ export default function ContentCalendarPage() {
       )}
 
       {viewMode !== 'MONTH' && (
-        <div className="bg-[#0a0404] border border-[#2a1010] rounded-3xl p-8 shadow-md">
+        <div className="bg-[#0e0e12] border border-[#22222a] rounded-3xl p-8 shadow-md">
           <div className="text-center py-10">
             <CalendarIcon className="w-12 h-12 text-red-500 mx-auto mb-3" />
             <h3 className="text-lg font-bold text-white">
@@ -319,7 +319,7 @@ export default function ContentCalendarPage() {
 
           <div className="space-y-4 max-w-3xl mx-auto">
             {selectedDatePosts.length === 0 && !loading ? (
-              <div className="p-6 rounded-2xl bg-[#0f0505]/70 border border-dashed border-[#2a1010] text-center text-sm text-neutral-400">
+              <div className="p-6 rounded-2xl bg-[#0e0e12]/70 border border-dashed border-[#22222a] text-center text-sm text-neutral-400">
                 No scheduled posts on this date.
               </div>
             ) : (
@@ -327,7 +327,7 @@ export default function ContentCalendarPage() {
                 <div
                   key={post.id}
                   onClick={() => setSelectedPost(post)}
-                  className="cursor-pointer p-5 rounded-2xl bg-[#0f0505]/70 border border-[#2a1010] hover:border-red-500/60 flex items-center justify-between gap-4 transition-all shadow-sm"
+                  className="cursor-pointer p-5 rounded-2xl bg-[#0e0e12]/70 border border-[#22222a] hover:border-red-500/60 flex items-center justify-between gap-4 transition-all shadow-sm"
                 >
                   <div className="flex items-center gap-4">
                     <Clock className="w-5 h-5 text-red-500 shrink-0" />
@@ -366,8 +366,8 @@ export default function ContentCalendarPage() {
 
       {selectedPost && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-md">
-          <div className="w-full max-w-xl bg-[#0a0404] border border-[#2a1010] rounded-3xl p-8 shadow-2xl">
-            <div className="flex items-center justify-between pb-4 border-b border-[#2a1010] mb-6">
+          <div className="w-full max-w-xl bg-[#0e0e12] border border-[#22222a] rounded-3xl p-8 shadow-2xl">
+            <div className="flex items-center justify-between pb-4 border-b border-[#22222a] mb-6">
               <div className="flex items-center gap-3">
                 <CalendarIcon className="w-5 h-5 text-red-500" />
                 <h4 className="text-base md:text-lg font-bold text-white">
@@ -387,7 +387,7 @@ export default function ContentCalendarPage() {
                 <span className="text-xs font-bold text-neutral-400 uppercase tracking-wider">
                   Master Caption
                 </span>
-                <p className="text-sm md:text-base text-neutral-200 mt-1.5 bg-[#100606]/90 p-4 rounded-2xl border border-[#2a1010] leading-relaxed">
+                <p className="text-sm md:text-base text-neutral-200 mt-1.5 bg-[#100606]/90 p-4 rounded-2xl border border-[#22222a] leading-relaxed">
                   {selectedPost.masterCaption}
                 </p>
               </div>
@@ -400,7 +400,7 @@ export default function ContentCalendarPage() {
                   {selectedPost.platformPosts.map((p) => (
                     <div
                       key={p.id}
-                      className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#0f0505] border border-[#2a1010] text-sm font-semibold"
+                      className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#0e0e12] border border-[#22222a] text-sm font-semibold"
                     >
                       <PlatformIcon platform={p.platform} size={16} className="w-4 h-4 rounded" />
                       <span className="text-white">{p.platform}</span>
@@ -410,7 +410,7 @@ export default function ContentCalendarPage() {
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
-                <div className="p-4 rounded-2xl bg-[#0f0505]/60 border border-[#2a1010]">
+                <div className="p-4 rounded-2xl bg-[#0e0e12]/60 border border-[#22222a]">
                   <span className="text-xs font-semibold text-neutral-400">Scheduled For</span>
                   <p className="text-sm md:text-base font-bold text-white mt-1">
                     {selectedPost.scheduledFor
@@ -427,7 +427,7 @@ export default function ContentCalendarPage() {
                     {getTimezoneLabel(getPostTimezone(selectedPost))}
                   </p>
                 </div>
-                <div className="p-4 rounded-2xl bg-[#0f0505]/60 border border-[#2a1010]">
+                <div className="p-4 rounded-2xl bg-[#0e0e12]/60 border border-[#22222a]">
                   <span className="text-xs font-semibold text-neutral-400">Queue Status</span>
                   <p className="text-sm md:text-base font-bold text-red-500 mt-1">
                     {selectedPost.status}
@@ -436,10 +436,10 @@ export default function ContentCalendarPage() {
               </div>
             </div>
 
-            <div className="flex items-center justify-end gap-3.5 mt-8 pt-5 border-t border-[#2a1010]">
+            <div className="flex items-center justify-end gap-3.5 mt-8 pt-5 border-t border-[#22222a]">
               <button
                 onClick={() => setSelectedPost(null)}
-                className="px-5 py-2.5 text-sm font-semibold text-neutral-300 hover:bg-[#1a0a0a] rounded-xl"
+                className="px-5 py-2.5 text-sm font-semibold text-neutral-300 hover:bg-[#18181f] rounded-xl"
               >
                 Close
               </button>

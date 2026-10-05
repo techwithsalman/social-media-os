@@ -130,7 +130,7 @@ export default function PublishedPostsPage() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search published posts..."
-              className="pl-10 pr-4 py-2 text-sm bg-[#0f0505] border border-[#2a1010] rounded-xl text-white placeholder-neutral-500 focus:outline-none focus:ring-1 focus:ring-red-500"
+              className="pl-10 pr-4 py-2 text-sm bg-[#0e0e12] border border-[#22222a] rounded-xl text-white placeholder-neutral-500 focus:outline-none focus:ring-1 focus:ring-red-500"
             />
           </div>
         </div>
@@ -142,7 +142,7 @@ export default function PublishedPostsPage() {
           <p className="text-sm text-neutral-400 font-semibold">Loading published records...</p>
         </div>
       ) : filteredPosts.length === 0 ? (
-        <div className="p-16 text-center bg-[#0a0404] border border-[#2a1010] rounded-3xl">
+        <div className="p-16 text-center bg-[#0e0e12] border border-[#22222a] rounded-3xl">
           <CheckCircle2 className="w-12 h-12 text-neutral-600 mx-auto mb-4" />
           <h3 className="text-lg font-bold text-white">No published posts found</h3>
           <p className="text-sm text-neutral-400 mt-1.5 max-w-md mx-auto">
@@ -160,11 +160,11 @@ export default function PublishedPostsPage() {
           {filteredPosts.map((post) => (
             <div
               key={post.id}
-              className="bg-[#0a0404] border border-[#2a1010] rounded-3xl p-6 md:p-8 shadow-md hover:border-[#3a1515] transition-all"
+              className="bg-[#0e0e12] border border-[#22222a] rounded-3xl p-6 md:p-8 shadow-md hover:border-[#33333e] transition-all"
             >
               <div className="flex flex-col md:flex-row md:items-start justify-between gap-5 mb-5">
                 <div className="flex items-start gap-5 overflow-hidden">
-                  <div className="w-20 h-20 rounded-2xl bg-[#1a0a0a] overflow-hidden shrink-0 border border-[#3a1515] flex items-center justify-center">
+                  <div className="w-20 h-20 rounded-2xl bg-[#18181f] overflow-hidden shrink-0 border border-[#33333e] flex items-center justify-center">
                     {post.mediaAsset?.thumbnailUrl || post.mediaAsset?.url ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img
@@ -234,7 +234,7 @@ export default function PublishedPostsPage() {
                   </button>
                   <Link
                     href={`/create-post?duplicate=${post.id}`}
-                    className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#1a0a0a] hover:bg-[#2a1010] text-neutral-200 border border-[#3a1515] text-sm font-bold transition-colors"
+                    className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#18181f] hover:bg-[#2a1010] text-neutral-200 border border-[#33333e] text-sm font-bold transition-colors"
                   >
                     <Copy className="w-4 h-4" />
                     <span>Duplicate</span>
@@ -243,11 +243,11 @@ export default function PublishedPostsPage() {
               </div>
 
               {/* Platform breakdown cards */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3.5 pt-4 border-t border-[#2a1010]">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3.5 pt-4 border-t border-[#22222a]">
                 {post.platformPosts.map((p) => (
                   <div
                     key={p.id}
-                    className="p-4 rounded-2xl bg-[#0f0505]/70 border border-[#2a1010] flex flex-col justify-between gap-2.5"
+                    className="p-4 rounded-2xl bg-[#0e0e12]/70 border border-[#22222a] flex flex-col justify-between gap-2.5"
                   >
                     <div className="flex items-center justify-between gap-3">
                       <div className="flex items-center gap-3 overflow-hidden">
@@ -275,21 +275,21 @@ export default function PublishedPostsPage() {
                     {p.status === 'PUBLISHED' ? (
                       <p className="text-xs text-emerald-400 font-medium">Live broadcast verified</p>
                     ) : p.status === 'INBOX_DRAFT' ? (
-                      <p className="text-xs text-red-400 leading-relaxed bg-red-950/40 p-2.5 rounded-lg border border-red-900/50 break-words font-medium">
+                      <p className="text-xs text-red-400 leading-relaxed bg-red-950/40 p-2.5 rounded-lg border border-[#22222a] break-words font-medium">
                         {p.errorMessage || 'Sent to TikTok Creator Inbox (Draft)'}
                       </p>
                     ) : p.status === 'PROCESSING' ? (
-                      <p className="text-xs text-blue-300 leading-relaxed bg-blue-950/40 p-2.5 rounded-lg border border-blue-900/50 break-words font-medium">
+                      <p className="text-xs text-red-300 leading-relaxed bg-red-950/40 p-2.5 rounded-lg border border-red-900/50 break-words font-medium">
                         {p.errorMessage || 'Currently processing on platform...'}
                       </p>
                     ) : (
-                      <p className="text-xs text-red-300 leading-relaxed bg-red-950/40 p-2.5 rounded-lg border border-red-900/50 break-words font-mono">
+                      <p className="text-xs text-red-300 leading-relaxed bg-red-950/40 p-2.5 rounded-lg border border-[#22222a] break-words font-mono">
                         {p.errorMessage || 'Publishing failed on platform API'}
                       </p>
                     )}
 
                     {p.platform === 'TIKTOK' && (p.status === 'INBOX_DRAFT' || p.status === 'PROCESSING') && (
-                      <div className="mt-2.5 p-3 rounded-xl bg-[#050202] border border-[#2a1010] space-y-2">
+                      <div className="mt-2.5 p-3 rounded-xl bg-[#0e0e12] border border-[#22222a] space-y-2">
                         <div className="flex items-center justify-between gap-2">
                           <span className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">
                             Caption & Hashtags:
@@ -316,7 +316,7 @@ export default function PublishedPostsPage() {
                             )}
                           </button>
                         </div>
-                        <p className="text-xs text-neutral-300 bg-[#0f0505]/80 p-2 rounded-lg font-mono line-clamp-2">
+                        <p className="text-xs text-neutral-300 bg-[#0e0e12]/80 p-2 rounded-lg font-mono line-clamp-2">
                           {`${p.customCaption || post.masterCaption || ''} ${p.hashtags || ''}`.trim() || 'No caption set'}
                         </p>
                         <p className="text-[11px] text-neutral-400 leading-relaxed italic">
@@ -346,3 +346,4 @@ export default function PublishedPostsPage() {
     </AppLayout>
   );
 }
+

@@ -238,7 +238,7 @@ export default function BillingPage() {
         </p>
 
         {/* Billing cycle switch */}
-        <div className="inline-flex items-center bg-[#0a0404] border border-[#2a1010] rounded-2xl p-1.5 mt-8 text-sm font-bold shadow-md">
+        <div className="inline-flex items-center bg-[#0e0e12] border border-[#22222a] rounded-2xl p-1.5 mt-8 text-sm font-bold shadow-md">
           <button
             onClick={() => setBillingCycle('MONTHLY')}
             className={`px-5 py-2 rounded-xl transition-all ${
@@ -282,8 +282,8 @@ export default function BillingPage() {
               data-current-plan={isCurrent || undefined}
               className={`rounded-3xl p-7 md:p-8 flex flex-col justify-between transition-all relative ${
                 plan.code === 'PRO'
-                  ? 'bg-[#0c0505] border-2 border-red-500 shadow-2xl shadow-red-500/20 scale-[1.02]'
-                  : 'bg-[#0a0404] border border-[#2a1010] shadow-md'
+                  ? 'bg-[#0a0a0e] border-2 border-red-500 shadow-2xl shadow-red-500/20 scale-[1.02]'
+                  : 'bg-[#0e0e12] border border-[#22222a] shadow-md'
               }`}
             >
               {plan.code === 'PRO' && (
@@ -296,7 +296,7 @@ export default function BillingPage() {
                 <div className="flex items-center justify-between mb-3">
                   <h3 className="text-xl font-bold text-white">{plan.name}</h3>
                   {plan.code !== 'PRO' && (
-                    <span className="text-xs font-bold text-neutral-400 bg-[#1a0a0a] px-2.5 py-1 rounded-lg">
+                    <span className="text-xs font-bold text-neutral-400 bg-[#18181f] px-2.5 py-1 rounded-lg">
                       {badge}
                     </span>
                   )}
@@ -315,7 +315,7 @@ export default function BillingPage() {
                   </div>
                 )}
 
-                <div className="space-y-3 pt-5 border-t border-[#2a1010]">
+                <div className="space-y-3 pt-5 border-t border-[#22222a]">
                   {features.map((feature) => {
                     const Icon = feature.enabled ? Check : Minus;
 
@@ -343,7 +343,7 @@ export default function BillingPage() {
                 onClick={() => alert(`${getPlanButtonText(plan, false)} is ready for stripe/payment checkout integration.`)}
                 className={`w-full mt-8 py-3.5 px-5 rounded-2xl text-sm font-black transition-all ${
                   isCurrent
-                    ? 'bg-[#1a0a0a] text-neutral-500 border border-[#3a1515] cursor-default'
+                    ? 'bg-[#18181f] text-neutral-500 border border-[#33333e] cursor-default'
                     : plan.code === 'PRO'
                     ? 'bg-gradient-to-r from-red-700 to-red-600 hover:from-red-600 hover:to-red-500 text-white shadow-xl shadow-red-600/40 hover:scale-[1.02]'
                     : 'bg-red-600/20 hover:bg-red-600/30 text-red-400 border border-red-500/30'
