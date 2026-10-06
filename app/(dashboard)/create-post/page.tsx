@@ -413,8 +413,11 @@ export default function CreatePostPage() {
     };
 
     const params = new URLSearchParams(window.location.search);
-    const postIdToEdit = params.get('edit');
-    const duplicatePostId = params.get('duplicate');
+    const rawEdit = params.get('edit');
+    const rawDuplicate = params.get('duplicate');
+
+    const postIdToEdit = (rawEdit && rawEdit !== 'null' && rawEdit !== 'undefined') ? rawEdit : null;
+    const duplicatePostId = (rawDuplicate && rawDuplicate !== 'null' && rawDuplicate !== 'undefined') ? rawDuplicate : null;
 
     if (postIdToEdit) {
       setEditPostId(postIdToEdit);
@@ -2352,6 +2355,7 @@ export default function CreatePostPage() {
     </AppLayout>
   );
 }
+
 
 
 
