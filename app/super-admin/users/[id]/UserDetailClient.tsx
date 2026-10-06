@@ -30,6 +30,7 @@ export function UserDetailClient({ detail, plans }: { detail: any, plans: any[] 
   const router = useRouter();
   const [loadingAction, setLoadingAction] = useState<string | null>(null);
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
+  const [selectedPlan, setSelectedPlan] = useState<string>(plans[0]?.code || 'STARTER');
 
   const handleAction = async (action: string, payload: any = {}) => {
     setLoadingAction(action);
@@ -158,15 +159,14 @@ export function UserDetailClient({ detail, plans }: { detail: any, plans: any[] 
                 <div className="flex gap-2">
                   <select 
                     id="planSelect"
+                    value={selectedPlan}
+                    onChange={(e) => setSelectedPlan(e.target.value)}
                     className="flex-1 bg-[#0f0505] border border-[#3a1515] rounded-lg text-sm px-3 py-2 text-white"
                   >
                     {plans.map(p => <option key={p.code} value={p.code}>{p.name}</option>)}
                   </select>
                   <button 
-                    onClick={() => {
-                      const sel = document.getElementById('planSelect') as HTMLSelectElement;
-                      handleAction('change_plan', { planCode: sel.value });
-                    }}
+                    onClick={() => handleAction('change_plan', { planCode: selectedPlan })}
                     disabled={!!loadingAction}
                     className="px-3 py-2 bg-red-600 hover:bg-red-500 text-white text-sm font-bold rounded-lg"
                   >
