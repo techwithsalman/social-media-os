@@ -635,90 +635,66 @@ export default function CreatePostPage() {
 
   const handleFileUpload = async (file: File) => {
     if (!file) return;
+
+    if (file.size > 50 * 1024 * 1024) {
+      setErrorMessage('File is too large. Maximum size is 50 MB.');
+      return;
+    }
+
     setUploading(true);
     setErrorMessage('');
 
     try {
       let data;
-      let uploadMethod = 'direct';
 
-      // 1. Try to get a presigned URL first (for R2)
+      // 1. Get presigned URL
       const presignedRes = await fetch('/api/upload/presigned', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ filename: file.name, mimeType: file.type, size: file.size })
       });
 
-      if (presignedRes.ok) {
-        const presignedData = await presignedRes.json();
-                            if (presignedData.uploadUrl) {
-            try {
-              uploadMethod = 'presigned';
-              // 2. Upload file directly to R2
-              const r2Res = await fetch(presignedData.uploadUrl, {
-                method: 'PUT',
-                body: file,
-                headers: { 'Content-Type': file.type }
-              });
-  
-              if (!r2Res.ok) {
-                throw new Error(`Cloudflare R2 Upload failed: ${r2Res.statusText}`);
-              }
-  
-              // 3. Finalize upload and save MediaAsset
-              const finalizeRes = await fetch('/api/upload/finalize', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  objectKey: presignedData.objectKey,
-                  filename: file.name,
-                  mimeType: file.type,
-                  size: file.size
-                })
-              });
-  
-              const finalizeText = await finalizeRes.text();
-              try {
-                data = JSON.parse(finalizeText);
-              } catch (e) {
-                throw new Error(`Server returned invalid response: ${finalizeRes.status} ${finalizeText.substring(0, 50)}`);
-              }
-  
-              if (!finalizeRes.ok) throw new Error(data?.error || 'Failed to finalize upload');
-            } catch (r2Error) {
-              console.warn('R2 Presigned upload failed, falling back to direct:', r2Error);
-              uploadMethod = 'direct';
-            }
-          }
+      const presignedData = await presignedRes.json().catch(() => null);
+
+      if (!presignedRes.ok || !presignedData?.uploadUrl) {
+        throw new Error(presignedData?.error || 'Could not initialize media upload.');
       }
 
-      // 4. Fallback to direct upload if presigned isn't available/configured
-      if (uploadMethod === 'direct') {
-        const formData = new FormData();
-        formData.append('file', file);
+      // 2. Upload directly to R2
+      const r2Res = await fetch(presignedData.uploadUrl, {
+        method: 'PUT',
+        body: file,
+        headers: { 'Content-Type': file.type }
+      });
 
-        const res = await fetch('/api/upload', {
-          method: 'POST',
-          body: formData,
-        });
+      if (!r2Res.ok) {
+        throw new Error('Upload failed. Please try again.');
+      }
 
-        const rawText = await res.text();
-        try {
-          data = JSON.parse(rawText);
-        } catch (e) {
-          throw new Error(`Server error (${res.status}): ${rawText.substring(0, 100)}`);
-        }
-        
-        if (!res.ok) throw new Error(data?.error || 'Upload failed');
+      // 3. Finalize upload and save MediaAsset
+      const finalizeRes = await fetch('/api/upload/finalize', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          objectKey: presignedData.objectKey,
+          filename: file.name,
+          mimeType: file.type,
+          size: file.size
+        })
+      });
+
+      data = await finalizeRes.json().catch(() => null);
+
+      if (!finalizeRes.ok || !data) {
+        throw new Error(data?.error || 'Failed to finalize upload');
       }
 
       setMediaFile({
         id: data.media.id,
         url: data.media.url,
-        thumbnailUrl: data.media.thumbnailUrl || data.media.url,
-        name: data.media.originalName,
-        size: data.media.size,
         mimeType: data.media.mimeType,
+        name: data.media.fileName,
+        size: data.media.size,
       });
     } catch (err: any) {
       console.error('Upload error:', err);
@@ -2376,6 +2352,8 @@ export default function CreatePostPage() {
     </AppLayout>
   );
 }
+
+
 
 
 

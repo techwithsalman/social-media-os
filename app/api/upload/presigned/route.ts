@@ -44,6 +44,14 @@ export async function POST(req: NextRequest) {
     }
 
     const fileSize = size || 10 * 1024 * 1024; // Default 10MB check if unprovided
+
+    if (fileSize > 50 * 1024 * 1024) {
+      return NextResponse.json(
+        { error: 'File is too large. Maximum size is 50 MB.' },
+        { status: 413 }
+      );
+    }
+
     await assertCanUploadFile(session.workspaceId, fileSize);
 
     const { uploadUrl, objectKey } = await getPresignedUploadUrl(
@@ -71,3 +79,5 @@ export async function POST(req: NextRequest) {
     );
   }
 }
+
+
