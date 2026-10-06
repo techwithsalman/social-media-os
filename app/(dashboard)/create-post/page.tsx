@@ -651,40 +651,45 @@ export default function CreatePostPage() {
 
       if (presignedRes.ok) {
         const presignedData = await presignedRes.json();
-        if (presignedData.uploadUrl) {
-          uploadMethod = 'presigned';
-          // 2. Upload file directly to R2
-          const r2Res = await fetch(presignedData.uploadUrl, {
-            method: 'PUT',
-            body: file,
-            headers: { 'Content-Type': file.type }
-          });
-
-          if (!r2Res.ok) {
-            throw new Error(`Cloudflare R2 Upload failed: ${r2Res.statusText}`);
+                            if (presignedData.uploadUrl) {
+            try {
+              uploadMethod = 'presigned';
+              // 2. Upload file directly to R2
+              const r2Res = await fetch(presignedData.uploadUrl, {
+                method: 'PUT',
+                body: file,
+                headers: { 'Content-Type': file.type }
+              });
+  
+              if (!r2Res.ok) {
+                throw new Error(`Cloudflare R2 Upload failed: ${r2Res.statusText}`);
+              }
+  
+              // 3. Finalize upload and save MediaAsset
+              const finalizeRes = await fetch('/api/upload/finalize', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  objectKey: presignedData.objectKey,
+                  filename: file.name,
+                  mimeType: file.type,
+                  size: file.size
+                })
+              });
+  
+              const finalizeText = await finalizeRes.text();
+              try {
+                data = JSON.parse(finalizeText);
+              } catch (e) {
+                throw new Error(`Server returned invalid response: ${finalizeRes.status} ${finalizeText.substring(0, 50)}`);
+              }
+  
+              if (!finalizeRes.ok) throw new Error(data?.error || 'Failed to finalize upload');
+            } catch (r2Error) {
+              console.warn('R2 Presigned upload failed, falling back to direct:', r2Error);
+              uploadMethod = 'direct';
+            }
           }
-
-          // 3. Finalize upload and save MediaAsset
-          const finalizeRes = await fetch('/api/upload/finalize', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              objectKey: presignedData.objectKey,
-              filename: file.name,
-              mimeType: file.type,
-              size: file.size
-            })
-          });
-
-          const finalizeText = await finalizeRes.text();
-          try {
-            data = JSON.parse(finalizeText);
-          } catch (e) {
-            throw new Error(`Server returned invalid response: ${finalizeRes.status} ${finalizeText.substring(0, 50)}`);
-          }
-
-          if (!finalizeRes.ok) throw new Error(data?.error || 'Failed to finalize upload');
-        }
       }
 
       // 4. Fallback to direct upload if presigned isn't available/configured
@@ -775,9 +780,24 @@ export default function CreatePostPage() {
       : scheduledTime,
   });
 
+  const validateYouTubeMedia = () => {
+    const hasYouTube = accounts.filter((a) => selectedAccountIds.includes(a.id)).some((acc) => acc.platform === 'YOUTUBE');
+    if (hasYouTube && !mediaFile) {
+      return 'Media is required for YouTube upload. Please attach a video.';
+    }
+    return null;
+  };
+
   const handleReviewSchedule = () => {
     setErrorMessage('');
     setScheduleError('');
+    
+    const ytError = validateYouTubeMedia();
+    if (ytError) {
+      setScheduleError(ytError);
+      return;
+    }
+
     const scheduleValues = getScheduleInputValues();
 
     if (selectedAccounts.length === 0) {
@@ -834,8 +854,14 @@ export default function CreatePostPage() {
   };
 
   const handlePublishNow = async () => {
-    if (selectedAccounts.length === 0) {
+    if (selectedAccountIds.length === 0) {
       setErrorMessage('Please select at least one connected account.');
+      return;
+    }
+
+    const ytError = validateYouTubeMedia();
+    if (ytError) {
+      setErrorMessage(ytError);
       return;
     }
 
@@ -2350,4 +2376,7 @@ export default function CreatePostPage() {
     </AppLayout>
   );
 }
+
+
+
 
