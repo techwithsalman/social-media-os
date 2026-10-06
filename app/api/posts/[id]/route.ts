@@ -115,6 +115,13 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
       dedupePlatformSettingsByAccount(platformSettings || [])
     );
 
+    const hasYouTube = uniquePlatformSettings.some((p: any) => p.platform === 'YOUTUBE');
+    if (hasYouTube) {
+      if (!mediaAssetId) {
+        return NextResponse.json({ error: 'Please upload a video before publishing to YouTube.' }, { status: 400 });
+      }
+    }
+
     if (!masterCaption && uniquePlatformSettings.length === 0) {
       return NextResponse.json({ error: 'Post caption or content is required.' }, { status: 400 });
     }
@@ -303,3 +310,4 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
     return NextResponse.json({ error: error.message || 'Error deleting post' }, { status: 500 });
   }
 }
+

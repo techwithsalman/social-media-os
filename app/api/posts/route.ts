@@ -136,6 +136,14 @@ export async function POST(req: NextRequest) {
       dedupePlatformSettingsByAccount(platformSettings || [])
     );
 
+    const hasYouTube = uniquePlatformSettings.some((p: any) => p.platform === 'YOUTUBE');
+    if (hasYouTube) {
+      if (!mediaAssetId) {
+        return NextResponse.json({ error: 'Please upload a video before publishing to YouTube.' }, { status: 400 });
+      }
+      // We could also check the mimeType here by querying Prisma if we want to be thorough, but client side usually checks this.
+    }
+
     if (!masterCaption && uniquePlatformSettings.length === 0) {
       return NextResponse.json({ error: 'Post caption or content is required.' }, { status: 400 });
     }
@@ -244,3 +252,4 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: error.message || 'Failed to create post' }, { status: 500 });
   }
 }
+

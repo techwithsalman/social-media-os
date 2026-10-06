@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useRef } from 'react';
-import { Zap, useRouter } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PlatformIcon } from '@/components/ui/PlatformIcons';
 import {
@@ -428,3 +428,6 @@ export default function BulkUploadPage() {
     </AppLayout>
   );
 }
+
+
+
