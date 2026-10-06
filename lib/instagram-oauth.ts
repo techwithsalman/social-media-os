@@ -64,7 +64,7 @@ export async function createInstagramAuthorizationUrl(session: SessionPayload) {
   authUrl.searchParams.set('client_id', config.appId!);
   authUrl.searchParams.set('redirect_uri', config.redirectUri);
   authUrl.searchParams.set('response_type', 'code');
-  authUrl.searchParams.set('scope', 'instagram_business_basic,instagram_business_content_publish');
+  authUrl.searchParams.set('scope', 'instagram_business_basic,instagram_business_content_publish,instagram_manage_comments,instagram_manage_messages');
   authUrl.searchParams.set('state', state);
 
   return authUrl.toString();
@@ -199,7 +199,7 @@ export async function saveInstagramAccount(
         create: {
           accessToken: encryptedAccessToken,
           refreshToken: null,
-          scope: 'instagram_business_basic,instagram_business_content_publish',
+          scope: 'instagram_business_basic,instagram_business_content_publish,instagram_manage_comments,instagram_manage_messages',
           expiresAt: profile.expiresAt,
         },
       },

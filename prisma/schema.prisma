@@ -48,6 +48,8 @@ model Workspace {
   usagePeriods   UsagePeriod[]
   usageCredits   UsageCredit[]
   paymentTransactions PaymentTransaction[]
+  instagramAutoDmRules InstagramAutoDmRule[]
+  instagramAutoDmExecutions InstagramAutoDmExecution[]
 }
 
 model Plan {
@@ -104,6 +106,8 @@ model SocialAccount {
   workspace         Workspace      @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   token             OAuthToken?
   platformPosts     PlatformPost[]
+  instagramAutoDmRules InstagramAutoDmRule[]
+  instagramAutoDmExecutions InstagramAutoDmExecution[]
 
   @@unique([workspaceId, platform, platformAccountId])
 }
@@ -369,4 +373,49 @@ model PaymentTransaction {
 
   @@index([workspaceId, createdAt])
   @@index([planId])
+}
+
+
+model InstagramAutoDmRule {
+  id               String    @id @default(cuid())
+  workspaceId      String
+  socialAccountId  String
+  name             String
+  mediaId          String    // The Instagram Post/Reel ID
+  keyword          String
+  matchType        String    @default("EXACT") // EXACT or CONTAINS
+  message          String
+  buttonLabel      String?
+  destinationUrl   String?
+  enabled          Boolean   @default(true)
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  workspace        Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  socialAccount    SocialAccount @relation(fields: [socialAccountId], references: [id], onDelete: Cascade)
+  executions       InstagramAutoDmExecution[]
+
+  @@index([workspaceId])
+  @@index([socialAccountId, mediaId, enabled])
+}
+
+model InstagramAutoDmExecution {
+  id               String    @id @default(cuid())
+  ruleId           String
+  workspaceId      String
+  socialAccountId  String
+  commentId        String
+  commenterId      String    // Instagram username or ID of the commenter
+  commentText      String
+  status           String    @default("SENT") // SENT, FAILED, SKIPPED
+  error            String?
+  createdAt        DateTime  @default(now())
+  sentAt           DateTime?
+
+  rule             InstagramAutoDmRule @relation(fields: [ruleId], references: [id], onDelete: Cascade)
+  workspace        Workspace           @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  socialAccount    SocialAccount       @relation(fields: [socialAccountId], references: [id], onDelete: Cascade)
+
+  @@unique([ruleId, commentId])
+  @@index([workspaceId])
 }
