@@ -287,7 +287,7 @@ export default function BillingPage() {
               }`}
             >
               {plan.code === 'PRO' && (
-                <span className="absolute -top-3.5 left-1/2 -tranneutral-x-1/2 px-4 py-1 rounded-full bg-gradient-to-r from-red-600 to-red-500 text-white text-xs font-black uppercase tracking-wider shadow-lg">
+                <span className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full bg-gradient-to-r from-red-600 to-red-500 text-white text-xs font-black uppercase tracking-wider shadow-lg">
                   {badge}
                 </span>
               )}

@@ -27,6 +27,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
   title,
 }) => {
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  React.useEffect(() => { if (mobileSidebarOpen) { document.body.style.overflow = 'hidden'; } else { document.body.style.overflow = ''; } }, [mobileSidebarOpen]);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(2);
 
@@ -41,7 +42,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
       />
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-w-0 lg:pl-72">
+      <div className="flex-1 flex flex-col min-w-0 w-full lg:pl-72">
         <Header
           title={title}
           onOpenMobileSidebar={() => setMobileSidebarOpen(true)}
@@ -49,7 +50,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
           unreadCount={unreadCount}
         />
 
-        <main className="flex-1 p-6 md:p-10 max-w-[1440px] w-full mx-auto pb-24">
+        <main className="flex-1 p-4 md:p-6 lg:p-10 max-w-[1440px] w-full mx-auto pb-24 overflow-x-hidden">
           {children}
         </main>
       </div>
@@ -63,3 +64,5 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
     </div>
   );
 };
+
+

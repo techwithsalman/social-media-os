@@ -236,7 +236,7 @@ export default function BulkUploadPage() {
             <label className="block text-xs md:text-sm font-bold text-neutral-300 mb-2.5">
               Target Networks
             </label>
-            <div className="grid grid-cols-2 gap-2.5">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
               {['INSTAGRAM', 'FACEBOOK', 'TIKTOK', 'YOUTUBE', 'LINKEDIN', 'X'].map((plat) => {
                 const isChecked = selectedPlatforms.includes(plat);
                 return (
@@ -428,6 +428,7 @@ export default function BulkUploadPage() {
     </AppLayout>
   );
 }
+
 
 
 

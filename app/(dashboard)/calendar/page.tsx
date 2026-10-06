@@ -231,7 +231,7 @@ export default function ContentCalendarPage() {
       </div>
 
       {viewMode === 'MONTH' && (
-        <div className="bg-transparent border border-red-500/10 rounded-[32px] overflow-hidden shadow-md p-2">
+        <div className="bg-transparent border border-red-500/10 rounded-[32px] overflow-x-auto shadow-md p-2">
           <div className="grid grid-cols-7 text-xs md:text-sm font-bold text-neutral-400 text-center py-4 px-2">
             <span>Sun</span>
             <span>Mon</span>
@@ -486,3 +486,4 @@ export default function ContentCalendarPage() {
     </AppLayout>
   );
 }
+

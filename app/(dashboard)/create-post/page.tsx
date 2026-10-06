@@ -1907,6 +1907,8 @@ export default function CreatePostPage() {
             </div>
           </div>
 
+          <div className="pb-32 lg:pb-0" />
+
           {/* PUBLISHING ACTIONS BAR */}
           <div className="sticky bottom-4 md:bottom-6 z-20 p-4 md:p-6 rounded-3xl bg-[#0e0e12]/95 backdrop-blur-xl border border-[#22222a] shadow-2xl flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4">
             <div className="flex items-center gap-3">
@@ -2348,3 +2350,4 @@ export default function CreatePostPage() {
     </AppLayout>
   );
 }
+
