@@ -746,7 +746,12 @@ export default function CreatePostPage() {
       });
     } catch (err: any) {
       console.error('Upload error:', err);
-      setDiagnosticError(err.message || 'Failed to upload media', 'MEDIA_DIRECT_UPLOAD');
+      let errMsg = err.message || 'Failed to upload media';
+      if (errMsg === 'Failed to fetch') {
+        errMsg = 'Media upload failed. Please try again.';
+        console.error('[CORS/Network Error] Direct media upload blocked by storage CORS policy.');
+      }
+      setDiagnosticError(errMsg, 'MEDIA_DIRECT_UPLOAD');
     } finally {
       setUploading(false);
     }
