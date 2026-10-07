@@ -9,7 +9,7 @@ export async function GET(req: NextRequest) {
   const token = req.nextUrl.searchParams.get('hub.verify_token');
   const challenge = req.nextUrl.searchParams.get('hub.challenge');
 
-  console.log('[IG_WEBHOOK] GET_VERIFICATION mode=' + mode + ' token=' + token);
+  console.log([IG_WEBHOOK] GET_VERIFICATION mode= token= challenge=);
 
   const verifyToken = process.env.META_WEBHOOK_VERIFY_TOKEN || 'social_media_os_verify';
 
@@ -31,11 +31,11 @@ export async function POST(req: NextRequest) {
     try {
       payload = JSON.parse(rawBody);
       const entryCount = payload.entry?.length || 0;
-      console.log('[IG_WEBHOOK] object=' + payload.object);
-      console.log('[IG_WEBHOOK] entries=' + entryCount);
+      console.log([IG_WEBHOOK] object=);
+      console.log([IG_WEBHOOK] entries=);
       
       if (entryCount > 0 && payload.entry[0]?.changes?.length > 0) {
-        console.log('[IG_WEBHOOK] field=' + payload.entry[0].changes[0].field);
+        console.log([IG_WEBHOOK] field=);
       }
     } catch (e) {
       console.error('[IG_WEBHOOK] Error parsing JSON');
@@ -200,8 +200,6 @@ async function sendInstagramPrivateReply(igAccountId: string, commentId: string,
   }
   return data;
 }
-
-
 
 
 
