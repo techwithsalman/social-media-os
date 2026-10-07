@@ -1,12 +1,13 @@
-import { NextResponse } from 'next/server';
+const fs = require('fs');
+let code = `import { NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
 
 export async function GET(req: Request) {
   try {
     const prisma = new PrismaClient();
     const statements = [
-      'CREATE TABLE "InstagramAutoDmRule" ("id" TEXT NOT NULL, "workspaceId" TEXT NOT NULL, "socialAccountId" TEXT NOT NULL, "name" TEXT NOT NULL, "mediaId" TEXT NOT NULL, "keyword" TEXT NOT NULL, "matchType" TEXT NOT NULL DEFAULT \'EXACT\', "message" TEXT NOT NULL, "buttonLabel" TEXT, "destinationUrl" TEXT, "enabled" BOOLEAN NOT NULL DEFAULT true, "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP, "updatedAt" TIMESTAMP(3) NOT NULL, CONSTRAINT "InstagramAutoDmRule_pkey" PRIMARY KEY ("id"))',
-      'CREATE TABLE "InstagramAutoDmExecution" ("id" TEXT NOT NULL, "ruleId" TEXT NOT NULL, "workspaceId" TEXT NOT NULL, "socialAccountId" TEXT NOT NULL, "commentId" TEXT NOT NULL, "commenterId" TEXT NOT NULL, "commentText" TEXT NOT NULL, "status" TEXT NOT NULL DEFAULT \'SENT\', "error" TEXT, "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP, "sentAt" TIMESTAMP(3), CONSTRAINT "InstagramAutoDmExecution_pkey" PRIMARY KEY ("id"))',
+      'CREATE TABLE "InstagramAutoDmRule" ("id" TEXT NOT NULL, "workspaceId" TEXT NOT NULL, "socialAccountId" TEXT NOT NULL, "name" TEXT NOT NULL, "mediaId" TEXT NOT NULL, "keyword" TEXT NOT NULL, "matchType" TEXT NOT NULL DEFAULT \\'EXACT\\', "message" TEXT NOT NULL, "buttonLabel" TEXT, "destinationUrl" TEXT, "enabled" BOOLEAN NOT NULL DEFAULT true, "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP, "updatedAt" TIMESTAMP(3) NOT NULL, CONSTRAINT "InstagramAutoDmRule_pkey" PRIMARY KEY ("id"))',
+      'CREATE TABLE "InstagramAutoDmExecution" ("id" TEXT NOT NULL, "ruleId" TEXT NOT NULL, "workspaceId" TEXT NOT NULL, "socialAccountId" TEXT NOT NULL, "commentId" TEXT NOT NULL, "commenterId" TEXT NOT NULL, "commentText" TEXT NOT NULL, "status" TEXT NOT NULL DEFAULT \\'SENT\\', "error" TEXT, "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP, "sentAt" TIMESTAMP(3), CONSTRAINT "InstagramAutoDmExecution_pkey" PRIMARY KEY ("id"))',
       'CREATE INDEX "InstagramAutoDmRule_workspaceId_idx" ON "InstagramAutoDmRule"("workspaceId")',
       'CREATE INDEX "InstagramAutoDmRule_socialAccountId_mediaId_enabled_idx" ON "InstagramAutoDmRule"("socialAccountId", "mediaId", "enabled")',
       'CREATE INDEX "InstagramAutoDmExecution_workspaceId_idx" ON "InstagramAutoDmExecution"("workspaceId")',
@@ -51,4 +52,5 @@ export async function GET(req: Request) {
   } catch (e: any) {
     return NextResponse.json({ error: String(e) });
   }
-}
+}`;
+fs.writeFileSync('app/api/super-admin/migrate/route.ts', code);
