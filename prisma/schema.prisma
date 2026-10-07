@@ -8,72 +8,74 @@ generator client {
 }
 
 model User {
-  id                          String            @id @default(cuid())
-  email                       String            @unique
-  passwordHash                String
-  firstName                   String
-  lastName                    String
-  avatarUrl                   String?
-  systemRole                  String            @default("USER") // USER, SUPER_ADMIN
-  status                      String            @default("ACTIVE") // ACTIVE, SUSPENDED, ARCHIVED
-  lastActiveAt                DateTime?
-  createdAt                   DateTime          @default(now())
-  updatedAt                   DateTime          @updatedAt
-  workspaces                  WorkspaceMember[]
-  posts                       ContentPost[]
-  createdPlanOverrides        PlanOverride[]    @relation("PlanOverrideAdmin")
-  createdUsageCredits         UsageCredit[]     @relation("UsageCreditAdmin")
-  createdPaymentTransactions  PaymentTransaction[] @relation("PaymentTransactionAdmin")
+  id                         String               @id @default(cuid())
+  email                      String               @unique
+  passwordHash               String
+  firstName                  String
+  lastName                   String
+  avatarUrl                  String?
+  systemRole                 String               @default("USER") // USER, SUPER_ADMIN
+  status                     String               @default("ACTIVE") // ACTIVE, SUSPENDED, ARCHIVED
+  lastActiveAt               DateTime?
+  createdAt                  DateTime             @default(now())
+  updatedAt                  DateTime             @updatedAt
+  workspaces                 WorkspaceMember[]
+  posts                      ContentPost[]
+  createdPlanOverrides       PlanOverride[]       @relation("PlanOverrideAdmin")
+  createdUsageCredits        UsageCredit[]        @relation("UsageCreditAdmin")
+  createdPaymentTransactions PaymentTransaction[] @relation("PaymentTransactionAdmin")
 }
 
 model Workspace {
-  id             String            @id @default(cuid())
-  name           String
-  slug           String            @unique
-  timezone       String            @default("Asia/Karachi")
-  plan           String            @default("FREE") // FREE, STARTER, PRO, AGENCY
-  status         String            @default("ACTIVE") // ACTIVE, SUSPENDED, ARCHIVED
-  suspendedAt    DateTime?
-  suspendedReason String?
-  createdAt      DateTime          @default(now())
-  updatedAt      DateTime          @updatedAt
-  members        WorkspaceMember[]
-  socialAccounts SocialAccount[]
-  mediaAssets    MediaAsset[]
-  posts          ContentPost[]
-  notifications  Notification[]
-  activityLogs   ActivityLog[]
-  subscriptions  Subscription[]
-  planOverrides  PlanOverride[]
-  usagePeriods   UsagePeriod[]
-  usageCredits   UsageCredit[]
-  paymentTransactions PaymentTransaction[]
-  instagramAutoDmRules InstagramAutoDmRule[]
+  id                        String                     @id @default(cuid())
+  name                      String
+  slug                      String                     @unique
+  timezone                  String                     @default("Asia/Karachi")
+  plan                      String                     @default("FREE") // FREE, STARTER, PRO, AGENCY
+  status                    String                     @default("ACTIVE") // ACTIVE, SUSPENDED, ARCHIVED
+  suspendedAt               DateTime?
+  suspendedReason           String?
+  createdAt                 DateTime                   @default(now())
+  updatedAt                 DateTime                   @updatedAt
+  members                   WorkspaceMember[]
+  socialAccounts            SocialAccount[]
+  mediaAssets               MediaAsset[]
+  posts                     ContentPost[]
+  notifications             Notification[]
+  activityLogs              ActivityLog[]
+  subscriptions             Subscription[]
+  planOverrides             PlanOverride[]
+  usagePeriods              UsagePeriod[]
+  usageCredits              UsageCredit[]
+  paymentTransactions       PaymentTransaction[]
+  instagramAutoDmRules      InstagramAutoDmRule[]
   instagramAutoDmExecutions InstagramAutoDmExecution[]
+  facebookAutoDmRules       FacebookAutoDmRule[]
+  facebookAutoDmExecutions  FacebookAutoDmExecution[]
 }
 
 model Plan {
-  id                       String      @id
-  code                     String      @unique // FREE, STARTER, PRO, AGENCY
+  id                       String               @id
+  code                     String               @unique // FREE, STARTER, PRO, AGENCY
   name                     String
   description              String
-  monthlyPrice             Int         @default(0) // Minor units, e.g. cents or paisa
-  yearlyPrice              Int         @default(0)
-  currency                 String      @default("USD")
+  monthlyPrice             Int                  @default(0) // Minor units, e.g. cents or paisa
+  yearlyPrice              Int                  @default(0)
+  currency                 String               @default("USD")
   maxSocialAccounts        Int
   monthlyPostLimit         Int
   maxTeamMembers           Int
   storageLimitMB           Int
-  bulkUploadEnabled        Boolean     @default(false)
-  analyticsEnabled         Boolean     @default(true)
-  advancedAnalyticsEnabled Boolean     @default(false)
-  schedulingEnabled        Boolean     @default(true)
-  customCaptionsEnabled    Boolean     @default(true)
-  prioritySupportEnabled   Boolean     @default(false)
-  active                   Boolean     @default(true)
-  sortOrder                Int         @default(0)
-  createdAt                DateTime    @default(now())
-  updatedAt                DateTime    @updatedAt
+  bulkUploadEnabled        Boolean              @default(false)
+  analyticsEnabled         Boolean              @default(true)
+  advancedAnalyticsEnabled Boolean              @default(false)
+  schedulingEnabled        Boolean              @default(true)
+  customCaptionsEnabled    Boolean              @default(true)
+  prioritySupportEnabled   Boolean              @default(false)
+  active                   Boolean              @default(true)
+  sortOrder                Int                  @default(0)
+  createdAt                DateTime             @default(now())
+  updatedAt                DateTime             @updatedAt
   subscriptions            Subscription[]
   planOverrides            PlanOverride[]
   paymentTransactions      PaymentTransaction[]
@@ -92,22 +94,24 @@ model WorkspaceMember {
 }
 
 model SocialAccount {
-  id                String         @id @default(cuid())
-  workspaceId       String
-  platform          String         // INSTAGRAM, FACEBOOK, TIKTOK, LINKEDIN, YOUTUBE, X, PINTEREST, SNAPCHAT
-  platformAccountId String
-  name              String
-  username          String
-  profileImageUrl   String?
-  status            String         @default("CONNECTED") // CONNECTED, DISCONNECTED, EXPIRED, NEEDS_RECONNECTION
-  isMock            Boolean        @default(false)
-  createdAt         DateTime       @default(now())
-  updatedAt         DateTime       @updatedAt
-  workspace         Workspace      @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  token             OAuthToken?
-  platformPosts     PlatformPost[]
-  instagramAutoDmRules InstagramAutoDmRule[]
+  id                        String                     @id @default(cuid())
+  workspaceId               String
+  platform                  String // INSTAGRAM, FACEBOOK, TIKTOK, LINKEDIN, YOUTUBE, X, PINTEREST, SNAPCHAT
+  platformAccountId         String
+  name                      String
+  username                  String
+  profileImageUrl           String?
+  status                    String                     @default("CONNECTED") // CONNECTED, DISCONNECTED, EXPIRED, NEEDS_RECONNECTION
+  isMock                    Boolean                    @default(false)
+  createdAt                 DateTime                   @default(now())
+  updatedAt                 DateTime                   @updatedAt
+  workspace                 Workspace                  @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  token                     OAuthToken?
+  platformPosts             PlatformPost[]
+  instagramAutoDmRules      InstagramAutoDmRule[]
   instagramAutoDmExecutions InstagramAutoDmExecution[]
+  FacebookAutoDmRule        FacebookAutoDmRule[]
+  FacebookAutoDmExecution   FacebookAutoDmExecution[]
 
   @@unique([workspaceId, platform, platformAccountId])
 }
@@ -201,24 +205,24 @@ model ContentPost {
 }
 
 model PlatformPost {
-  id             String          @id @default(cuid())
-  contentPostId  String
+  id              String          @id @default(cuid())
+  contentPostId   String
   socialAccountId String
-  platform       String          // INSTAGRAM, FACEBOOK, TIKTOK, LINKEDIN, YOUTUBE, X, PINTEREST, SNAPCHAT
-  customCaption  String?
-  hashtags       String?
-  contentType    String?         // POST, REEL, VIDEO, SHORT, CAROUSEL
-  visibility     String?         // PUBLIC, PRIVATE, UNLISTED
-  metadata       String?         // JSON string for platform-specific flags (comments, duet, title, etc)
-  status         String          @default("DRAFT") // DRAFT, QUEUED, PROCESSING, UPLOADING, SCHEDULED, PUBLISHED, FAILED, RETRYING, CANCELLED
-  externalPostId String?
+  platform        String // INSTAGRAM, FACEBOOK, TIKTOK, LINKEDIN, YOUTUBE, X, PINTEREST, SNAPCHAT
+  customCaption   String?
+  hashtags        String?
+  contentType     String? // POST, REEL, VIDEO, SHORT, CAROUSEL
+  visibility      String? // PUBLIC, PRIVATE, UNLISTED
+  metadata        String? // JSON string for platform-specific flags (comments, duet, title, etc)
+  status          String          @default("DRAFT") // DRAFT, QUEUED, PROCESSING, UPLOADING, SCHEDULED, PUBLISHED, FAILED, RETRYING, CANCELLED
+  externalPostId  String?
   externalPostUrl String?
-  errorMessage   String?
-  createdAt      DateTime        @default(now())
-  updatedAt      DateTime        @updatedAt
-  contentPost    ContentPost     @relation(fields: [contentPostId], references: [id], onDelete: Cascade)
-  socialAccount  SocialAccount   @relation(fields: [socialAccountId], references: [id], onDelete: Cascade)
-  publishingJobs PublishingJob[]
+  errorMessage    String?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  contentPost     ContentPost     @relation(fields: [contentPostId], references: [id], onDelete: Cascade)
+  socialAccount   SocialAccount   @relation(fields: [socialAccountId], references: [id], onDelete: Cascade)
+  publishingJobs  PublishingJob[]
 }
 
 model PublishingJob {
@@ -262,16 +266,16 @@ model Notification {
 }
 
 model ActivityLog {
-  id            String     @id @default(cuid())
-  workspaceId   String?
-  userId        String?
-  actorUserId   String?
-  targetUserId  String?
-  action        String
-  details       String?
-  metadata      String?
-  createdAt     DateTime   @default(now())
-  workspace     Workspace? @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  id           String     @id @default(cuid())
+  workspaceId  String?
+  userId       String?
+  actorUserId  String?
+  targetUserId String?
+  action       String
+  details      String?
+  metadata     String?
+  createdAt    DateTime   @default(now())
+  workspace    Workspace? @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
 
   @@index([workspaceId, createdAt])
   @@index([actorUserId, createdAt])
@@ -340,7 +344,7 @@ model UsagePeriod {
 model UsageCredit {
   id               String    @id @default(cuid())
   workspaceId      String
-  type             String    // POSTS, STORAGE_MB, SOCIAL_ACCOUNTS, TEAM_MEMBERS
+  type             String // POSTS, STORAGE_MB, SOCIAL_ACCOUNTS, TEAM_MEMBERS
   amount           Int
   reason           String
   startsAt         DateTime  @default(now())
@@ -360,7 +364,7 @@ model PaymentTransaction {
   planId           String?
   amount           Int
   currency         String    @default("USD")
-  provider         String    // SAFE_PAY, BANK_TRANSFER, RAAST, CASH, STRIPE, OTHER
+  provider         String // SAFE_PAY, BANK_TRANSFER, RAAST, CASH, STRIPE, OTHER
   reference        String?
   status           String    @default("PAID") // PENDING, PAID, FAILED, REFUNDED
   paidAt           DateTime?
@@ -375,46 +379,90 @@ model PaymentTransaction {
   @@index([planId])
 }
 
-
 model InstagramAutoDmRule {
-  id               String    @id @default(cuid())
-  workspaceId      String
-  socialAccountId  String
-  name             String
-  mediaId          String    // The Instagram Post/Reel ID
-  keyword          String
-  matchType        String    @default("EXACT") // EXACT or CONTAINS
-  message          String
-  buttonLabel      String?
-  destinationUrl   String?
-  enabled          Boolean   @default(true)
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
+  id              String   @id @default(cuid())
+  workspaceId     String
+  socialAccountId String
+  name            String
+  mediaId         String // The Instagram Post/Reel ID
+  keyword         String
+  matchType       String   @default("EXACT") // EXACT or CONTAINS
+  message         String
+  buttonLabel     String?
+  destinationUrl  String?
+  enabled         Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
-  workspace        Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  socialAccount    SocialAccount @relation(fields: [socialAccountId], references: [id], onDelete: Cascade)
-  executions       InstagramAutoDmExecution[]
+  workspace     Workspace                  @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  socialAccount SocialAccount              @relation(fields: [socialAccountId], references: [id], onDelete: Cascade)
+  executions    InstagramAutoDmExecution[]
 
   @@index([workspaceId])
   @@index([socialAccountId, mediaId, enabled])
 }
 
 model InstagramAutoDmExecution {
-  id               String    @id @default(cuid())
-  ruleId           String
-  workspaceId      String
-  socialAccountId  String
-  commentId        String
-  commenterId      String    // Instagram username or ID of the commenter
-  commentText      String
-  status           String    @default("SENT") // SENT, FAILED, SKIPPED
-  error            String?
-  createdAt        DateTime  @default(now())
-  sentAt           DateTime?
+  id              String    @id @default(cuid())
+  ruleId          String
+  workspaceId     String
+  socialAccountId String
+  commentId       String
+  commenterId     String // Instagram username or ID of the commenter
+  commentText     String
+  status          String    @default("SENT") // SENT, FAILED, SKIPPED
+  error           String?
+  createdAt       DateTime  @default(now())
+  sentAt          DateTime?
 
-  rule             InstagramAutoDmRule @relation(fields: [ruleId], references: [id], onDelete: Cascade)
-  workspace        Workspace           @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  socialAccount    SocialAccount       @relation(fields: [socialAccountId], references: [id], onDelete: Cascade)
+  rule          InstagramAutoDmRule @relation(fields: [ruleId], references: [id], onDelete: Cascade)
+  workspace     Workspace           @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  socialAccount SocialAccount       @relation(fields: [socialAccountId], references: [id], onDelete: Cascade)
+
+  @@unique([ruleId, commentId])
+  @@index([workspaceId])
+}
+
+model FacebookAutoDmRule {
+  id              String   @id @default(cuid())
+  workspaceId     String
+  socialAccountId String
+  pageId          String
+  postId          String
+  name            String
+  keyword         String
+  matchType       String   @default("EXACT")
+  message         String
+  buttonLabel     String?
+  destinationUrl  String?
+  enabled         Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  workspace     Workspace                 @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  socialAccount SocialAccount             @relation(fields: [socialAccountId], references: [id], onDelete: Cascade)
+  executions    FacebookAutoDmExecution[]
+
+  @@index([workspaceId])
+  @@index([socialAccountId, postId, enabled])
+}
+
+model FacebookAutoDmExecution {
+  id              String    @id @default(cuid())
+  ruleId          String
+  workspaceId     String
+  socialAccountId String
+  commentId       String
+  commenterId     String
+  commentText     String
+  status          String    @default("SENT")
+  error           String?
+  createdAt       DateTime  @default(now())
+  sentAt          DateTime?
+
+  rule          FacebookAutoDmRule @relation(fields: [ruleId], references: [id], onDelete: Cascade)
+  workspace     Workspace          @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  socialAccount SocialAccount      @relation(fields: [socialAccountId], references: [id], onDelete: Cascade)
 
   @@unique([ruleId, commentId])
   @@index([workspaceId])
