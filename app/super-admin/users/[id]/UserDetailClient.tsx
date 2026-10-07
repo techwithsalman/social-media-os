@@ -30,7 +30,7 @@ export function UserDetailClient({ detail, plans }: { detail: any, plans: any[] 
   const router = useRouter();
   const [loadingAction, setLoadingAction] = useState<string | null>(null);
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
-  const [selectedPlan, setSelectedPlan] = useState<string>(plans[0]?.code || 'STARTER');
+  const [selectedPlan, setSelectedPlan] = useState<string>(plans[0]?.code || 'FREE');
 
   const handleAction = async (action: string, payload: any = {}) => {
     setLoadingAction(action);
@@ -196,21 +196,12 @@ export function UserDetailClient({ detail, plans }: { detail: any, plans: any[] 
                 </div>
               </div>
 
-              <div className="p-4 rounded-xl bg-[#050202] border border-[#2a1010]">
-                <h3 className="text-sm font-bold text-white mb-2">Starter Plan</h3>
-                <button 
-                  onClick={() => handleAction('change_plan', { planCode: 'STARTER' })}
-                  disabled={!!loadingAction}
-                  className="w-full px-3 py-2 bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border border-blue-500/20 text-sm font-bold rounded-lg transition-colors"
-                >
-                  Force Assign Starter
-                </button>
-              </div>
+              
 
               <div className="p-4 rounded-xl bg-[#050202] border border-[#2a1010]">
                 <h3 className="text-sm font-bold text-white mb-2">Trial Extension</h3>
                 <button 
-                  onClick={() => handleAction('extend_trial', { planCode: 'STARTER', days: 14 })}
+                  onClick={() => handleAction('extend_trial', { planCode: selectedPlan, days: 14 })}
                   disabled={!!loadingAction}
                   className="w-full px-3 py-2 bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/20 text-sm font-bold rounded-lg transition-colors"
                 >

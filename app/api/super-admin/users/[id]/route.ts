@@ -168,7 +168,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       const trialDays = Number(body.days || 7);
       const trialEndsAt = new Date();
       trialEndsAt.setDate(trialEndsAt.getDate() + Math.max(1, trialDays));
-      const planCode = body.planCode || 'STARTER';
+      const planCode = body.planCode || 'FREE';
       const plan = await prisma.plan.findUnique({ where: { code: planCode } });
 
       if (!plan) {
