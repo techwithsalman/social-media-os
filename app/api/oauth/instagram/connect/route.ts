@@ -12,6 +12,7 @@ function redirectToAccounts(req: NextRequest, code: string) {
 export async function GET(req: NextRequest) {
   try {
     const session = await getSession();
+    if (req.nextUrl.searchParams.get('debug') === '1') { return NextResponse.json({ appId: process.env.INSTAGRAM_APP_ID, metaId: process.env.META_APP_ID }); }
     if (!session) {
       const url = new URL('/login', req.url);
       url.searchParams.set('redirect', '/accounts');
@@ -35,5 +36,6 @@ export async function GET(req: NextRequest) {
     return redirectToAccounts(req, 'instagram_oauth_failed');
   }
 }
+
 
 
