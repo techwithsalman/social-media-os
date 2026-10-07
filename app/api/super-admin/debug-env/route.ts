@@ -6,30 +6,29 @@ export async function GET() {
   const isSame = dbUrl.includes('ep-flat-bonus');
   
   const prisma = new PrismaClient();
-  let tables = [];
-  let migrations = [];
+  let hasRule = false;
+  let hasExec = false;
   
   try {
-    const res = await prisma.\\SELECT tablename FROM pg_tables WHERE schemaname='public'\;
-    tables = Array.isArray(res) ? res.map(r => r.tablename) : [];
-    
-    const migs = await prisma.\\SELECT * FROM _prisma_migrations\;
-    migrations = Array.isArray(migs) ? migs.map(m => m.migration_name) : [];
+    // @ts-ignore
+    await prisma.instagramAutoDmRule.findFirst();
+    hasRule = true;
   } catch (e) {
-    return NextResponse.json({ error: String(e), dbUrl });
+    hasRule = false;
   }
 
-  const hasRule = tables.includes('InstagramAutoDmRule');
-  const hasExec = tables.includes('InstagramAutoDmExecution');
-  const hasMig = migrations.includes('20261007120000_add_instagram_auto_dm');
+  try {
+    // @ts-ignore
+    await prisma.instagramAutoDmExecution.findFirst();
+    hasExec = true;
+  } catch (e) {
+    hasExec = false;
+  }
 
   return NextResponse.json({
     dbUrl,
     SAME_DATABASE: isSame,
-    TABLES: tables,
-    MIGRATIONS: migrations,
     InstagramAutoDmRule: hasRule,
     InstagramAutoDmExecution: hasExec,
-    MIGRATION_APPLIED: hasMig,
   });
 }
