@@ -164,8 +164,24 @@ export async function saveYouTubeAccount(
     },
   });
 
-  if (existing) {
-    throw new YouTubeOAuthError('ACCOUNT_EXISTS', 'This YouTube channel is already connected to this workspace.', 409);
+    if (existing) {
+    await prisma.socialAccount.update({
+      where: { id: existing.id },
+      data: {
+        name: channelInfo.title,
+        username: channelInfo.title,
+        profileImageUrl: channelInfo.thumbnailUrl,
+        status: 'CONNECTED',
+        token: {
+          update: {
+            accessToken: encryptToken(tokenData.accessToken),
+            refreshToken: tokenData.refreshToken ? encryptToken(tokenData.refreshToken) : undefined,
+            expiresAt: tokenData.expiresIn ? new Date(Date.now() + tokenData.expiresIn * 1000) : null,
+          }
+        }
+      }
+    });
+    return;
   }
 
   const entitlements = await getWorkspaceEntitlements(session.workspaceId);

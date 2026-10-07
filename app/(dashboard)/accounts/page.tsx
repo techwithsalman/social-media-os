@@ -160,7 +160,8 @@ function getOAuthNotice(search: string) {
 export default function ConnectedAccountsPage() {
   const [accounts, setAccounts] = useState<SocialAccount[]>([]);
   const [requirements, setRequirements] = useState<Record<string, PlatformReq>>({});
-  const [mode, setMode] = useState<AccountsMode>({
+  const [entitlements, setEntitlements] = useState<any>(null);
+    const [mode, setMode] = useState<AccountsMode>({
     realApiMode: false,
     mockApiMode: true,
     metaOAuthConfigured: false,
@@ -185,6 +186,7 @@ export default function ConnectedAccountsPage() {
         setAccounts(data.accounts || []);
         setRequirements(data.platformRequirements || {});
         setMode(data.mode || { realApiMode: false, mockApiMode: true, metaOAuthConfigured: false, realTikTokConfigured: false });
+          setEntitlements(data.entitlements || null);
       }
     } catch (e) {
       console.error(e);
@@ -212,6 +214,10 @@ export default function ConnectedAccountsPage() {
   }, [accounts, loading]);
 
   const handleConnect = async (platform: string) => {
+    if (entitlements && entitlements.limits.maxSocialAccounts !== null && accounts.length >= entitlements.limits.maxSocialAccounts) {
+      alert(`You've reached your ${entitlements.plan.name} plan limit of ${entitlements.limits.maxSocialAccounts} connected social accounts.`);
+      return;
+    }
     if (platform === 'LINKEDIN') { window.location.href = '/api/oauth/linkedin/connect'; return; }
     if (platform === 'X') {
       window.open('https://developer.x.com/', '_blank', 'noopener,noreferrer');
@@ -328,7 +334,7 @@ export default function ConnectedAccountsPage() {
         <div className="absolute inset-0 bg-[url('/noise.png')] opacity-[0.03] mix-blend-overlay pointer-events-none" />
         
         <div className="relative z-10">
-          <h2 className="text-3xl md:text-4xl font-black text-white tracking-tight drop-shadow-md mb-2">Connected Channels ({connectedPlatformCount} / {supportedPlatforms.length})</h2>
+          <h2 className="text-3xl md:text-4xl font-black text-white tracking-tight drop-shadow-md mb-2">Connected Channels ({accounts.length} / {entitlements?.limits?.maxSocialAccounts || 0})</h2>
           <p className="text-base md:text-lg text-neutral-300 font-medium">Connect your official social media accounts to manage and schedule content.</p>
         </div>
       </div>

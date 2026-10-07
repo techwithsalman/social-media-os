@@ -10,6 +10,7 @@ import {
 } from '@/lib/meta-token-service';
 
 import { isRealTikTokConfigured, getTikTokEnvironmentInfo } from '@/lib/tiktok-oauth';
+import { getWorkspaceEntitlements, serializeEntitlements } from '@/lib/billing';
 
 export async function GET() {
   try {
@@ -60,6 +61,8 @@ const accounts = await prisma.socialAccount.findMany({
     });
 
     const platformRequirements = platformRegistry.getAllRequirements();
+    const rawEntitlements = await getWorkspaceEntitlements(session.workspaceId);
+    const entitlements = serializeEntitlements(rawEntitlements);
     const mappedAccounts = accounts.map(acc => ({ ...acc, hasAutoDmToken: !!acc.token?.autoDmAccessToken, token: acc.token ? { expiresAt: acc.token.expiresAt, scope: acc.token.scope } : null }));
     const sortedAccounts = sortBySupportedPlatformOrder(mappedAccounts);
 

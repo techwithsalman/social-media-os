@@ -167,8 +167,22 @@ export async function saveInstagramAccount(
     },
   });
 
-  if (existing) {
-    throw new InstagramOAuthError('ACCOUNT_EXISTS', 'This Instagram account is already connected to this workspace.', 409);
+    if (existing) {
+    await prisma.socialAccount.update({
+      where: { id: existing.id },
+      data: {
+        name: profile.username,
+        username: profile.username,
+        status: 'CONNECTED',
+        token: {
+          update: {
+            accessToken: encryptToken(profile.accessToken),
+            expiresAt: profile.expiresAt ? new Date(profile.expiresAt) : null,
+          }
+        }
+      }
+    });
+    return;
   }
 
   const entitlements = await getWorkspaceEntitlements(session.workspaceId);
