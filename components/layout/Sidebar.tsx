@@ -47,6 +47,7 @@ const navItems = [
   { label: 'Connected Accounts', href: '/accounts', icon: Share2 },
   { label: 'Analytics', href: '/analytics', icon: BarChart3 },
   { label: 'Instagram Auto DM', href: '/instagram-auto-dm', icon: MessageCircle, badge: 'Beta' },
+  { label: 'Facebook Auto DM', href: '/facebook-auto-dm', icon: MessageCircle, badge: 'Beta' },
   { label: 'Team', href: '/team', icon: Users },
   { label: 'Billing', href: '/billing', icon: CreditCard },
   { label: 'Settings', href: '/settings', icon: Settings },
