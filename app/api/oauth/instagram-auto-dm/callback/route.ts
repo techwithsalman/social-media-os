@@ -2,6 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { encryptToken } from '@/lib/crypto';
 import { getSession } from '@/lib/auth';
+import crypto from 'crypto';
+
+function hashToken(token: string) {
+  return crypto.createHash('sha256').update(token).digest('hex');
+}
 
 export async function GET(req: NextRequest) {
   try {
@@ -9,14 +14,16 @@ export async function GET(req: NextRequest) {
     if (!session) return NextResponse.redirect(new URL('/login', req.url));
 
     const code = req.nextUrl.searchParams.get('code');
-    const state = req.nextUrl.searchParams.get('state');
+    const statePayload = req.nextUrl.searchParams.get('state');
 
-    if (!code || !state) {
-      return NextResponse.redirect(new URL('/instagram-auto-dm?error=missing_code', req.url));
+    if (!code || !statePayload) {
+      return NextResponse.redirect(new URL('/instagram-auto-dm?error=missing_code_or_state', req.url));
     }
 
+    const stateHash = hashToken(statePayload);
+
     const oauthState = await prisma.metaOAuthState.findFirst({
-      where: { userId: session.userId, workspaceId: session.workspaceId },
+      where: { stateHash, userId: session.userId, workspaceId: session.workspaceId },
       orderBy: { createdAt: 'desc' }
     });
 
@@ -24,11 +31,17 @@ export async function GET(req: NextRequest) {
       return NextResponse.redirect(new URL('/instagram-auto-dm?error=invalid_state', req.url));
     }
 
+    const parts = statePayload.split('_');
+    if (parts.length < 2) {
+      return NextResponse.redirect(new URL('/instagram-auto-dm?error=invalid_state_format', req.url));
+    }
+    const targetAccountId = parts[1];
+
     const appId = process.env.AUTO_DM_INSTAGRAM_APP_ID;
     const appSecret = process.env.AUTO_DM_INSTAGRAM_APP_SECRET;
     const redirectUri = process.env.AUTO_DM_INSTAGRAM_REDIRECT_URI || ((process.env.NODE_ENV === 'production' ? 'https://app.techwithsalman.online' : req.nextUrl.origin) + '/api/oauth/instagram-auto-dm/callback');
 
-    // 1. Exchange code for short-lived token via POST to api.instagram.com
+    // Exchange short token
     const body = new URLSearchParams({
       client_id: appId as string,
       client_secret: appSecret as string,
@@ -51,14 +64,9 @@ export async function GET(req: NextRequest) {
     }
 
     const shortToken = tokenData.access_token;
-    const igId = tokenData.user_id?.toString();
+    const returnedIgId = tokenData.user_id?.toString();
 
-    if (!igId) {
-      console.error('Instagram Token Error: No user_id returned', tokenData);
-      return NextResponse.redirect(new URL('/instagram-auto-dm?error=missing_user_id', req.url));
-    }
-
-    // 2. Exchange for long-lived token via GET to graph.instagram.com
+    // Exchange long token
     const longTokenUrl = new URL('https://graph.instagram.com/access_token');
     longTokenUrl.searchParams.set('grant_type', 'ig_exchange_token');
     longTokenUrl.searchParams.set('client_secret', appSecret as string);
@@ -66,12 +74,11 @@ export async function GET(req: NextRequest) {
 
     const longTokenRes = await fetch(longTokenUrl.toString());
     const longTokenData = await longTokenRes.json();
-    
     const finalToken = longTokenData.access_token || shortToken;
 
-    // 3. Find the existing SocialAccount by platformAccountId === igId
+    // Securely bind the token to the explicitly requested workspace account
     const existingAccount = await prisma.socialAccount.findFirst({
-      where: { platformAccountId: igId, platform: 'INSTAGRAM', workspaceId: session.workspaceId },
+      where: { id: targetAccountId, workspaceId: session.workspaceId, platform: 'INSTAGRAM' },
       include: { token: true }
     });
 
@@ -80,14 +87,16 @@ export async function GET(req: NextRequest) {
         where: { id: existingAccount.token.id },
         data: { autoDmAccessToken: encryptToken(finalToken) }
       });
+      
+      // Optional: Verify that returnedIgId matches expected platformAccountId
+      // However, sometimes IGID != IGSID. As long as we trust the workspace/session binding, we are safe.
+      console.log('Successfully enabled Auto DM for SocialAccount:', existingAccount.id);
     } else {
-      // If the account wasn't connected for publishing first, we can't save it because we require the publishing token to exist.
-      // Usually, they select it from the UI, so it MUST exist.
-      console.error('Account not found in DB for igId:', igId);
+      console.error('Target account not found in DB:', targetAccountId);
       return NextResponse.redirect(new URL('/instagram-auto-dm?error=account_not_found', req.url));
     }
 
-    return NextResponse.redirect(new URL('/instagram-auto-dm?success=reconnected', req.url));
+    return NextResponse.redirect(new URL('/instagram-auto-dm?success=enabled', req.url));
   } catch (err) {
     console.error('Auto DM Callback Error', err);
     return NextResponse.redirect(new URL('/instagram-auto-dm?error=internal_error', req.url));

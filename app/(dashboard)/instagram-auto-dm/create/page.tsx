@@ -245,19 +245,19 @@ export default function CreateInstagramAutoDmPage() {
                             <div className="col-span-1 sm:col-span-2 mt-2 flex justify-end">
                               {!acc.hasAutoDmToken ? (
                                 <button 
-                                  onClick={(e) => { e.preventDefault(); window.location.href='/api/oauth/instagram-auto-dm/connect'; }}
+                                  onClick={(e) => { e.preventDefault(); window.location.href=`/api/oauth/instagram-auto-dm/connect?accountId=${acc.id}`; }}
                                   className="bg-red-600 hover:bg-red-700 text-white text-xs font-bold py-2 px-4 rounded-lg flex items-center gap-2"
                                 >
                                   <Instagram className="w-3 h-3" />
-                                  Connect Auto DM
+                                  Enable Auto DM
                                 </button>
                               ) : (
                                 <button 
-                                  onClick={(e) => { e.preventDefault(); window.location.href='/api/oauth/instagram-auto-dm/connect'; }}
-                                  className="bg-zinc-800 border border-zinc-700 hover:bg-zinc-700 text-zinc-300 text-xs font-bold py-2 px-4 rounded-lg flex items-center gap-2"
+                                  disabled
+                                  className="bg-zinc-800 border border-green-500/30 text-green-400 text-xs font-bold py-2 px-4 rounded-lg flex items-center gap-2 cursor-default"
                                 >
                                   <Instagram className="w-3 h-3" />
-                                  Reconnect Auto DM
+                                  Auto DM Enabled
                                 </button>
                               )}
                             </div>

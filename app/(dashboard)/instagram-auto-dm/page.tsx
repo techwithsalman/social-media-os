@@ -23,8 +23,8 @@ function InstagramAutoDmContent() {
     if (searchParams.get("success") === "1") {
       setSuccessMsg("Automation created successfully.");
       setTimeout(() => setSuccessMsg(""), 5000);
-    } else if (searchParams.get("success") === "reconnected") {
-      setSuccessMsg("Instagram Auto DM connected successfully.");
+    } else if (searchParams.get("success") === "enabled") {
+      setSuccessMsg("Auto DM Enabled");
       setTimeout(() => setSuccessMsg(""), 5000);
     }
     fetchAutomations();

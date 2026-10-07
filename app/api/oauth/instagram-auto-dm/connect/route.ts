@@ -18,10 +18,20 @@ export async function GET(req: NextRequest) {
     const appId = process.env.AUTO_DM_INSTAGRAM_APP_ID;
     if (!appId) return NextResponse.redirect(new URL('/instagram-auto-dm?error=missing_auto_dm_env', req.url));
 
+    const accountId = req.nextUrl.searchParams.get('accountId');
+    if (!accountId) return NextResponse.redirect(new URL('/instagram-auto-dm?error=missing_account_id', req.url));
+
+    // Verify account exists and belongs to user
+    const account = await prisma.socialAccount.findFirst({
+      where: { id: accountId, workspaceId: session.workspaceId, platform: 'INSTAGRAM' }
+    });
+    if (!account) return NextResponse.redirect(new URL('/instagram-auto-dm?error=invalid_account', req.url));
+
     const redirectUri = process.env.AUTO_DM_INSTAGRAM_REDIRECT_URI || ((process.env.NODE_ENV === 'production' ? 'https://app.techwithsalman.online' : req.nextUrl.origin) + '/api/oauth/instagram-auto-dm/callback');
 
-    const state = randomToken();
-    const stateHash = hashToken(state);
+    const rawState = randomToken();
+    const statePayload = rawState + '_' + accountId;
+    const stateHash = hashToken(statePayload);
 
     await prisma.metaOAuthState.create({
       data: {
@@ -37,7 +47,7 @@ export async function GET(req: NextRequest) {
     url.searchParams.set('client_id', appId);
     url.searchParams.set('redirect_uri', redirectUri);
     url.searchParams.set('response_type', 'code');
-    url.searchParams.set('state', state);
+    url.searchParams.set('state', statePayload);
     url.searchParams.set('scope', 'instagram_business_basic,instagram_business_manage_messages,instagram_business_manage_comments');
 
     return NextResponse.redirect(url.toString());
