@@ -23,6 +23,9 @@ function InstagramAutoDmContent() {
     if (searchParams.get("success") === "1") {
       setSuccessMsg("Automation created successfully.");
       setTimeout(() => setSuccessMsg(""), 5000);
+    } else if (searchParams.get("success") === "reconnected") {
+      setSuccessMsg("Instagram Auto DM connected successfully.");
+      setTimeout(() => setSuccessMsg(""), 5000);
     }
     fetchAutomations();
   }, [searchParams]);
@@ -250,3 +253,5 @@ export default function InstagramAutoDmPage() {
     </Suspense>
   );
 }
+
+

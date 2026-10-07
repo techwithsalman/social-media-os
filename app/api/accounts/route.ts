@@ -52,6 +52,7 @@ const accounts = await prisma.socialAccount.findMany({
           select: {
             expiresAt: true,
             scope: true,
+            autoDmAccessToken: true,
           },
         },
       },
@@ -59,7 +60,8 @@ const accounts = await prisma.socialAccount.findMany({
     });
 
     const platformRequirements = platformRegistry.getAllRequirements();
-    const sortedAccounts = sortBySupportedPlatformOrder(accounts);
+    const mappedAccounts = accounts.map(acc => ({ ...acc, hasAutoDmToken: !!acc.token?.autoDmAccessToken, token: acc.token ? { expiresAt: acc.token.expiresAt, scope: acc.token.scope } : null }));
+    const sortedAccounts = sortBySupportedPlatformOrder(mappedAccounts);
 
     return NextResponse.json({
       accounts: sortedAccounts,
@@ -100,3 +102,6 @@ export async function DELETE(req: NextRequest) {
     return NextResponse.json({ error: error.message || 'Failed to disconnect account' }, { status: 500 });
   }
 }
+
+
+

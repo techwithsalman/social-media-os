@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Save, Loader2, Info, Instagram, Video, Image as ImageIcon, MessageCircle } from "lucide-react";
@@ -220,8 +220,7 @@ export default function CreateInstagramAutoDmPage() {
                   ) : (
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       {accounts.map(acc => (
-                        <div 
-                          key={acc.id}
+                        <React.Fragment key={acc.id}><div 
                           onClick={() => setFormData(prev => ({ ...prev, socialAccountId: acc.id }))}
                           className={`relative cursor-pointer p-3 rounded-lg border flex items-center gap-3 transition-all ${formData.socialAccountId === acc.id ? 'bg-red-500/5 border-red-500 shadow-sm shadow-red-500/10' : 'bg-black border-zinc-800 hover:border-zinc-700'}`}
                         >
@@ -236,10 +235,35 @@ export default function CreateInstagramAutoDmPage() {
                             <p className="text-sm font-bold text-white truncate">{acc.name || acc.username}</p>
                             <p className="text-xs text-zinc-500 truncate">@{acc.username}</p>
                           </div>
+                          
+                            {formData.socialAccountId === acc.id && (
+                              <div className="absolute top-2 right-2 w-2 h-2 rounded-full bg-red-500"></div>
+                            )}
+                          </div>
+                          
                           {formData.socialAccountId === acc.id && (
-                            <div className="absolute top-2 right-2 w-2 h-2 rounded-full bg-red-500"></div>
+                            <div className="col-span-1 sm:col-span-2 mt-2 flex justify-end">
+                              {!acc.hasAutoDmToken ? (
+                                <button 
+                                  onClick={(e) => { e.preventDefault(); window.location.href='/api/oauth/instagram-auto-dm/connect'; }}
+                                  className="bg-red-600 hover:bg-red-700 text-white text-xs font-bold py-2 px-4 rounded-lg flex items-center gap-2"
+                                >
+                                  <Instagram className="w-3 h-3" />
+                                  Connect Auto DM
+                                </button>
+                              ) : (
+                                <button 
+                                  onClick={(e) => { e.preventDefault(); window.location.href='/api/oauth/instagram-auto-dm/connect'; }}
+                                  className="bg-zinc-800 border border-zinc-700 hover:bg-zinc-700 text-zinc-300 text-xs font-bold py-2 px-4 rounded-lg flex items-center gap-2"
+                                >
+                                  <Instagram className="w-3 h-3" />
+                                  Reconnect Auto DM
+                                </button>
+                              )}
+                            </div>
                           )}
-                        </div>
+                        </React.Fragment>
+
                       ))}
                     </div>
                   )}
