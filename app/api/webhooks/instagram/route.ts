@@ -24,6 +24,17 @@ export async function POST(req: NextRequest) {
     const signature = req.headers.get('x-hub-signature-256');
     const secret = process.env.META_APP_SECRET;
 
+    console.log([Webhook Delivery] Received POST at );
+
+    let payload;
+    try {
+      payload = JSON.parse(rawBody);
+      console.log([Webhook Payload] Object: , Entries: );
+    } catch (e) {
+      console.error('[Webhook Error] Invalid JSON');
+      return new NextResponse('Invalid JSON', { status: 400 });
+    }
+
     // Verify signature if secret is available
     if (signature && secret) {
       const hmac = crypto.createHmac('sha256', secret);
@@ -64,8 +75,7 @@ export async function POST(req: NextRequest) {
 
 async function processCommentWebhook(igAccountId: string, value: any) {
   const { id: commentId, from, text, media } = value;
-  
-  if (!commentId || !from || !text || !media) return;
+  console.log([Webhook Comment] Account: , MediaID: , CommentID: , TextPresent: );
   const commenterId = from.id;
   const mediaId = media.id;
 
@@ -183,4 +193,5 @@ async function sendInstagramPrivateReply(igAccountId: string, commentId: string,
   }
   return data;
 }
+
 
