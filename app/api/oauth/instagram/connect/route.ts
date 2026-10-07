@@ -23,6 +23,8 @@ export async function GET(req: NextRequest) {
     }
 
     const authorizationUrl = await createInstagramAuthorizationUrl(session);
+    console.log('[IG_AUTH_DEBUG]', authorizationUrl);
+    if (req.nextUrl.searchParams.get('debug') === '1') { return NextResponse.json({ url: authorizationUrl, appId: process.env.INSTAGRAM_APP_ID, metaId: process.env.META_APP_ID }); }
     return NextResponse.redirect(authorizationUrl);
   } catch (error) {
     if (error instanceof InstagramOAuthError) {
@@ -33,3 +35,5 @@ export async function GET(req: NextRequest) {
     return redirectToAccounts(req, 'instagram_oauth_failed');
   }
 }
+
+
