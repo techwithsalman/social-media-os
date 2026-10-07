@@ -1,3 +1,5 @@
+import { createOAuthCallbackResponse } from '@/lib/oauth-callback';
+import { getBaseUrl } from '@/lib/url';
 import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
 import { exchangeTikTokCodeForTokens, fetchTikTokUserInfo, TikTokOAuthError } from '@/lib/tiktok-oauth';
@@ -14,21 +16,8 @@ function sanitizeErrorDescription(desc: string | null | undefined): string | und
   return cleaned.slice(0, 250);
 }
 
-function redirectToAccounts(
-  req: NextRequest,
-  params: { connected?: boolean; error?: string; errorDesc?: string }
-) {
-  const url = new URL('/accounts', req.url);
-  if (params.connected) {
-    url.searchParams.set('tiktok_connected', 'true');
-  }
-  if (params.error) {
-    url.searchParams.set('tiktok_error', params.error);
-  }
-  if (params.errorDesc) {
-    url.searchParams.set('tiktok_error_desc', params.errorDesc);
-  }
-  return NextResponse.redirect(url);
+function redirectToAccounts(req: NextRequest, params: { connected?: boolean; error?: string; errorDesc?: string }) {
+  return createOAuthCallbackResponse('TIKTOK', !!params.connected, params.error, getBaseUrl(req));
 }
 
 export async function GET(req: NextRequest) {

@@ -1,3 +1,4 @@
+import { createOAuthCallbackResponse } from '@/lib/oauth-callback';
 import { getBaseUrl } from '@/lib/url';
 import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
@@ -11,13 +12,7 @@ import {
 export const dynamic = 'force-dynamic';
 
 function redirectToAccounts(req: NextRequest, success?: boolean, error?: string) {
-  const url = new URL('/accounts', getBaseUrl(req));
-  if (success) {
-    url.searchParams.set('pinterest_success', '1');
-  } else if (error) {
-    url.searchParams.set('pinterest_error', error);
-  }
-  return NextResponse.redirect(url);
+  return createOAuthCallbackResponse('PINTEREST', !!success, error, getBaseUrl(req));
 }
 
 export async function GET(req: NextRequest) {
@@ -51,7 +46,7 @@ export async function GET(req: NextRequest) {
     // 3. Save Account
     await savePinterestAccount(tokenData, profile, session);
 
-    return redirectToAccounts(req, true);
+    return createOAuthCallbackResponse('PINTEREST', true, undefined, getBaseUrl(req));
   } catch (error: any) {
     console.error('[Pinterest Callback Error]:', error);
     if (error instanceof PinterestOAuthError) {

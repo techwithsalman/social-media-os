@@ -237,7 +237,7 @@ export default function ConnectedAccountsPage() {
       alert(`You've reached your ${entitlements.plan.name} plan limit of ${entitlements.limits.maxSocialAccounts} connected social accounts.`);
       return;
     }
-    if (platform === 'LINKEDIN') { window.location.href = '/api/oauth/linkedin/connect'; return; }
+    if (platform === 'LINKEDIN') { window.open('/api/oauth/linkedin/connect', 'oauth_popup', 'width=600,height=700'); return; }
     if (platform === 'X') {
       window.open('https://developer.x.com/', '_blank', 'noopener,noreferrer');
       return;
@@ -248,25 +248,25 @@ export default function ConnectedAccountsPage() {
     }
     if (platform === 'TIKTOK' && mode.realTikTokConfigured) {
       setActionLoadingPlatform(platform);
-      window.location.href = `/api/oauth/tiktok/connect`;
+      window.open(`/api/oauth/tiktok/connect`, 'oauth_popup', 'width=600,height=700');
       return;
     }
 
     if (mode.realApiMode && platform === 'INSTAGRAM') {
       setActionLoadingPlatform(platform);
-      window.location.href = `/api/oauth/instagram/connect?mode=${intentMode}`;
+      window.open(`/api/oauth/instagram/connect?mode=${intentMode}`, 'oauth_popup', 'width=600,height=700');
       return;
     }
 
     if (mode.realApiMode && platform === 'FACEBOOK') {
       setActionLoadingPlatform(platform);
-      window.location.href = `/api/oauth/meta/connect?platform=FACEBOOK`;
+      window.open(`/api/oauth/meta/connect?platform=FACEBOOK`, 'oauth_popup', 'width=600,height=700');
       return;
     }
 
     if (platform === 'YOUTUBE') {
       setActionLoadingPlatform(platform);
-      window.location.href = `/api/oauth/youtube/connect`;
+      window.open(`/api/oauth/youtube/connect`, 'oauth_popup', 'width=600,height=700');
       return;
     }
 

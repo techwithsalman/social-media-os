@@ -1,3 +1,4 @@
+import { createOAuthCallbackResponse } from '@/lib/oauth-callback';
 import { getBaseUrl } from '@/lib/url';
 import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';

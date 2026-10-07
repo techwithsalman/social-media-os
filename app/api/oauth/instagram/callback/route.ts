@@ -1,3 +1,4 @@
+import { createOAuthCallbackResponse } from '@/lib/oauth-callback';
 import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
 import {
@@ -17,9 +18,7 @@ function getBaseUrl(req: NextRequest) {
 }
 
 function redirectToAccounts(req: NextRequest, code: string) {
-  const url = new URL('/accounts', getBaseUrl(req));
-  url.searchParams.set('meta_error', code);
-  return NextResponse.redirect(url);
+  return createOAuthCallbackResponse('INSTAGRAM', false, code, getBaseUrl(req));
 }
 
 export async function GET(req: NextRequest) {
@@ -58,8 +57,7 @@ export async function GET(req: NextRequest) {
     await saveInstagramAccount(profile, session, mode as any);
 
     // Redirect to Connected Accounts successfully
-    const successUrl = new URL('/accounts?instagram_connected=1', getBaseUrl(req));
-    return NextResponse.redirect(successUrl);
+    return createOAuthCallbackResponse('INSTAGRAM', true, undefined, getBaseUrl(req));
   } catch (error) {
     if (error instanceof InstagramOAuthError) {
       console.error('[Instagram Callback Error]:', error.message);

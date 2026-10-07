@@ -1,3 +1,4 @@
+import { createOAuthCallbackResponse } from '@/lib/oauth-callback';
 import { getBaseUrl } from '@/lib/url';
 export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
@@ -11,13 +12,7 @@ import {
 } from '@/lib/youtube-oauth';
 
 function redirectToAccounts(req: NextRequest, success?: boolean, error?: string) {
-  const url = new URL('/accounts', getBaseUrl(req));
-  if (success) {
-    url.searchParams.set('youtube_success', '1');
-  } else if (error) {
-    url.searchParams.set('youtube_error', error);
-  }
-  return NextResponse.redirect(url);
+  return createOAuthCallbackResponse('YOUTUBE', !!success, error, getBaseUrl(req));
 }
 
 export async function GET(req: NextRequest) {
@@ -54,7 +49,7 @@ export async function GET(req: NextRequest) {
     // 4. Save Account
     await saveYouTubeAccount(tokenData, channelInfo, session);
 
-    return redirectToAccounts(req, true);
+    return createOAuthCallbackResponse('YOUTUBE', true, undefined, getBaseUrl(req));
   } catch (error) {
     if (error instanceof YouTubeOAuthError) {
       return redirectToAccounts(req, false, error.code.toLowerCase());
