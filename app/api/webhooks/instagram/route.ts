@@ -9,8 +9,6 @@ export async function GET(req: NextRequest) {
   const token = req.nextUrl.searchParams.get('hub.verify_token');
   const challenge = req.nextUrl.searchParams.get('hub.challenge');
 
-  
-
   const verifyToken = process.env.META_WEBHOOK_VERIFY_TOKEN || 'social_media_os_verify';
 
   if (mode === 'subscribe' && token === verifyToken) {
@@ -21,26 +19,10 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  console.log('[IG_WEBHOOK] POST_RECEIVED');
   try {
     const rawBody = await req.text();
     const signature = req.headers.get('x-hub-signature-256');
     const secret = process.env.META_APP_SECRET;
-
-    let payload;
-    try {
-      payload = JSON.parse(rawBody);
-      const entryCount = payload.entry?.length || 0;
-      console.log([IG_WEBHOOK] object=);
-      console.log([IG_WEBHOOK] entries=);
-      
-      if (entryCount > 0 && payload.entry[0]?.changes?.length > 0) {
-        console.log([IG_WEBHOOK] field=);
-      }
-    } catch (e) {
-      console.error('[IG_WEBHOOK] Error parsing JSON');
-      return new NextResponse('Invalid JSON', { status: 400 });
-    }
 
     // Verify signature if secret is available
     if (signature && secret) {
@@ -82,7 +64,8 @@ export async function POST(req: NextRequest) {
 
 async function processCommentWebhook(igAccountId: string, value: any) {
   const { id: commentId, from, text, media } = value;
-  console.log([Webhook Comment] Account: , MediaID: , CommentID: , TextPresent: );
+  
+  if (!commentId || !from || !text || !media) return;
   const commenterId = from.id;
   const mediaId = media.id;
 
@@ -200,8 +183,4 @@ async function sendInstagramPrivateReply(igAccountId: string, commentId: string,
   }
   return data;
 }
-
-
-
-
 
