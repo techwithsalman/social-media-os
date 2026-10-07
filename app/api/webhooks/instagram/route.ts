@@ -19,19 +19,24 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  console.log('[IG_WEBHOOK] POST_RECEIVED');
   try {
     const rawBody = await req.text();
     const signature = req.headers.get('x-hub-signature-256');
     const secret = process.env.META_APP_SECRET;
 
-    console.log([Webhook Delivery] Received POST at );
-
     let payload;
     try {
       payload = JSON.parse(rawBody);
-      console.log([Webhook Payload] Object: , Entries: );
+      const entryCount = payload.entry?.length || 0;
+      console.log([IG_WEBHOOK] object=);
+      console.log([IG_WEBHOOK] entries=);
+      
+      if (entryCount > 0 && payload.entry[0]?.changes?.length > 0) {
+        console.log([IG_WEBHOOK] field=);
+      }
     } catch (e) {
-      console.error('[Webhook Error] Invalid JSON');
+      console.error('[IG_WEBHOOK] Error parsing JSON');
       return new NextResponse('Invalid JSON', { status: 400 });
     }
 
@@ -193,5 +198,6 @@ async function sendInstagramPrivateReply(igAccountId: string, commentId: string,
   }
   return data;
 }
+
 
 
