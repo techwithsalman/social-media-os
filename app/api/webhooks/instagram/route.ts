@@ -9,7 +9,7 @@ export async function GET(req: NextRequest) {
   const token = req.nextUrl.searchParams.get('hub.verify_token');
   const challenge = req.nextUrl.searchParams.get('hub.challenge');
 
-  const verifyToken = process.env.META_WEBHOOK_VERIFY_TOKEN || 'social_media_os_verify';
+  const verifyToken = process.env.AUTO_DM_WEBHOOK_VERIFY_TOKEN || process.env.META_WEBHOOK_VERIFY_TOKEN || 'social_media_os_verify';
 
   if (mode === 'subscribe' && token === verifyToken) {
     return new NextResponse(challenge, { status: 200 });
@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
   try {
     const rawBody = await req.text();
     const signature = req.headers.get('x-hub-signature-256');
-    const secret = process.env.META_APP_SECRET;
+    const secret = process.env.AUTO_DM_INSTAGRAM_APP_SECRET || process.env.META_APP_SECRET;
 
     // Verify signature if secret is available
     if (signature && secret) {
@@ -78,7 +78,7 @@ async function processCommentWebhook(igAccountId: string, value: any) {
     include: { token: true }
   });
 
-  if (!account || !account.token || !account.token.accessToken) return;
+  if (!account || !account.token || !account.token.autoDmAccessToken || account.token.accessToken) return;
 
   // Find active rules for this media
   const rules = await prisma.instagramAutoDmRule.findMany({
@@ -119,7 +119,7 @@ async function processCommentWebhook(igAccountId: string, value: any) {
 
       // Send the DM
       try {
-        const accessToken = decryptToken(account.token.accessToken);
+        const accessToken = decryptToken(account.token.autoDmAccessToken || account.token.accessToken);
         await sendInstagramPrivateReply(igAccountId, commentId, rule, accessToken);
         
         await prisma.instagramAutoDmExecution.update({
@@ -183,4 +183,8 @@ async function sendInstagramPrivateReply(igAccountId: string, commentId: string,
   }
   return data;
 }
+
+
+
+
 

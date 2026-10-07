@@ -121,6 +121,7 @@ model OAuthToken {
   socialAccountId String        @unique
   accessToken     String
   refreshToken    String?
+  autoDmAccessToken String?
   scope           String?
   expiresAt       DateTime?
   createdAt       DateTime      @default(now())
@@ -467,3 +468,4 @@ model FacebookAutoDmExecution {
   @@unique([ruleId, commentId])
   @@index([workspaceId])
 }
+
