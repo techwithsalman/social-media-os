@@ -33,13 +33,12 @@ export async function GET(req: NextRequest) {
       },
     });
 
-    const url = new URL('https://www.facebook.com/v21.0/dialog/oauth');
+    const url = new URL('https://api.instagram.com/oauth/authorize');
     url.searchParams.set('client_id', appId);
-    url.searchParams.set('display', 'page');
     url.searchParams.set('redirect_uri', redirectUri);
     url.searchParams.set('response_type', 'code');
     url.searchParams.set('state', state);
-    url.searchParams.set('scope', 'instagram_basic,instagram_manage_comments,instagram_manage_messages,pages_show_list,pages_read_engagement');
+    url.searchParams.set('scope', 'instagram_business_basic,instagram_business_manage_messages,instagram_business_manage_comments');
 
     return NextResponse.redirect(url.toString());
   } catch (err) {
