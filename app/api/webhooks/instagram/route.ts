@@ -9,6 +9,8 @@ export async function GET(req: NextRequest) {
   const token = req.nextUrl.searchParams.get('hub.verify_token');
   const challenge = req.nextUrl.searchParams.get('hub.challenge');
 
+  console.log([IG_WEBHOOK] GET_VERIFICATION mode= token= challenge=);
+
   const verifyToken = process.env.META_WEBHOOK_VERIFY_TOKEN || 'social_media_os_verify';
 
   if (mode === 'subscribe' && token === verifyToken) {
@@ -198,6 +200,7 @@ async function sendInstagramPrivateReply(igAccountId: string, commentId: string,
   }
   return data;
 }
+
 
 
 
