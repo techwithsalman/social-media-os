@@ -1,8 +1,18 @@
 import { NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
+import { getCurrentUser } from '@/lib/auth';
 
-export async function GET(req: Request) {
+export async function POST(req: Request) {
   try {
+    const user = await getCurrentUser();
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    
+    if (user.systemRole !== 'SUPER_ADMIN') {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
     const prisma = new PrismaClient();
     const statements = [
       'CREATE TABLE "FacebookAutoDmRule" ("id" TEXT NOT NULL, "workspaceId" TEXT NOT NULL, "socialAccountId" TEXT NOT NULL, "pageId" TEXT NOT NULL, "postId" TEXT NOT NULL, "name" TEXT NOT NULL, "keyword" TEXT NOT NULL, "matchType" TEXT NOT NULL DEFAULT \'EXACT\', "message" TEXT NOT NULL, "buttonLabel" TEXT, "destinationUrl" TEXT, "enabled" BOOLEAN NOT NULL DEFAULT true, "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP, "updatedAt" TIMESTAMP(3) NOT NULL, CONSTRAINT "FacebookAutoDmRule_pkey" PRIMARY KEY ("id"))',
@@ -18,19 +28,30 @@ export async function GET(req: Request) {
       'ALTER TABLE "FacebookAutoDmExecution" ADD CONSTRAINT "FacebookAutoDmExecution_socialAccountId_fkey" FOREIGN KEY ("socialAccountId") REFERENCES "SocialAccount"("id") ON DELETE CASCADE ON UPDATE CASCADE'
     ];
       
-    const results = [];
+    let executed = 0;
+    let skipped = 0;
     
     for (const stmt of statements) {
       try {
         await prisma.$executeRawUnsafe(stmt);
-        results.push({ stmt: stmt.substring(0, 50) + '...', status: 'success' });
+        executed++;
       } catch (e: any) {
-        results.push({ stmt: stmt.substring(0, 50) + '...', status: 'error', error: String(e) });
+        const msg = String(e);
+        if (msg.includes('already exists')) {
+          skipped++;
+        } else {
+          return NextResponse.json({ error: 'Migration failed safely on statement execution.' }, { status: 500 });
+        }
       }
     }
     
-    return NextResponse.json({ success: true, results });
+    return NextResponse.json({ success: true, executed, skipped, message: 'Migration idempotent pass completed.' });
   } catch (e: any) {
-    return NextResponse.json({ error: String(e) });
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
+}
+
+// Block GET entirely
+export async function GET() {
+  return NextResponse.json({ error: 'Method Not Allowed' }, { status: 405 });
 }
