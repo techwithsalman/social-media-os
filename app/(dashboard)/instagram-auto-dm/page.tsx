@@ -5,7 +5,9 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Plus, Activity, Edit, Trash2, Power, PowerOff, MessageCircle, AlertCircle, BarChart3, Settings2 } from "lucide-react";
 
-export default function InstagramAutoDmPage() {
+import { Suspense } from "react";
+
+function InstagramAutoDmContent() {
   const searchParams = useSearchParams();
   const [automations, setAutomations] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -237,5 +239,14 @@ export default function InstagramAutoDmPage() {
         </>
       )}
     </div>
+  );
+}
+
+
+export default function InstagramAutoDmPage() {
+  return (
+    <Suspense fallback={<div className="p-8 text-center text-zinc-500">Loading...</div>}>
+      <InstagramAutoDmContent />
+    </Suspense>
   );
 }

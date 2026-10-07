@@ -84,7 +84,7 @@ async function processCommentWebhook(igAccountId: string, value: any) {
   const rules = await prisma.instagramAutoDmRule.findMany({
     where: {
       socialAccountId: account.id,
-      mediaId: mediaId,
+      OR: [{ mediaId: mediaId }, { mediaId: "ANY" }],
       enabled: true
     }
   });
@@ -183,3 +183,4 @@ async function sendInstagramPrivateReply(igAccountId: string, commentId: string,
   }
   return data;
 }
+

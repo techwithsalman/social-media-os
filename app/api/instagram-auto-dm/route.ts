@@ -48,7 +48,7 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { name, socialAccountId, mediaId, keyword, matchType, message, buttonLabel, destinationUrl, enabled } = body;
 
-    if (!name || !socialAccountId || !mediaId || !keyword || !message) {
+    if (!name || !socialAccountId || !keyword || !message) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
@@ -66,7 +66,7 @@ export async function POST(req: NextRequest) {
         workspaceId: session.workspaceId,
         socialAccountId,
         name,
-        mediaId,
+        mediaId: mediaId || "ANY",
         keyword,
         matchType: matchType || 'EXACT',
         message,
@@ -82,3 +82,5 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Failed to create rule' }, { status: 500 });
   }
 }
+
+

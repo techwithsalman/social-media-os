@@ -20,14 +20,14 @@ export function hashToken(token: string): string {
 }
 
 export function getInstagramConfig(requireSecret: boolean) {
-  const appId = process.env.INSTAGRAM_APP_ID?.trim() || process.env.META_APP_ID?.trim();
-  const appSecret = process.env.INSTAGRAM_APP_SECRET?.trim() || process.env.META_APP_SECRET?.trim();
+  const appId = process.env.INSTAGRAM_APP_ID?.trim();
+  const appSecret = process.env.INSTAGRAM_APP_SECRET?.trim();
   
   const appUrl = process.env.NODE_ENV === "production"
     ? (process.env.APP_URL || process.env.NEXT_PUBLIC_APP_URL || "https://app.techwithsalman.online")
     : "http://localhost:3000";
     
-  const redirectUri = `${appUrl}/api/oauth/instagram/callback`;
+  const redirectUri = process.env.INSTAGRAM_REDIRECT_URI?.trim() || `${appUrl}/api/oauth/instagram/callback`;
 
   if (!appId || (requireSecret && !appSecret)) {
     throw new InstagramOAuthError(
@@ -58,7 +58,7 @@ export async function createInstagramAuthorizationUrl(session: SessionPayload) {
     },
   });
 
-  const authUrl = new URL('https://www.instagram.com/oauth/authorize');
+  const authUrl = new URL('https://api.instagram.com/oauth/authorize');
   authUrl.searchParams.set('enable_fb_login', '0');
   authUrl.searchParams.set('force_authentication', '1');
   authUrl.searchParams.set('client_id', config.appId!);
