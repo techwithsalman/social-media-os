@@ -219,6 +219,28 @@ export default function ConnectedAccountsPage() {
   }, []);
 
   useEffect(() => {
+    const handleMessage = (event: MessageEvent) => {
+      const expectedOrigin = process.env.NODE_ENV === 'production' 
+        ? 'https://app.techwithsalman.online' 
+        : window.location.origin;
+      
+      if (event.origin !== expectedOrigin) return;
+
+      if (event.data?.type === 'SOCIAL_ACCOUNT_CONNECTED') {
+        fetchAccounts();
+        setOauthNotice({ type: 'success', message: 'Account connected successfully.' });
+        setActionLoadingPlatform(null);
+      } else if (event.data?.type === 'SOCIAL_ACCOUNT_ERROR') {
+        setOauthNotice({ type: 'error', message: 'Connection failed: ' + event.data.error });
+        setActionLoadingPlatform(null);
+      }
+    };
+
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, []);
+
+  useEffect(() => {
     const notice = getOAuthNotice(window.location.search);
     if (notice && notice.type === 'success' && notice.message.includes('TikTok')) {
       const hasConnectedTikTok = accounts.some(
@@ -232,12 +254,24 @@ export default function ConnectedAccountsPage() {
     setOauthNotice(notice);
   }, [accounts, loading]);
 
+  const openOAuthPopup = (url: string) => {
+    const popup = window.open(url, 'oauth_popup', 'width=600,height=700');
+    if (popup) {
+      const timer = setInterval(() => {
+        if (popup.closed) {
+          clearInterval(timer);
+          setActionLoadingPlatform(null);
+        }
+      }, 500);
+    }
+  };
+
   const handleConnect = async (platform: string, intentMode: 'add' | 'reconnect' = 'add') => {
     if (entitlements && entitlements.limits.maxSocialAccounts !== null && accounts.length >= entitlements.limits.maxSocialAccounts) {
       alert(`You've reached your ${entitlements.plan.name} plan limit of ${entitlements.limits.maxSocialAccounts} connected social accounts.`);
       return;
     }
-    if (platform === 'LINKEDIN') { window.open('/api/oauth/linkedin/connect', 'oauth_popup', 'width=600,height=700'); return; }
+    if (platform === 'LINKEDIN') { openOAuthPopup('/api/oauth/linkedin/connect'); return; }
     if (platform === 'X') {
       window.open('https://developer.x.com/', '_blank', 'noopener,noreferrer');
       return;
@@ -248,25 +282,25 @@ export default function ConnectedAccountsPage() {
     }
     if (platform === 'TIKTOK' && mode.realTikTokConfigured) {
       setActionLoadingPlatform(platform);
-      window.open(`/api/oauth/tiktok/connect`, 'oauth_popup', 'width=600,height=700');
+      openOAuthPopup(`/api/oauth/tiktok/connect`);
       return;
     }
 
     if (mode.realApiMode && platform === 'INSTAGRAM') {
       setActionLoadingPlatform(platform);
-      window.open(`/api/oauth/instagram/connect?mode=${intentMode}`, 'oauth_popup', 'width=600,height=700');
+      openOAuthPopup(`/api/oauth/instagram/connect?mode=${intentMode}`);
       return;
     }
 
     if (mode.realApiMode && platform === 'FACEBOOK') {
       setActionLoadingPlatform(platform);
-      window.open(`/api/oauth/meta/connect?platform=FACEBOOK`, 'oauth_popup', 'width=600,height=700');
+      openOAuthPopup(`/api/oauth/meta/connect?platform=FACEBOOK`);
       return;
     }
 
     if (platform === 'YOUTUBE') {
       setActionLoadingPlatform(platform);
-      window.open(`/api/oauth/youtube/connect`, 'oauth_popup', 'width=600,height=700');
+      openOAuthPopup(`/api/oauth/youtube/connect`);
       return;
     }
 
