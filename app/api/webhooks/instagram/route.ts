@@ -31,11 +31,11 @@ export async function POST(req: NextRequest) {
     try {
       payload = JSON.parse(rawBody);
       const entryCount = payload.entry?.length || 0;
-      console.log([IG_WEBHOOK] object=);
-      console.log([IG_WEBHOOK] entries=);
+      console.log('[IG_WEBHOOK] object=' + payload.object);
+      console.log('[IG_WEBHOOK] entries=' + entryCount);
       
       if (entryCount > 0 && payload.entry[0]?.changes?.length > 0) {
-        console.log([IG_WEBHOOK] field=);
+        console.log('[IG_WEBHOOK] field=' + payload.entry[0].changes[0].field);
       }
     } catch (e) {
       console.error('[IG_WEBHOOK] Error parsing JSON');
@@ -200,6 +200,7 @@ async function sendInstagramPrivateReply(igAccountId: string, commentId: string,
   }
   return data;
 }
+
 
 
 
