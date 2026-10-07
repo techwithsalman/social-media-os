@@ -81,9 +81,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: true, rule });
   } catch (error: any) {
     console.error(error);
-    return NextResponse.json({ error: 'Failed to create rule', code: error?.code, details: error?.message || String(error) }, { status: 500 });
+    return NextResponse.json({ error: 'Unable to save automation. Please try again.' }, { status: 500 });
   }
 }
+
 
 
 

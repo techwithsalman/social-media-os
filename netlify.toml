@@ -1,6 +1,6 @@
 [build]
   # Default Next.js build command
-  command = "npm run build"
+  command = "npx prisma migrate deploy && npm run build"
   publish = ".next"
 
 
