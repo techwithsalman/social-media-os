@@ -1,35 +1,34 @@
 import { NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
-import fs from 'fs';
-import path from 'path';
 
 export async function GET(req: Request) {
   try {
     const prisma = new PrismaClient();
-    
-    // Read the migration SQL file
-    const sqlPath = path.join(process.cwd(), 'prisma', 'migrations', '20261007120000_add_instagram_auto_dm', 'migration.sql');
-    const sqlContent = fs.readFileSync(sqlPath, 'utf8');
-    
-    // Split by statement (;) and filter empty
-    const statements = sqlContent.split(';')
-      .map(s => s.trim())
-      .filter(s => s.length > 0);
+    const statements = [
+      \CREATE TABLE "InstagramAutoDmRule" ("id" TEXT NOT NULL, "workspaceId" TEXT NOT NULL, "socialAccountId" TEXT NOT NULL, "name" TEXT NOT NULL, "mediaId" TEXT NOT NULL, "keyword" TEXT NOT NULL, "matchType" TEXT NOT NULL DEFAULT 'EXACT', "message" TEXT NOT NULL, "buttonLabel" TEXT, "destinationUrl" TEXT, "enabled" BOOLEAN NOT NULL DEFAULT true, "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP, "updatedAt" TIMESTAMP(3) NOT NULL, CONSTRAINT "InstagramAutoDmRule_pkey" PRIMARY KEY ("id"))\,
+      \CREATE TABLE "InstagramAutoDmExecution" ("id" TEXT NOT NULL, "ruleId" TEXT NOT NULL, "workspaceId" TEXT NOT NULL, "socialAccountId" TEXT NOT NULL, "commentId" TEXT NOT NULL, "commenterId" TEXT NOT NULL, "commentText" TEXT NOT NULL, "status" TEXT NOT NULL DEFAULT 'SENT', "error" TEXT, "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP, "sentAt" TIMESTAMP(3), CONSTRAINT "InstagramAutoDmExecution_pkey" PRIMARY KEY ("id"))\,
+      \CREATE INDEX "InstagramAutoDmRule_workspaceId_idx" ON "InstagramAutoDmRule"("workspaceId")\,
+      \CREATE INDEX "InstagramAutoDmRule_socialAccountId_mediaId_enabled_idx" ON "InstagramAutoDmRule"("socialAccountId", "mediaId", "enabled")\,
+      \CREATE INDEX "InstagramAutoDmExecution_workspaceId_idx" ON "InstagramAutoDmExecution"("workspaceId")\,
+      \CREATE UNIQUE INDEX "InstagramAutoDmExecution_ruleId_commentId_key" ON "InstagramAutoDmExecution"("ruleId", "commentId")\,
+      \ALTER TABLE "InstagramAutoDmRule" ADD CONSTRAINT "InstagramAutoDmRule_workspaceId_fkey" FOREIGN KEY ("workspaceId") REFERENCES "Workspace"("id") ON DELETE CASCADE ON UPDATE CASCADE\,
+      \ALTER TABLE "InstagramAutoDmRule" ADD CONSTRAINT "InstagramAutoDmRule_socialAccountId_fkey" FOREIGN KEY ("socialAccountId") REFERENCES "SocialAccount"("id") ON DELETE CASCADE ON UPDATE CASCADE\,
+      \ALTER TABLE "InstagramAutoDmExecution" ADD CONSTRAINT "InstagramAutoDmExecution_ruleId_fkey" FOREIGN KEY ("ruleId") REFERENCES "InstagramAutoDmRule"("id") ON DELETE CASCADE ON UPDATE CASCADE\,
+      \ALTER TABLE "InstagramAutoDmExecution" ADD CONSTRAINT "InstagramAutoDmExecution_workspaceId_fkey" FOREIGN KEY ("workspaceId") REFERENCES "Workspace"("id") ON DELETE CASCADE ON UPDATE CASCADE\,
+      \ALTER TABLE "InstagramAutoDmExecution" ADD CONSTRAINT "InstagramAutoDmExecution_socialAccountId_fkey" FOREIGN KEY ("socialAccountId") REFERENCES "SocialAccount"("id") ON DELETE CASCADE ON UPDATE CASCADE\
+    ];
       
     const results = [];
     
     for (const stmt of statements) {
-      // Execute each statement directly against the production database
       try {
         await prisma.\(stmt);
         results.push({ stmt: stmt.substring(0, 50) + '...', status: 'success' });
       } catch (e: any) {
-        // If the table or index already exists, it might throw, which is fine
         results.push({ stmt: stmt.substring(0, 50) + '...', status: 'error', error: String(e) });
       }
     }
     
-    // Verify tables exist
     let hasRule = false;
     let hasExec = false;
     try {
