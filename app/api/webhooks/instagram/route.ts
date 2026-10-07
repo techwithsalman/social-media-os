@@ -21,15 +21,17 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const rawBody = await req.text();
+    console.log('[IG_WEBHOOK] POST_RECEIVED');
+
     const signature = req.headers.get('x-hub-signature-256');
     const secret = process.env.AUTO_DM_INSTAGRAM_APP_SECRET || process.env.META_APP_SECRET;
 
-    // Verify signature if secret is available
     if (signature && secret) {
       const hmac = crypto.createHmac('sha256', secret);
       hmac.update(rawBody);
       const expectedSignature = `sha256=${hmac.digest('hex')}`;
       if (!crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expectedSignature))) {
+        console.log('[IG_WEBHOOK] Invalid signature detected');
         return new NextResponse('Invalid signature', { status: 401 });
       }
     }
@@ -38,17 +40,27 @@ export async function POST(req: NextRequest) {
     try {
       payload = JSON.parse(rawBody);
     } catch (e) {
+      console.log('[IG_WEBHOOK] Invalid JSON payload');
       return new NextResponse('Invalid JSON', { status: 400 });
     }
+
+    console.log(`[IG_WEBHOOK] object=${payload.object}`);
 
     if (payload.object !== 'instagram') {
       return new NextResponse('OK', { status: 200 });
     }
 
-    // Process entries
-    for (const entry of payload.entry || []) {
-      const igAccountId = entry.id; // Instagram Account ID
-      for (const change of entry.changes || []) {
+    const entries = Array.isArray(payload.entry) ? payload.entry : [];
+    console.log(`[IG_WEBHOOK] entry_count=${entries.length}`);
+
+    for (const entry of entries) {
+      const igAccountId = entry.id;
+      const changes = Array.isArray(entry.changes) ? entry.changes : [];
+      console.log(`[IG_WEBHOOK] change_count=${changes.length} for account_id=${igAccountId}`);
+
+      for (const change of changes) {
+        console.log(`[IG_WEBHOOK] field=${change.field}`);
+        
         if (change.field === 'comments') {
           await processCommentWebhook(igAccountId, change.value);
         }
@@ -63,24 +75,45 @@ export async function POST(req: NextRequest) {
 }
 
 async function processCommentWebhook(igAccountId: string, value: any) {
-  const { id: commentId, from, text, media } = value;
-  
-  if (!commentId || !from || !text || !media) return;
-  const commenterId = from.id;
-  const mediaId = media.id;
+  const commentId = value?.id;
+  const commenterId = value?.from?.id;
+  const text = value?.text;
+  const mediaId = value?.media?.id;
+
+  console.log(`[IG_WEBHOOK] comment_id=${commentId}`);
+  console.log(`[IG_WEBHOOK] media_id=${mediaId}`);
+  console.log(`[IG_WEBHOOK] has_text=${!!text}`);
+
+  if (!commentId || !commenterId || !text || !mediaId) {
+    console.log('[IG_WEBHOOK] Missing required comment payload fields. Skipping.');
+    return;
+  }
 
   // Do not reply to self
-  if (commenterId === igAccountId) return;
+  if (commenterId === igAccountId) {
+    console.log('[IG_WEBHOOK] Comment is from the account itself. Skipping.');
+    return;
+  }
 
-  // Find social account
   const account = await prisma.socialAccount.findFirst({
     where: { platformAccountId: igAccountId, platform: 'INSTAGRAM' },
     include: { token: true }
   });
 
-  if (!account || !account.token || !account.token.autoDmAccessToken || account.token.accessToken) return;
+  if (!account) {
+    console.log('[IG_WEBHOOK] ACCOUNT_MATCH_NOT_FOUND');
+    return;
+  }
+  
+  console.log('[IG_WEBHOOK] ACCOUNT_MATCH_FOUND');
 
-  // Find active rules for this media
+  if (!account.token || !account.token.autoDmAccessToken) {
+    console.log('[IG_WEBHOOK] AUTO_DM_TOKEN_PRESENT=false');
+    return;
+  }
+  
+  console.log('[IG_WEBHOOK] AUTO_DM_TOKEN_PRESENT=true');
+
   const rules = await prisma.instagramAutoDmRule.findMany({
     where: {
       socialAccountId: account.id,
@@ -89,6 +122,8 @@ async function processCommentWebhook(igAccountId: string, value: any) {
     }
   });
 
+  console.log(`[IG_WEBHOOK] ACTIVE_RULES_FOUND=${rules.length}`);
+
   if (!rules.length) return;
 
   for (const rule of rules) {
@@ -96,15 +131,21 @@ async function processCommentWebhook(igAccountId: string, value: any) {
       ? text.trim().toLowerCase() === rule.keyword.toLowerCase()
       : text.toLowerCase().includes(rule.keyword.toLowerCase());
 
+    console.log(`[IG_WEBHOOK] KEYWORD_MATCH=${isMatch} for rule=${rule.id}`);
+
     if (isMatch) {
+      console.log(`[IG_WEBHOOK] RULE_MATCHED=${rule.id}`);
+
       // Check idempotency
       const existing = await prisma.instagramAutoDmExecution.findUnique({
         where: { ruleId_commentId: { ruleId: rule.id, commentId } }
       });
 
-      if (existing) continue;
+      if (existing) {
+        console.log('[IG_WEBHOOK] Execution already exists. Skipping.');
+        continue;
+      }
 
-      // Create pending execution
       const execution = await prisma.instagramAutoDmExecution.create({
         data: {
           ruleId: rule.id,
@@ -117,74 +158,49 @@ async function processCommentWebhook(igAccountId: string, value: any) {
         }
       });
 
-      // Send the DM
       try {
-        const accessToken = decryptToken(account.token.autoDmAccessToken || account.token.accessToken);
+        console.log('[IG_WEBHOOK] DM_SEND_ATTEMPT');
+        const accessToken = decryptToken(account.token.autoDmAccessToken);
         await sendInstagramPrivateReply(igAccountId, commentId, rule, accessToken);
         
         await prisma.instagramAutoDmExecution.update({
           where: { id: execution.id },
           data: { status: 'SENT', sentAt: new Date() }
         });
+        console.log('[IG_WEBHOOK] DM_SEND_SUCCESS');
       } catch (err: any) {
-        console.error(`[Auto DM Error] ${err.message}`);
+        console.log(`[IG_WEBHOOK] DM_SEND_FAILED error="${err.message}"`);
         await prisma.instagramAutoDmExecution.update({
           where: { id: execution.id },
           data: { status: 'FAILED', error: err.message || 'Unknown error' }
         });
       }
 
-      // Stop processing rules for this comment once one matches
       break; 
     }
   }
 }
 
 async function sendInstagramPrivateReply(igAccountId: string, commentId: string, rule: any, accessToken: string) {
-  // Graph API: POST /{ig_user_id}/messages
-  // Private reply payload requires recipient to be the comment_id
   const url = buildMetaGraphUrl(`/me/messages`);
   
   const payload: any = {
     recipient: { comment_id: commentId },
-    message: { }
+    message: { text: rule.message }
   };
 
-  if (rule.buttonLabel && rule.destinationUrl) {
-    payload.message = {
-      attachment: {
-        type: 'template',
-        payload: {
-          template_type: 'button',
-          text: rule.message,
-          buttons: [
-            {
-              type: 'web_url',
-              url: rule.destinationUrl,
-              title: rule.buttonLabel
-            }
-          ]
-        }
-      }
-    };
-  } else {
-    payload.message = { text: rule.message };
-  }
-
-  const res = await fetch(`${url}?access_token=${encodeURIComponent(accessToken)}`, {
+  const res = await fetch(url, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${accessToken}`
+    },
     body: JSON.stringify(payload)
   });
 
-  const data = await res.json();
   if (!res.ok) {
-    throw new Error(data?.error?.message || 'Failed to send private reply');
+    const data = await res.json().catch(() => ({}));
+    const metaError = data.error?.message || 'Unknown Meta error';
+    throw new Error(metaError);
   }
-  return data;
 }
-
-
-
-
-
