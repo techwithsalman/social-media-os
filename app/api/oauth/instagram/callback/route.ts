@@ -33,6 +33,7 @@ export async function GET(req: NextRequest) {
 
     const code = searchParams.get('code');
     const state = searchParams.get('state');
+    const mode = state?.startsWith('reconnect:') ? 'reconnect' : 'add';
 
     if (!code || !state) {
       return redirectToAccounts(req, 'instagram_oauth_failed');
@@ -45,7 +46,7 @@ export async function GET(req: NextRequest) {
     const profile = await exchangeInstagramCode(code, oauthState.redirectUri);
     
     // Save isolated to the workspace
-    await saveInstagramAccount(profile, session);
+    await saveInstagramAccount(profile, session, mode as any);
 
     // Redirect to Connected Accounts successfully
     const successUrl = new URL('/accounts?instagram_connected=1', req.url);

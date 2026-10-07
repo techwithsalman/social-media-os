@@ -24,7 +24,8 @@ export async function GET(req: NextRequest) {
       return redirectToAccounts(req, 'real_mode_disabled');
     }
 
-    const authorizationUrl = await createInstagramAuthorizationUrl(session || { userId: 'debug', workspaceId: 'debug' } as any);
+    const mode = (req.nextUrl.searchParams.get('mode') as 'add' | 'reconnect') || 'add';
+    const authorizationUrl = await createInstagramAuthorizationUrl(session || { userId: 'debug', workspaceId: 'debug' } as any, mode);
     const parsedUrl = new URL(authorizationUrl);
     
     const diagnostic = {

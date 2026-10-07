@@ -141,6 +141,9 @@ function getOAuthNotice(search: string) {
   if (!error) return null;
 
   const messages: Record<string, string> = {
+    account_exists: 'This account is already connected to your workspace.',
+    account_not_found: 'Account not found. You may have logged into a different account.',
+    social_account_limit_reached: 'You have reached your connected account limit for your current plan.',
     authorization_cancelled: 'Meta login was cancelled before accounts were connected.',
     meta_config_missing: 'Meta OAuth is not configured yet. Fill the Meta values in .env and restart the app.',
     real_mode_disabled: 'Enable REAL_API_MODE and turn off MOCK_API_MODE before starting real Meta login.',
@@ -229,7 +232,7 @@ export default function ConnectedAccountsPage() {
     setOauthNotice(notice);
   }, [accounts, loading]);
 
-  const handleConnect = async (platform: string) => {
+  const handleConnect = async (platform: string, intentMode: 'add' | 'reconnect' = 'add') => {
     if (entitlements && entitlements.limits.maxSocialAccounts !== null && accounts.length >= entitlements.limits.maxSocialAccounts) {
       alert(`You've reached your ${entitlements.plan.name} plan limit of ${entitlements.limits.maxSocialAccounts} connected social accounts.`);
       return;
@@ -251,7 +254,7 @@ export default function ConnectedAccountsPage() {
 
     if (mode.realApiMode && platform === 'INSTAGRAM') {
       setActionLoadingPlatform(platform);
-      window.location.href = `/api/oauth/instagram/connect`;
+      window.location.href = `/api/oauth/instagram/connect?mode=${intentMode}`;
       return;
     }
 
@@ -442,7 +445,7 @@ export default function ConnectedAccountsPage() {
                           <div className="flex items-center justify-end gap-2 pt-2 border-t border-[#33333e]/50">
                             {!isConnected && (
                               <button
-                                onClick={() => handleConnect(plat.id)}
+                                onClick={() => handleConnect(plat.id, 'reconnect')}
                                 disabled={isActing}
                                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-500 text-xs font-bold transition-all disabled:opacity-50"
                               >

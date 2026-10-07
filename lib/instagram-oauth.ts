@@ -42,9 +42,9 @@ export function getInstagramConfig(requireSecret: boolean) {
 
 const INSTAGRAM_STATE_TTL_MS = 10 * 60 * 1000;
 
-export async function createInstagramAuthorizationUrl(session: SessionPayload) {
+export async function createInstagramAuthorizationUrl(session: SessionPayload, mode: 'add' | 'reconnect' = 'add') {
   const config = getInstagramConfig(false);
-  const state = randomToken();
+  const state = `${mode}:${randomToken()}`;
   const stateHash = hashToken(state);
 
   // We reuse MetaOAuthState to avoid schema changes
@@ -60,7 +60,7 @@ export async function createInstagramAuthorizationUrl(session: SessionPayload) {
 
   const authUrl = new URL('https://www.instagram.com/oauth/authorize');
   authUrl.searchParams.set('enable_fb_login', '0');
-  authUrl.searchParams.set('force_authentication', '1');
+  if (mode === 'add') { authUrl.searchParams.set('prompt', 'select_account'); } else { authUrl.searchParams.set('force_authentication', '1'); }
   authUrl.searchParams.set('client_id', config.appId!);
   authUrl.searchParams.set('redirect_uri', config.redirectUri);
   authUrl.searchParams.set('response_type', 'code');
@@ -156,7 +156,8 @@ export async function exchangeInstagramCode(code: string, redirectUri: string) {
 
 export async function saveInstagramAccount(
   profile: Awaited<ReturnType<typeof exchangeInstagramCode>>,
-  session: SessionPayload
+  session: SessionPayload,
+  mode: 'add' | 'reconnect' = 'add'
 ) {
   // Prevent duplicate Instagram accounts in the same workspace
   const existing = await prisma.socialAccount.findFirst({
@@ -167,7 +168,15 @@ export async function saveInstagramAccount(
     },
   });
 
-    if (existing) {
+    if (mode === 'add' && existing) {
+    throw new InstagramOAuthError('ACCOUNT_EXISTS', 'This Instagram account is already connected to this workspace.', 409);
+  }
+
+  if (mode === 'reconnect' && !existing) {
+    throw new InstagramOAuthError('ACCOUNT_NOT_FOUND', 'Account not found. You may have logged into a different Instagram account.', 404);
+  }
+
+  if (existing) {
     await prisma.socialAccount.update({
       where: { id: existing.id },
       data: {
