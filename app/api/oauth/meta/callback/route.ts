@@ -1,3 +1,4 @@
+import { getBaseUrl } from '@/lib/url';
 import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
 import {
@@ -9,7 +10,7 @@ import {
 } from '@/lib/meta-oauth';
 
 function redirectToAccounts(req: NextRequest, code: string) {
-  const url = new URL('/accounts', req.url);
+  const url = new URL('/accounts', getBaseUrl(req));
   url.searchParams.set('meta_error', code);
   return NextResponse.redirect(url);
 }
@@ -18,7 +19,7 @@ export async function GET(req: NextRequest) {
   try {
     const session = await getSession();
     if (!session) {
-      const url = new URL('/login', req.url);
+      const url = new URL('/login', getBaseUrl(req));
       url.searchParams.set('redirect', '/accounts');
       return NextResponse.redirect(url);
     }
@@ -44,7 +45,7 @@ export async function GET(req: NextRequest) {
     }
 
     const selectionToken = await createMetaAccountSelection(session, discoveredAccounts);
-    const selectionUrl = new URL('/accounts/meta/select', req.url);
+    const selectionUrl = new URL('/accounts/meta/select', getBaseUrl(req));
     selectionUrl.searchParams.set('token', selectionToken);
     return NextResponse.redirect(selectionUrl);
   } catch (error) {

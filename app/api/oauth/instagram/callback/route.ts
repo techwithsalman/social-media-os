@@ -7,8 +7,17 @@ import {
   InstagramOAuthError,
 } from '@/lib/instagram-oauth';
 
+function getBaseUrl(req: NextRequest) {
+  let host = req.headers.get('x-forwarded-host') || req.headers.get('host');
+  if (!host || host.includes('.netlify.app')) {
+    host = 'app.techwithsalman.online';
+  }
+  const protocol = host.includes('localhost') ? 'http' : 'https';
+  return `${protocol}://${host}`;
+}
+
 function redirectToAccounts(req: NextRequest, code: string) {
-  const url = new URL('/accounts', req.url);
+  const url = new URL('/accounts', getBaseUrl(req));
   url.searchParams.set('meta_error', code);
   return NextResponse.redirect(url);
 }
@@ -17,7 +26,7 @@ export async function GET(req: NextRequest) {
   try {
     const session = await getSession();
     if (!session) {
-      const url = new URL('/login', req.url);
+      const url = new URL('/login', getBaseUrl(req));
       url.searchParams.set('redirect', '/accounts');
       return NextResponse.redirect(url);
     }
@@ -49,7 +58,7 @@ export async function GET(req: NextRequest) {
     await saveInstagramAccount(profile, session, mode as any);
 
     // Redirect to Connected Accounts successfully
-    const successUrl = new URL('/accounts?instagram_connected=1', req.url);
+    const successUrl = new URL('/accounts?instagram_connected=1', getBaseUrl(req));
     return NextResponse.redirect(successUrl);
   } catch (error) {
     if (error instanceof InstagramOAuthError) {

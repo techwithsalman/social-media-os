@@ -1,3 +1,4 @@
+import { getBaseUrl } from '@/lib/url';
 import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
 import { createTikTokAuthorizationUrl, TikTokOAuthError } from '@/lib/tiktok-oauth';
@@ -5,7 +6,7 @@ import { createTikTokAuthorizationUrl, TikTokOAuthError } from '@/lib/tiktok-oau
 export const dynamic = 'force-dynamic';
 
 function redirectToAccounts(req: NextRequest, error: string, errorDesc?: string) {
-  const url = new URL('/accounts', req.url);
+  const url = new URL('/accounts', getBaseUrl(req));
   url.searchParams.set('tiktok_error', error);
   if (errorDesc) {
     url.searchParams.set('tiktok_error_desc', errorDesc);
@@ -19,7 +20,7 @@ export async function GET(req: NextRequest) {
     const session = await getSession();
     if (!session) {
       console.log('[TIKTOK DEBUG] Unauthorized request to connect route - Redirecting to login');
-      const url = new URL('/login', req.url);
+      const url = new URL('/login', getBaseUrl(req));
       url.searchParams.set('redirect', '/accounts');
       return NextResponse.redirect(url);
     }

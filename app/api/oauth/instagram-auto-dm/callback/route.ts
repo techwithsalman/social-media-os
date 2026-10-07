@@ -1,3 +1,4 @@
+import { getBaseUrl } from '@/lib/url';
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { encryptToken } from '@/lib/crypto';
@@ -11,13 +12,13 @@ function hashToken(token: string) {
 export async function GET(req: NextRequest) {
   try {
     const session = await getSession();
-    if (!session) return NextResponse.redirect(new URL('/login', req.url));
+    if (!session) return NextResponse.redirect(new URL('/login', getBaseUrl(req)));
 
     const code = req.nextUrl.searchParams.get('code');
     const statePayload = req.nextUrl.searchParams.get('state');
 
     if (!code || !statePayload) {
-      return NextResponse.redirect(new URL('/instagram-auto-dm?error=missing_code_or_state', req.url));
+      return NextResponse.redirect(new URL('/instagram-auto-dm?error=missing_code_or_state', getBaseUrl(req)));
     }
 
     const stateHash = hashToken(statePayload);
@@ -28,12 +29,12 @@ export async function GET(req: NextRequest) {
     });
 
     if (!oauthState) {
-      return NextResponse.redirect(new URL('/instagram-auto-dm?error=invalid_state', req.url));
+      return NextResponse.redirect(new URL('/instagram-auto-dm?error=invalid_state', getBaseUrl(req)));
     }
 
     const parts = statePayload.split('_');
     if (parts.length < 2) {
-      return NextResponse.redirect(new URL('/instagram-auto-dm?error=invalid_state_format', req.url));
+      return NextResponse.redirect(new URL('/instagram-auto-dm?error=invalid_state_format', getBaseUrl(req)));
     }
     const targetAccountId = parts[1];
 
@@ -60,7 +61,7 @@ export async function GET(req: NextRequest) {
 
     if (tokenData.error_message || !tokenData.access_token) {
       console.error('Instagram Token Error:', tokenData);
-      return NextResponse.redirect(new URL('/instagram-auto-dm?error=token_exchange_failed', req.url));
+      return NextResponse.redirect(new URL('/instagram-auto-dm?error=token_exchange_failed', getBaseUrl(req)));
     }
 
     const shortToken = tokenData.access_token;
@@ -93,12 +94,12 @@ export async function GET(req: NextRequest) {
       console.log('Successfully enabled Auto DM for SocialAccount:', existingAccount.id);
     } else {
       console.error('Target account not found in DB:', targetAccountId);
-      return NextResponse.redirect(new URL('/instagram-auto-dm?error=account_not_found', req.url));
+      return NextResponse.redirect(new URL('/instagram-auto-dm?error=account_not_found', getBaseUrl(req)));
     }
 
-    return NextResponse.redirect(new URL('/instagram-auto-dm?success=enabled', req.url));
+    return NextResponse.redirect(new URL('/instagram-auto-dm?success=enabled', getBaseUrl(req)));
   } catch (err) {
     console.error('Auto DM Callback Error', err);
-    return NextResponse.redirect(new URL('/instagram-auto-dm?error=internal_error', req.url));
+    return NextResponse.redirect(new URL('/instagram-auto-dm?error=internal_error', getBaseUrl(req)));
   }
 }

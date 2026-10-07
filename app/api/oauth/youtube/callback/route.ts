@@ -1,3 +1,4 @@
+import { getBaseUrl } from '@/lib/url';
 export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
@@ -10,7 +11,7 @@ import {
 } from '@/lib/youtube-oauth';
 
 function redirectToAccounts(req: NextRequest, success?: boolean, error?: string) {
-  const url = new URL('/accounts', req.url);
+  const url = new URL('/accounts', getBaseUrl(req));
   if (success) {
     url.searchParams.set('youtube_success', '1');
   } else if (error) {
@@ -23,7 +24,7 @@ export async function GET(req: NextRequest) {
   try {
     const session = await getSession();
     if (!session) {
-      const url = new URL('/login', req.url);
+      const url = new URL('/login', getBaseUrl(req));
       url.searchParams.set('redirect', '/accounts');
       return NextResponse.redirect(url);
     }

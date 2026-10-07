@@ -1,3 +1,4 @@
+import { getBaseUrl } from '@/lib/url';
 import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
 import prisma from '@/lib/prisma';
@@ -13,19 +14,19 @@ function hashToken(token: string) {
 export async function GET(req: NextRequest) {
   try {
     const session = await getSession();
-    if (!session) return NextResponse.redirect(new URL('/login', req.url));
+    if (!session) return NextResponse.redirect(new URL('/login', getBaseUrl(req)));
 
     const appId = process.env.AUTO_DM_INSTAGRAM_APP_ID;
-    if (!appId) return NextResponse.redirect(new URL('/instagram-auto-dm?error=missing_auto_dm_env', req.url));
+    if (!appId) return NextResponse.redirect(new URL('/instagram-auto-dm?error=missing_auto_dm_env', getBaseUrl(req)));
 
     const accountId = req.nextUrl.searchParams.get('accountId');
-    if (!accountId) return NextResponse.redirect(new URL('/instagram-auto-dm?error=missing_account_id', req.url));
+    if (!accountId) return NextResponse.redirect(new URL('/instagram-auto-dm?error=missing_account_id', getBaseUrl(req)));
 
     // Verify account exists and belongs to user
     const account = await prisma.socialAccount.findFirst({
       where: { id: accountId, workspaceId: session.workspaceId, platform: 'INSTAGRAM' }
     });
-    if (!account) return NextResponse.redirect(new URL('/instagram-auto-dm?error=invalid_account', req.url));
+    if (!account) return NextResponse.redirect(new URL('/instagram-auto-dm?error=invalid_account', getBaseUrl(req)));
 
     const redirectUri = process.env.AUTO_DM_INSTAGRAM_REDIRECT_URI || ((process.env.NODE_ENV === 'production' ? 'https://app.techwithsalman.online' : req.nextUrl.origin) + '/api/oauth/instagram-auto-dm/callback');
 
@@ -53,6 +54,6 @@ export async function GET(req: NextRequest) {
     return NextResponse.redirect(url.toString());
   } catch (err) {
     console.error('[Auto DM OAuth Connect Error]', err);
-    return NextResponse.redirect(new URL('/instagram-auto-dm?error=auto_dm_connect_failed', req.url));
+    return NextResponse.redirect(new URL('/instagram-auto-dm?error=auto_dm_connect_failed', getBaseUrl(req)));
   }
 }

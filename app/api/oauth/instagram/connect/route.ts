@@ -3,8 +3,17 @@ import { getSession } from '@/lib/auth';
 import { createInstagramAuthorizationUrl, InstagramOAuthError } from '@/lib/instagram-oauth';
 import { isRealApiMode } from '@/lib/meta-token-service';
 
+function getBaseUrl(req: NextRequest) {
+  let host = req.headers.get('x-forwarded-host') || req.headers.get('host');
+  if (!host || host.includes('.netlify.app')) {
+    host = 'app.techwithsalman.online';
+  }
+  const protocol = host.includes('localhost') ? 'http' : 'https';
+  return `${protocol}://${host}`;
+}
+
 function redirectToAccounts(req: NextRequest, code: string) {
-  const url = new URL('/accounts', req.url);
+  const url = new URL('/accounts', getBaseUrl(req));
   url.searchParams.set('meta_error', code);
   return NextResponse.redirect(url);
 }
@@ -15,7 +24,7 @@ export async function GET(req: NextRequest) {
     const isDebug = req.nextUrl.searchParams.get('debug') === '1';
 
     if (!session && !isDebug) {
-      const url = new URL('/login', req.url);
+      const url = new URL('/login', getBaseUrl(req));
       url.searchParams.set('redirect', '/accounts');
       return NextResponse.redirect(url);
     }
