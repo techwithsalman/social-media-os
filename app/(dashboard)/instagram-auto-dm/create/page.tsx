@@ -125,7 +125,7 @@ export default function CreateInstagramAutoDmPage() {
         router.push("/instagram-auto-dm?success=1");
       } else {
         const error = await res.json();
-        alert(`Error: ${error.error || "Failed to create automation"}\n\nDetails: ${error.details || ""}\nCode: ${error.code || ""}`);
+        alert(error.error || "Unable to save automation. Please try again.");
       }
     } catch (error) {
       console.error("Submit error", error);
@@ -514,5 +514,6 @@ export default function CreateInstagramAutoDmPage() {
     </div>
   );
 }
+
 
 
