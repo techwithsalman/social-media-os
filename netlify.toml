@@ -1,6 +1,6 @@
 [build]
   # Default Next.js build command
-  command = "npm run build"
+  command = "node scripts/migrate.js && npm run build"
   publish = ".next"
 
 
