@@ -12,20 +12,35 @@ function redirectToAccounts(req: NextRequest, code: string) {
 export async function GET(req: NextRequest) {
   try {
     const session = await getSession();
-    if (req.nextUrl.searchParams.get('debug') === '1') { return NextResponse.json({ appId: process.env.INSTAGRAM_APP_ID, metaId: process.env.META_APP_ID }); }
-    if (!session) {
+    const isDebug = req.nextUrl.searchParams.get('debug') === '1';
+
+    if (!session && !isDebug) {
       const url = new URL('/login', req.url);
       url.searchParams.set('redirect', '/accounts');
       return NextResponse.redirect(url);
     }
 
-    if (!isRealApiMode()) {
+    if (!isRealApiMode() && !isDebug) {
       return redirectToAccounts(req, 'real_mode_disabled');
     }
 
-    const authorizationUrl = await createInstagramAuthorizationUrl(session);
-    console.log('[IG_AUTH_DEBUG]', authorizationUrl);
-    if (req.nextUrl.searchParams.get('debug') === '1') { return NextResponse.json({ url: authorizationUrl, appId: process.env.INSTAGRAM_APP_ID, metaId: process.env.META_APP_ID }); }
+    const authorizationUrl = await createInstagramAuthorizationUrl(session || { userId: 'debug', workspaceId: 'debug' } as any);
+    const parsedUrl = new URL(authorizationUrl);
+    
+    const diagnostic = {
+      endpoint: parsedUrl.origin + parsedUrl.pathname,
+      client_id: parsedUrl.searchParams.get('client_id'),
+      redirect_uri: parsedUrl.searchParams.get('redirect_uri'),
+      scopes: parsedUrl.searchParams.get('scope'),
+      commit: 'v-fix-scopes-01'
+    };
+
+    console.log('INSTAGRAM_OAUTH_DIAGNOSTIC:', diagnostic);
+
+    if (isDebug) {
+      return NextResponse.json(diagnostic);
+    }
+
     return NextResponse.redirect(authorizationUrl);
   } catch (error) {
     if (error instanceof InstagramOAuthError) {
@@ -36,6 +51,3 @@ export async function GET(req: NextRequest) {
     return redirectToAccounts(req, 'instagram_oauth_failed');
   }
 }
-
-
-

@@ -58,13 +58,13 @@ export async function createInstagramAuthorizationUrl(session: SessionPayload) {
     },
   });
 
-  const authUrl = new URL('https://api.instagram.com/oauth/authorize');
+  const authUrl = new URL('https://www.instagram.com/oauth/authorize');
   authUrl.searchParams.set('enable_fb_login', '0');
   authUrl.searchParams.set('force_authentication', '1');
   authUrl.searchParams.set('client_id', config.appId!);
   authUrl.searchParams.set('redirect_uri', config.redirectUri);
   authUrl.searchParams.set('response_type', 'code');
-  authUrl.searchParams.set('scope', 'instagram_business_basic,instagram_business_content_publish,instagram_manage_comments,instagram_manage_messages');
+  authUrl.searchParams.set('scope', 'instagram_business_basic,instagram_business_content_publish,instagram_business_manage_comments,instagram_business_manage_messages');
   authUrl.searchParams.set('state', state);
 
   return authUrl.toString();
@@ -199,7 +199,7 @@ export async function saveInstagramAccount(
         create: {
           accessToken: encryptedAccessToken,
           refreshToken: null,
-          scope: 'instagram_business_basic,instagram_business_content_publish,instagram_manage_comments,instagram_manage_messages',
+          scope: 'instagram_business_basic,instagram_business_content_publish,instagram_business_manage_comments,instagram_business_manage_messages',
           expiresAt: profile.expiresAt,
         },
       },
@@ -217,3 +217,5 @@ export async function saveInstagramAccount(
 
   return connectedAccount;
 }
+
+
