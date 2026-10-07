@@ -19,9 +19,15 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  const diagnosticLogs: string[] = [];
+  const log = (msg: string) => {
+    console.log(msg);
+    diagnosticLogs.push(`[${new Date().toISOString()}] ${msg}`);
+  };
+
   try {
     const rawBody = await req.text();
-    console.log('[IG_WEBHOOK] POST_RECEIVED');
+    log('[IG_WEBHOOK] POST_RECEIVED');
 
     const signature = req.headers.get('x-hub-signature-256');
     const secret = process.env.AUTO_DM_INSTAGRAM_APP_SECRET || process.env.META_APP_SECRET;
@@ -31,7 +37,7 @@ export async function POST(req: NextRequest) {
       hmac.update(rawBody);
       const expectedSignature = `sha256=${hmac.digest('hex')}`;
       if (!crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expectedSignature))) {
-        console.log('[IG_WEBHOOK] Invalid signature detected');
+        log('[IG_WEBHOOK] Invalid signature detected');
         return new NextResponse('Invalid signature', { status: 401 });
       }
     }
@@ -40,58 +46,73 @@ export async function POST(req: NextRequest) {
     try {
       payload = JSON.parse(rawBody);
     } catch (e) {
-      console.log('[IG_WEBHOOK] Invalid JSON payload');
+      log('[IG_WEBHOOK] Invalid JSON payload');
       return new NextResponse('Invalid JSON', { status: 400 });
     }
 
-    console.log(`[IG_WEBHOOK] object=${payload.object}`);
+    log(`[IG_WEBHOOK] object=${payload.object}`);
 
     if (payload.object !== 'instagram') {
       return new NextResponse('OK', { status: 200 });
     }
 
     const entries = Array.isArray(payload.entry) ? payload.entry : [];
-    console.log(`[IG_WEBHOOK] entry_count=${entries.length}`);
+    log(`[IG_WEBHOOK] entry_count=${entries.length}`);
 
     for (const entry of entries) {
       const igAccountId = entry.id;
       const changes = Array.isArray(entry.changes) ? entry.changes : [];
-      console.log(`[IG_WEBHOOK] change_count=${changes.length} for account_id=${igAccountId}`);
+      log(`[IG_WEBHOOK] change_count=${changes.length} for account_id=${igAccountId}`);
 
       for (const change of changes) {
-        console.log(`[IG_WEBHOOK] field=${change.field}`);
+        log(`[IG_WEBHOOK] field=${change.field}`);
         
         if (change.field === 'comments') {
-          await processCommentWebhook(igAccountId, change.value);
+          await processCommentWebhook(igAccountId, change.value, log);
         }
       }
     }
 
     return new NextResponse('OK', { status: 200 });
   } catch (error: any) {
+    log(`[IG Webhook Error] ${error?.message || error}`);
     console.error('[IG Webhook Error]', error);
     return new NextResponse('Internal Server Error', { status: 500 });
+  } finally {
+    if (diagnosticLogs.length > 0) {
+      try {
+        await prisma.activityLog.create({
+          data: {
+            action: 'IG_WEBHOOK_DIAGNOSTIC',
+            details: 'Instagram Webhook Trace',
+            metadata: JSON.stringify({ logs: diagnosticLogs })
+          }
+        });
+      } catch (e) {
+        console.error('Failed to save webhook diagnostic log to DB', e);
+      }
+    }
   }
 }
 
-async function processCommentWebhook(igAccountId: string, value: any) {
+async function processCommentWebhook(igAccountId: string, value: any, log: (msg: string) => void) {
   const commentId = value?.id;
   const commenterId = value?.from?.id;
   const text = value?.text;
   const mediaId = value?.media?.id;
 
-  console.log(`[IG_WEBHOOK] comment_id=${commentId}`);
-  console.log(`[IG_WEBHOOK] media_id=${mediaId}`);
-  console.log(`[IG_WEBHOOK] has_text=${!!text}`);
+  log(`[IG_WEBHOOK] comment_id=${commentId}`);
+  log(`[IG_WEBHOOK] media_id=${mediaId}`);
+  log(`[IG_WEBHOOK] has_text=${!!text}`);
 
   if (!commentId || !commenterId || !text || !mediaId) {
-    console.log('[IG_WEBHOOK] Missing required comment payload fields. Skipping.');
+    log('[IG_WEBHOOK] Missing required comment payload fields. Skipping.');
     return;
   }
 
   // Do not reply to self
   if (commenterId === igAccountId) {
-    console.log('[IG_WEBHOOK] Comment is from the account itself. Skipping.');
+    log('[IG_WEBHOOK] Comment is from the account itself. Skipping.');
     return;
   }
 
@@ -101,18 +122,18 @@ async function processCommentWebhook(igAccountId: string, value: any) {
   });
 
   if (!account) {
-    console.log('[IG_WEBHOOK] ACCOUNT_MATCH_NOT_FOUND');
+    log('[IG_WEBHOOK] ACCOUNT_MATCH_NOT_FOUND');
     return;
   }
   
-  console.log('[IG_WEBHOOK] ACCOUNT_MATCH_FOUND');
+  log('[IG_WEBHOOK] ACCOUNT_MATCH_FOUND');
 
   if (!account.token || !account.token.autoDmAccessToken) {
-    console.log('[IG_WEBHOOK] AUTO_DM_TOKEN_PRESENT=false');
+    log('[IG_WEBHOOK] AUTO_DM_TOKEN_PRESENT=false');
     return;
   }
   
-  console.log('[IG_WEBHOOK] AUTO_DM_TOKEN_PRESENT=true');
+  log('[IG_WEBHOOK] AUTO_DM_TOKEN_PRESENT=true');
 
   const rules = await prisma.instagramAutoDmRule.findMany({
     where: {
@@ -122,7 +143,7 @@ async function processCommentWebhook(igAccountId: string, value: any) {
     }
   });
 
-  console.log(`[IG_WEBHOOK] ACTIVE_RULES_FOUND=${rules.length}`);
+  log(`[IG_WEBHOOK] ACTIVE_RULES_FOUND=${rules.length}`);
 
   if (!rules.length) return;
 
@@ -131,10 +152,10 @@ async function processCommentWebhook(igAccountId: string, value: any) {
       ? text.trim().toLowerCase() === rule.keyword.toLowerCase()
       : text.toLowerCase().includes(rule.keyword.toLowerCase());
 
-    console.log(`[IG_WEBHOOK] KEYWORD_MATCH=${isMatch} for rule=${rule.id}`);
+    log(`[IG_WEBHOOK] KEYWORD_MATCH=${isMatch} for rule=${rule.id}`);
 
     if (isMatch) {
-      console.log(`[IG_WEBHOOK] RULE_MATCHED=${rule.id}`);
+      log(`[IG_WEBHOOK] RULE_MATCHED=${rule.id}`);
 
       // Check idempotency
       const existing = await prisma.instagramAutoDmExecution.findUnique({
@@ -142,7 +163,7 @@ async function processCommentWebhook(igAccountId: string, value: any) {
       });
 
       if (existing) {
-        console.log('[IG_WEBHOOK] Execution already exists. Skipping.');
+        log('[IG_WEBHOOK] Execution already exists. Skipping.');
         continue;
       }
 
@@ -159,7 +180,7 @@ async function processCommentWebhook(igAccountId: string, value: any) {
       });
 
       try {
-        console.log('[IG_WEBHOOK] DM_SEND_ATTEMPT');
+        log('[IG_WEBHOOK] DM_SEND_ATTEMPT');
         const accessToken = decryptToken(account.token.autoDmAccessToken);
         await sendInstagramPrivateReply(igAccountId, commentId, rule, accessToken);
         
@@ -167,9 +188,9 @@ async function processCommentWebhook(igAccountId: string, value: any) {
           where: { id: execution.id },
           data: { status: 'SENT', sentAt: new Date() }
         });
-        console.log('[IG_WEBHOOK] DM_SEND_SUCCESS');
+        log('[IG_WEBHOOK] DM_SEND_SUCCESS');
       } catch (err: any) {
-        console.log(`[IG_WEBHOOK] DM_SEND_FAILED error="${err.message}"`);
+        log(`[IG_WEBHOOK] DM_SEND_FAILED error="${err.message}"`);
         await prisma.instagramAutoDmExecution.update({
           where: { id: execution.id },
           data: { status: 'FAILED', error: err.message || 'Unknown error' }
@@ -182,7 +203,7 @@ async function processCommentWebhook(igAccountId: string, value: any) {
 }
 
 async function sendInstagramPrivateReply(igAccountId: string, commentId: string, rule: any, accessToken: string) {
-  const url = buildMetaGraphUrl(`/me/messages`);
+  const url = buildMetaGraphUrl('/me/messages');
   
   const payload: any = {
     recipient: { comment_id: commentId },
@@ -193,7 +214,7 @@ async function sendInstagramPrivateReply(igAccountId: string, commentId: string,
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${accessToken}`
+      'Authorization': 'Bearer ' + accessToken
     },
     body: JSON.stringify(payload)
   });
