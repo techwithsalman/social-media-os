@@ -35,9 +35,11 @@ export default function CreateInstagramAutoDmPage() {
         const res = await fetch("/api/accounts?platform=INSTAGRAM");
         if (res.ok) {
           const data = await res.json();
-          setAccounts(data.accounts || []);
-          if (data.accounts?.length > 0) {
-            setFormData(prev => ({ ...prev, socialAccountId: data.accounts[0].id }));
+          const allAccounts = data.accounts || [];
+          const igAccounts = allAccounts.filter((acc: any) => acc.platform === 'INSTAGRAM');
+          setAccounts(igAccounts);
+          if (igAccounts.length > 0) {
+            setFormData(prev => ({ ...prev, socialAccountId: igAccounts[0].id }));
           }
         }
       } catch (error) {
