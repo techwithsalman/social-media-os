@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getSession } from '@/lib/auth';
@@ -69,6 +70,7 @@ const accounts = await prisma.socialAccount.findMany({
     return NextResponse.json({
       accounts: sortedAccounts,
       platformRequirements,
+      entitlements,
       mode: {
         realApiMode: isRealApiMode(),
         mockApiMode: !isRealApiMode(),
