@@ -26,7 +26,7 @@ export async function GET(req: NextRequest) {
 
     const appId = process.env.AUTO_DM_INSTAGRAM_APP_ID;
     const appSecret = process.env.AUTO_DM_INSTAGRAM_APP_SECRET;
-    const redirectUri = process.env.AUTO_DM_INSTAGRAM_REDIRECT_URI || (req.nextUrl.origin + '/api/oauth/instagram-auto-dm/callback');
+    const redirectUri = process.env.AUTO_DM_INSTAGRAM_REDIRECT_URI || ((process.env.NODE_ENV === 'production' ? 'https://app.techwithsalman.online' : req.nextUrl.origin) + '/api/oauth/instagram-auto-dm/callback');
 
     const tokenRes = await fetch('https://graph.facebook.com/v21.0/oauth/access_token?client_id=' + appId + '&redirect_uri=' + redirectUri + '&client_secret=' + appSecret + '&code=' + code);
     const tokenData = await tokenRes.json();

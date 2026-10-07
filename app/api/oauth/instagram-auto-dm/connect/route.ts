@@ -18,7 +18,7 @@ export async function GET(req: NextRequest) {
     const appId = process.env.AUTO_DM_INSTAGRAM_APP_ID;
     if (!appId) return NextResponse.redirect(new URL('/instagram-auto-dm?error=missing_auto_dm_env', req.url));
 
-    const redirectUri = process.env.AUTO_DM_INSTAGRAM_REDIRECT_URI || (req.nextUrl.origin + '/api/oauth/instagram-auto-dm/callback');
+    const redirectUri = process.env.AUTO_DM_INSTAGRAM_REDIRECT_URI || ((process.env.NODE_ENV === 'production' ? 'https://app.techwithsalman.online' : req.nextUrl.origin) + '/api/oauth/instagram-auto-dm/callback');
 
     const state = randomToken();
     const stateHash = hashToken(state);
