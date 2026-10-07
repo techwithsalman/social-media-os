@@ -65,7 +65,7 @@ export async function POST(req: NextRequest) {
       data: {
         workspaceId: session.workspaceId,
         socialAccountId,
-        pageId: socialAccount.accountId, // Assuming accountId stores the page ID
+        pageId: socialAccount.platformAccountId,
         postId: postId || 'ANY',
         name,
         keyword,
@@ -124,3 +124,4 @@ export async function DELETE(req: NextRequest) {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
+
