@@ -16,7 +16,7 @@ export async function GET() {
     const migs = await prisma.\\SELECT * FROM _prisma_migrations\;
     migrations = Array.isArray(migs) ? migs.map(m => m.migration_name) : [];
   } catch (e) {
-    return NextResponse.json({ error: String(e) });
+    return NextResponse.json({ error: String(e), dbUrl });
   }
 
   const hasRule = tables.includes('InstagramAutoDmRule');
@@ -24,6 +24,7 @@ export async function GET() {
   const hasMig = migrations.includes('20261007120000_add_instagram_auto_dm');
 
   return NextResponse.json({
+    dbUrl,
     SAME_DATABASE: isSame,
     TABLES: tables,
     MIGRATIONS: migrations,
