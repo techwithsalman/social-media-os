@@ -1,6 +1,9 @@
 import { getBaseUrl } from '@/lib/url';
 import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
+import { checkPlanLimit, PlanLimitError, createPlanLimitResponse } from '@/lib/billing/plan-limits';
+import prisma from '@/lib/prisma';
+
 import { createMetaAuthorizationUrl, MetaOAuthError } from '@/lib/meta-oauth';
 import { isRealApiMode } from '@/lib/meta-token-service';
 
@@ -33,3 +36,6 @@ export async function GET(req: NextRequest) {
     return redirectToAccounts(req, 'meta_oauth_failed');
   }
 }
+
+
+

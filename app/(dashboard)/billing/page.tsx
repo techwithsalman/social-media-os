@@ -139,34 +139,23 @@ function getAnnualSavings(plans: BillingPlan[]) {
 }
 
 function getPlanFeatures(plan: BillingPlan) {
+  const code = plan.code;
+  let accounts = 4;
+  let autoDm = 3;
+  let bulkVideos = 20;
+  let posts = 100;
+  let team = 1;
+
+  if (code === 'STARTER') { accounts = 15; autoDm = 20; bulkVideos = 100; posts = 500; team = 2; }
+  else if (code === 'PRO') { accounts = 30; autoDm = 75; bulkVideos = 500; posts = 1500; team = 5; }
+  else if (code === 'AGENCY') { accounts = 100; autoDm = 250; bulkVideos = 2000; posts = 5000; team = 20; }
+
   return [
-    {
-      text: formatQuantityLimit(
-        plan.maxSocialAccounts,
-        'connected social account',
-        'connected social accounts'
-      ),
-      enabled: true,
-    },
-    {
-      text: formatPostLimit(plan.monthlyPostLimit),
-      enabled: true,
-    },
-    {
-      text: formatQuantityLimit(plan.maxTeamMembers, 'team member', 'team members'),
-      enabled: true,
-    },
-    {
-      text: formatStorageLimit(plan.storageLimitMB),
-      enabled: true,
-    },
-    ...FEATURE_FIELDS.map(({ field, label }) => {
-      const enabled = Boolean(plan[field]);
-      return {
-        text: `${label}: ${enabled ? 'Enabled' : 'Disabled'}`,
-        enabled,
-      };
-    }),
+    { text: `Connected Accounts (` + accounts + `)`, enabled: true },
+    { text: `Instagram Auto DM posts (` + autoDm + `)`, enabled: true },
+    { text: `Bulk Upload videos per month (` + bulkVideos + `)`, enabled: true },
+    { text: `Scheduled/published posts per month (` + posts + `)`, enabled: true },
+    { text: `Team members (` + team + `)`, enabled: true },
   ];
 }
 
@@ -358,3 +347,4 @@ export default function BillingPage() {
     </AppLayout>
   );
 }
+

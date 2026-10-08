@@ -1,7 +1,9 @@
 import { getBaseUrl } from '@/lib/url';
 import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
+import { checkPlanLimit, PlanLimitError, createPlanLimitResponse } from '@/lib/billing/plan-limits';
 import prisma from '@/lib/prisma';
+
 import crypto from 'crypto';
 
 function randomToken(bytes = 32) {
@@ -57,3 +59,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.redirect(new URL('/instagram-auto-dm?error=auto_dm_connect_failed', getBaseUrl(req)));
   }
 }
+
+
+
+

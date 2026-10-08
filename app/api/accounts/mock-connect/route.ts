@@ -4,7 +4,8 @@ import { getSession } from '@/lib/auth';
 import { platformRegistry, SocialPlatformType } from '@/integrations';
 import { encryptToken } from '@/lib/crypto';
 import { DEMO_SOCIAL_ACCOUNT_BY_PLATFORM, SupportedPlatformId } from '@/lib/platforms';
-import { EntitlementError, assertCanConnectSocialAccount } from '@/lib/billing';
+import { EntitlementError } from '@/lib/billing';
+import { checkPlanLimit, PlanLimitError, createPlanLimitResponse } from '@/lib/billing/plan-limits';
 import { isMetaPlatform, isRealApiMode } from '@/lib/meta-token-service';
 
 export async function POST(req: NextRequest) {
@@ -73,7 +74,8 @@ export async function POST(req: NextRequest) {
         },
       });
     } else {
-      await assertCanConnectSocialAccount(session.workspaceId);
+      const accountsCount = await prisma.socialAccount.count({ where: { workspaceId: session.workspaceId, status: 'CONNECTED' } });
+      await checkPlanLimit(session.workspaceId, 'accounts', accountsCount);
 
       account = await prisma.socialAccount.create({
         data: {
@@ -107,6 +109,9 @@ export async function POST(req: NextRequest) {
     });
   } catch (error: any) {
     console.error('Mock connect error:', error);
+    if (error instanceof PlanLimitError) {
+      return createPlanLimitResponse(error);
+    }
     if (error instanceof EntitlementError) {
       return NextResponse.json({ error: error.message, code: error.code }, { status: error.status });
     }

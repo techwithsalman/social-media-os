@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
 import prisma from '@/lib/prisma';
+import { checkPlanLimit, PlanLimitError, createPlanLimitResponse } from '@/lib/billing/plan-limits';
 
 export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
   try {
@@ -19,6 +20,21 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     }
 
     const { name, keyword, matchType, message, buttonLabel, destinationUrl, enabled } = body;
+
+    if (enabled === true && !existing.enabled) {
+      const activeRules = await prisma.instagramAutoDmRule.findMany({
+        where: { workspaceId: session.workspaceId, enabled: true },
+        select: { mediaId: true }
+      });
+      const distinctPosts = new Set(activeRules.map((r: any) => r.mediaId));
+      if (!distinctPosts.has(existing.mediaId)) {
+        try {
+          await checkPlanLimit(session.workspaceId, 'instagramAutoDm', distinctPosts.size);
+        } catch (error: any) {
+          if (error instanceof PlanLimitError) return createPlanLimitResponse(error);
+        }
+      }
+    }
 
     const rule = await prisma.instagramAutoDmRule.update({
       where: { id: ruleId },

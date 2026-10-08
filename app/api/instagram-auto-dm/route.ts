@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
 import prisma from '@/lib/prisma';
+import { getEffectivePlan } from '@/lib/billing';
+import { checkPlanLimit, PlanLimitError, createPlanLimitResponse } from '@/lib/billing/plan-limits';
 
 export async function GET(req: NextRequest) {
   try {
@@ -60,6 +62,36 @@ export async function POST(req: NextRequest) {
     console.log('[DEBUG CREATE RULE] checking account', { socialAccountId, workspaceId: session.workspaceId });
     if (!account) {
       return NextResponse.json({ error: 'Invalid social account' }, { status: 403 });
+    }
+
+    const { plan } = await getEffectivePlan(session.workspaceId);
+    const planCode = (plan.code || 'FREE').toUpperCase();
+    
+    const isAnyPost = !mediaId || mediaId === 'ANY';
+    if (isAnyPost && planCode === 'FREE') {
+       return NextResponse.json({
+         error: 'PLAN_LIMIT_REACHED',
+         feature: 'anyCommentAutoDm',
+         limit: false,
+         used: 1,
+         plan: planCode,
+         message: 'Auto DM for Any Post is not available on the Free plan.'
+       }, { status: 403 });
+    }
+
+    if (enabled !== false) {
+      const activeRules = await prisma.instagramAutoDmRule.findMany({
+        where: { workspaceId: session.workspaceId, enabled: true },
+        select: { mediaId: true }
+      });
+      const distinctPosts = new Set(activeRules.map((r: any) => r.mediaId));
+      if (!distinctPosts.has(mediaId || 'ANY')) {
+        try {
+          await checkPlanLimit(session.workspaceId, 'instagramAutoDm', distinctPosts.size);
+        } catch (error: any) {
+          if (error instanceof PlanLimitError) return createPlanLimitResponse(error);
+        }
+      }
     }
 
     console.log('[DEBUG CREATE RULE] attempting to create in DB', { data: { workspaceId: session.workspaceId, socialAccountId, name, mediaId: mediaId || "ANY", keyword, matchType: matchType || 'EXACT', message, buttonLabel: buttonLabel || null, destinationUrl: destinationUrl || null, enabled: enabled ?? true } });

@@ -1,6 +1,9 @@
 import { getBaseUrl } from '@/lib/url';
 import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
+import { checkPlanLimit, PlanLimitError, createPlanLimitResponse } from '@/lib/billing/plan-limits';
+import prisma from '@/lib/prisma';
+
 import { createTikTokAuthorizationUrl, TikTokOAuthError } from '@/lib/tiktok-oauth';
 
 export const dynamic = 'force-dynamic';
@@ -36,3 +39,6 @@ export async function GET(req: NextRequest) {
     return redirectToAccounts(req, 'tiktok_oauth_failed', error.message);
   }
 }
+
+
+

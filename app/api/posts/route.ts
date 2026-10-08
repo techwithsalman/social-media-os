@@ -4,7 +4,8 @@ import { getSession } from '@/lib/auth';
 import { decryptToken } from '@/lib/crypto';
 import { PublishingEngine } from '@/lib/queue/publisher';
 import { WORKSPACE_TIMEZONE, zonedDateTimeToUtcDate } from '@/lib/timezone';
-import { EntitlementError, assertCanCreateBillablePost, recordPostUsage } from '@/lib/billing';
+import { EntitlementError, assertCanCreateBillablePost, recordPostUsage, getWorkspaceUsage } from '@/lib/billing';
+import { checkPlanLimit, PlanLimitError, createPlanLimitResponse } from '@/lib/billing/plan-limits';
 import { validateWorkspacePostTargets } from '@/lib/social-account-validation';
 import { resolveMediaAccessUrl } from '@/lib/storage/r2';
 
@@ -226,6 +227,14 @@ export async function POST(req: NextRequest) {
       initialStatus = 'SCHEDULED';
     }
 
+    if (initialStatus === 'SCHEDULED' || publishNow) {
+      const { postsThisMonth } = await getWorkspaceUsage(session.workspaceId);
+      try {
+        await checkPlanLimit(session.workspaceId, 'postsPerMonth', postsThisMonth);
+      } catch (error: any) {
+        if (error instanceof PlanLimitError) return createPlanLimitResponse(error);
+      }
+    }
     if (initialStatus === 'SCHEDULED') {
       await assertCanCreateBillablePost(session.workspaceId, 'schedule');
     }
@@ -307,4 +316,5 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: error.message || 'Failed to create post' }, { status: 500 });
   }
 }
+
 

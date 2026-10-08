@@ -2,6 +2,9 @@ import { getBaseUrl } from '@/lib/url';
 export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
+import { checkPlanLimit, PlanLimitError, createPlanLimitResponse } from '@/lib/billing/plan-limits';
+import prisma from '@/lib/prisma';
+
 import { createYouTubeAuthorizationUrl, YouTubeOAuthError } from '@/lib/youtube-oauth';
 
 function redirectToAccounts(req: NextRequest, code: string) {
@@ -18,6 +21,14 @@ export async function GET(req: NextRequest) {
       url.searchParams.set('redirect', '/accounts');
       return NextResponse.redirect(url);
     }
+    if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const accountsCount = await prisma.socialAccount.count({ where: { workspaceId: session.workspaceId, status: 'CONNECTED' } });
+    try {
+      await checkPlanLimit(session.workspaceId, 'accounts', accountsCount);
+    } catch (error: any) {
+      if (error instanceof PlanLimitError) return createPlanLimitResponse(error);
+    }
+
 
     const authorizationUrl = await createYouTubeAuthorizationUrl(session);
     return NextResponse.redirect(authorizationUrl);
@@ -30,3 +41,6 @@ export async function GET(req: NextRequest) {
     return redirectToAccounts(req, 'youtube_oauth_failed');
   }
 }
+
+
+

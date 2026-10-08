@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getSession } from '@/lib/auth';
 import { EntitlementError, assertCanInviteTeamMember } from '@/lib/billing';
+import { checkPlanLimit, PlanLimitError, createPlanLimitResponse } from '@/lib/billing/plan-limits';
 
 export async function GET() {
   try {
@@ -74,6 +75,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'User is already a member of this workspace' }, { status: 400 });
     }
 
+    const memberCount = await prisma.workspaceMember.count({ where: { workspaceId: session.workspaceId } });
+    try {
+      await checkPlanLimit(session.workspaceId, 'teamMembers', memberCount);
+    } catch (error: any) {
+      if (error instanceof PlanLimitError) return createPlanLimitResponse(error);
+    }
     await assertCanInviteTeamMember(session.workspaceId);
 
     const member = await prisma.workspaceMember.create({
@@ -95,3 +102,4 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: error.message || 'Failed to invite team member' }, { status: 500 });
   }
 }
+

@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getSession } from '@/lib/auth';
-import { EntitlementError, assertCanCreateBillablePost, recordPostUsage } from '@/lib/billing';
+import { EntitlementError, assertCanCreateBillablePost, recordPostUsage, getWorkspaceUsage } from '@/lib/billing';
+import { checkPlanLimit, PlanLimitError, createPlanLimitResponse } from '@/lib/billing/plan-limits';
 
 export async function POST(req: Request) {
   try {
@@ -43,6 +44,12 @@ export async function POST(req: Request) {
     }
 
 
+    const { postsThisMonth } = await getWorkspaceUsage(session.workspaceId);
+    try {
+      await checkPlanLimit(session.workspaceId, 'postsPerMonth', postsThisMonth + items.length - 1);
+    } catch (error: any) {
+      if (error instanceof PlanLimitError) return createPlanLimitResponse(error);
+    }
     // Assert billing for the first item as a proxy for the batch (or check for all)
     // For simplicity, we just assert once to see if they can create at least one scheduled post.
     try {
@@ -110,3 +117,4 @@ export async function POST(req: Request) {
     );
   }
 }
+

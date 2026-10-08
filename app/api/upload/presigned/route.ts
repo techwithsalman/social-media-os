@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
 import { getPresignedUploadUrl, isR2Configured } from '@/lib/storage/r2';
 import { EntitlementError, assertCanUploadFile } from '@/lib/billing';
+import { checkPlanLimit, PlanLimitError, createPlanLimitResponse } from '@/lib/billing/plan-limits';
+import prisma from '@/lib/prisma';
+
 
 const ALLOWED_MIME_TYPES = [
   'image/jpeg',
@@ -54,6 +57,24 @@ export async function POST(req: NextRequest) {
 
     await assertCanUploadFile(session.workspaceId, fileSize);
 
+    if (mimeType.startsWith('video/')) {
+      const now = new Date();
+      const periodStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1, 0, 0, 0, 0));
+      
+      const videoCount = await prisma.mediaAsset.count({
+        where: {
+          workspaceId: session.workspaceId,
+          mimeType: { startsWith: 'video/' },
+          createdAt: { gte: periodStart }
+        }
+      });
+      try {
+        await checkPlanLimit(session.workspaceId, 'bulkUploadVideos', videoCount);
+      } catch (error: any) {
+        if (error instanceof PlanLimitError) return createPlanLimitResponse(error);
+      }
+    }
+
     const { uploadUrl, objectKey } = await getPresignedUploadUrl(
       session.workspaceId,
       filename,
@@ -79,5 +100,6 @@ export async function POST(req: NextRequest) {
     );
   }
 }
+
 
 
