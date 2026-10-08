@@ -28,6 +28,7 @@ interface BulkItem {
   mediaAssetId?: string;
   name: string;
   url: string;
+  thumbnailUrl?: string;
   size: number;
   mimeType: string;
   caption: string;

@@ -12,7 +12,7 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { objectKey, filename, mimeType, size } = body;
+    const { objectKey, filename, mimeType, size, thumbnailKey } = body;
 
     if (!objectKey || !filename || !mimeType) {
       return NextResponse.json({ error: 'Missing required parameters.' }, { status: 400 });
@@ -20,6 +20,9 @@ export async function POST(req: NextRequest) {
 
     if (!objectKey.startsWith(`workspaces/${session.workspaceId}/`)) {
       return NextResponse.json({ error: 'Unauthorized object key.' }, { status: 403 });
+    }
+    if (thumbnailKey && !thumbnailKey.startsWith(`workspaces/${session.workspaceId}/`)) {
+      return NextResponse.json({ error: 'Unauthorized thumbnail key.' }, { status: 403 });
     }
 
     // Generate the playback/download URL for the newly uploaded R2 object
@@ -34,7 +37,7 @@ export async function POST(req: NextRequest) {
         mimeType: mimeType,
         size: size || 0,
         url: objectKey, // We store the actual R2 key as the authoritative URL
-        thumbnailUrl: null,
+        thumbnailUrl: thumbnailKey || null,
       },
     });
 
@@ -48,6 +51,7 @@ export async function POST(req: NextRequest) {
       media: {
         ...mediaAsset,
         url: playbackUrl, // Return the immediate presigned playback URL to the frontend UI
+        thumbnailUrl: thumbnailKey ? await resolveMediaAccessUrl(thumbnailKey, session.workspaceId) : null,
       },
     });
   } catch (error: any) {
