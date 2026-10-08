@@ -47,10 +47,14 @@ export async function POST(req: NextRequest) {
     if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
     const body = await req.json();
-    const { name, socialAccountId, postId, keyword, matchType, message } = body;
+    const { name, socialAccountId, postId, keyword, matchType, message, buttonLabel, destinationUrl, enabled } = body;
 
-    if (!name || !socialAccountId || !keyword || !message) {
+    if (!name || !socialAccountId || !message) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+    }
+    
+    if (matchType !== 'ANY_COMMENT' && !keyword) {
+      return NextResponse.json({ error: 'Keyword is required for this match type' }, { status: 400 });
     }
 
     const socialAccount = await prisma.socialAccount.findFirst({
@@ -68,10 +72,12 @@ export async function POST(req: NextRequest) {
         pageId: socialAccount.platformAccountId,
         postId: postId || 'ANY',
         name,
-        keyword,
+        keyword: keyword || 'ANY',
         matchType: matchType || 'EXACT',
         message,
-        enabled: true,
+        buttonLabel,
+        destinationUrl,
+        enabled: enabled !== undefined ? enabled : true,
       },
     });
 
