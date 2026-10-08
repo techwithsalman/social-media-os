@@ -96,6 +96,9 @@ async function resolveAccountByEntryId(igAccountId: string) {
   for (const acc of Array.from(candidateAccounts.values())) {
     try {
       console.log(`[IG_WEBHOOK] CANDIDATE_DB_PLATFORM_ACCOUNT_ID=${acc.platformAccountId}`);
+      if (acc.username) {
+        console.log(`[IG_WEBHOOK] CANDIDATE_DB_USERNAME=${acc.username}`);
+      }
       const token = decryptToken(acc.token.autoDmAccessToken);
       const res = await fetch(`https://graph.instagram.com/v21.0/me?fields=id,username&access_token=${encodeURIComponent(token)}`);
       
@@ -113,6 +116,13 @@ async function resolveAccountByEntryId(igAccountId: string) {
       if (data.id === igAccountId) {
         console.log('[IG_WEBHOOK] MEDIA_OWNER_RESOLUTION_SUCCESS');
         return acc;
+      }
+
+      if (data.username && acc.username && data.username.toLowerCase() === acc.username.toLowerCase()) {
+        console.log('[IG_WEBHOOK] ACCOUNT_MATCH_BY_TOKEN_USERNAME=true');
+        return acc;
+      } else {
+        console.log('[IG_WEBHOOK] ACCOUNT_MATCH_BY_TOKEN_USERNAME=false');
       }
     } catch (e: any) {
       console.log(`[IG_WEBHOOK] CANDIDATE_ERROR=${e.message}`);
