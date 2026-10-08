@@ -3,7 +3,13 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Save, Loader2, Info, Instagram, Video, Image as ImageIcon, MessageCircle } from "lucide-react";
+import { ArrowLeft, Save, Loader2, Info, Instagram, Video, Image as ImageIcon, MessageCircle, X, ExternalLink } from "lucide-react";
+
+function formatDate(isoStr: string) {
+  if (!isoStr) return "";
+  const d = new Date(isoStr);
+  return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+}
 
 export default function CreateInstagramAutoDmPage() {
   const router = useRouter();
@@ -12,6 +18,8 @@ export default function CreateInstagramAutoDmPage() {
   const [mediaList, setMediaList] = useState<any[]>([]);
   const [loadingMedia, setLoadingMedia] = useState(false);
   const [mediaError, setMediaError] = useState("");
+  
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [useManualMedia, setUseManualMedia] = useState(false);
   
   const [formData, setFormData] = useState({
@@ -60,7 +68,7 @@ export default function CreateInstagramAutoDmPage() {
           const data = await res.json();
           setMediaList(data.media || []);
         } else {
-          setMediaError("Unable to fetch media automatically.");
+          setMediaError("Unable to fetch media automatically. Please check your token or use manual entry.");
         }
       } catch (error) {
         setMediaError("Error fetching media.");
@@ -73,9 +81,13 @@ export default function CreateInstagramAutoDmPage() {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
-    const val = type === "checkbox" ? (e.target as HTMLInputElement).checked : value;
-    setFormData((prev) => ({ ...prev, [name]: val }));
-    // clear error
+    if (type === "checkbox") {
+      const checked = (e.target as HTMLInputElement).checked;
+      setFormData(prev => ({ ...prev, [name]: checked }));
+    } else {
+      setFormData(prev => ({ ...prev, [name]: value }));
+    }
+    
     if (errors[name]) {
       setErrors(prev => ({ ...prev, [name]: "" }));
     }
@@ -83,12 +95,13 @@ export default function CreateInstagramAutoDmPage() {
 
   const handleMediaSelect = (id: string) => {
     setFormData(prev => ({ ...prev, mediaId: prev.mediaId === id ? "" : id }));
+    setIsModalOpen(false);
   };
 
   const validate = () => {
     const newErrors: Record<string, string> = {};
     if (!formData.name.trim()) newErrors.name = "Automation Name is required.";
-    if (!formData.socialAccountId) newErrors.socialAccountId = "Instagram Account is required.";
+    if (!formData.socialAccountId) newErrors.socialAccountId = "Please select an Instagram account.";
     if (!formData.keyword.trim()) newErrors.keyword = "Trigger Keyword is required.";
     if (!formData.message.trim()) newErrors.message = "Message Content is required.";
     
@@ -138,6 +151,7 @@ export default function CreateInstagramAutoDmPage() {
   };
 
   const selectedAccount = accounts.find(a => a.id === formData.socialAccountId);
+  const selectedMedia = mediaList.find(m => m.id === formData.mediaId);
 
   return (
     <div className="min-h-screen bg-[#0a0a0a] pb-24">
@@ -220,22 +234,23 @@ export default function CreateInstagramAutoDmPage() {
                   ) : (
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       {accounts.map(acc => (
-                        <React.Fragment key={acc.id}><div 
-                          onClick={() => setFormData(prev => ({ ...prev, socialAccountId: acc.id }))}
-                          className={`relative cursor-pointer p-3 rounded-lg border flex items-center gap-3 transition-all ${formData.socialAccountId === acc.id ? 'bg-red-500/5 border-red-500 shadow-sm shadow-red-500/10' : 'bg-black border-zinc-800 hover:border-zinc-700'}`}
-                        >
-                          <div className="w-10 h-10 rounded-full bg-zinc-800 flex items-center justify-center overflow-hidden shrink-0">
-                            {acc.profileImageUrl ? (
-                              <img src={acc.profileImageUrl} alt="Profile" className="w-full h-full object-cover" />
-                            ) : (
-                              <Instagram className="w-5 h-5 text-zinc-500" />
-                            )}
-                          </div>
-                          <div className="min-w-0 flex-1">
-                            <p className="text-sm font-bold text-white truncate">{acc.name || acc.username}</p>
-                            <p className="text-xs text-zinc-500 truncate">@{acc.username}</p>
-                          </div>
-                          
+                        <React.Fragment key={acc.id}>
+                          <div 
+                            onClick={() => setFormData(prev => ({ ...prev, socialAccountId: acc.id }))}
+                            className={`relative cursor-pointer p-3 rounded-lg border flex items-center gap-3 transition-all ${formData.socialAccountId === acc.id ? 'bg-red-500/5 border-red-500 shadow-sm shadow-red-500/10' : 'bg-black border-zinc-800 hover:border-zinc-700'}`}
+                          >
+                            <div className="w-10 h-10 rounded-full bg-zinc-800 flex items-center justify-center overflow-hidden shrink-0">
+                              {acc.profileImageUrl ? (
+                                <img src={acc.profileImageUrl} alt="Profile" className="w-full h-full object-cover" />
+                              ) : (
+                                <Instagram className="w-5 h-5 text-zinc-500" />
+                              )}
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <p className="text-sm font-bold text-white truncate">{acc.name || acc.username}</p>
+                              <p className="text-xs text-zinc-500 truncate">@{acc.username}</p>
+                            </div>
+                            
                             {formData.socialAccountId === acc.id && (
                               <div className="absolute top-2 right-2 w-2 h-2 rounded-full bg-red-500"></div>
                             )}
@@ -248,26 +263,19 @@ export default function CreateInstagramAutoDmPage() {
                                   onClick={(e) => { e.preventDefault(); window.location.href=`/api/oauth/instagram-auto-dm/connect?accountId=${acc.id}`; }}
                                   className="bg-red-600 hover:bg-red-700 text-white text-xs font-bold py-2 px-4 rounded-lg flex items-center gap-2"
                                 >
-                                  <Instagram className="w-3 h-3" />
-                                  Enable Auto DM
+                                  <Instagram className="w-3.5 h-3.5" /> Enable Instagram Auto DM
                                 </button>
                               ) : (
-                                <button 
-                                  disabled
-                                  className="bg-zinc-800 border border-green-500/30 text-green-400 text-xs font-bold py-2 px-4 rounded-lg flex items-center gap-2 cursor-default"
-                                >
-                                  <Instagram className="w-3 h-3" />
-                                  Auto DM Enabled
-                                </button>
+                                <div className="text-xs font-medium text-emerald-500 flex items-center gap-1.5 px-2">
+                                  <div className="w-1.5 h-1.5 rounded-full bg-emerald-500"></div> Auto DM Active
+                                </div>
                               )}
                             </div>
                           )}
                         </React.Fragment>
-
                       ))}
                     </div>
                   )}
-                  {errors.socialAccountId && <p className="text-red-500 text-xs mt-1.5">{errors.socialAccountId}</p>}
                 </div>
               </div>
             </div>
@@ -290,7 +298,7 @@ export default function CreateInstagramAutoDmPage() {
                       onClick={() => setUseManualMedia(!useManualMedia)}
                       className="text-xs text-zinc-400 hover:text-white font-medium transition-colors"
                     >
-                      {useManualMedia ? "Browse Recent Posts" : "Enter ID Manually"}
+                      {useManualMedia ? "Use Post Browser" : "Enter ID Manually"}
                     </button>
                   </div>
                   
@@ -304,35 +312,54 @@ export default function CreateInstagramAutoDmPage() {
                       className="w-full bg-black border border-zinc-800 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500 transition-all"
                     />
                   ) : (
-                    <div className="space-y-4">
-                      {loadingMedia ? (
-                        <div className="flex items-center justify-center py-6 bg-black border border-zinc-800 rounded-lg">
-                          <Loader2 className="w-5 h-5 text-zinc-500 animate-spin" />
+                    <div className="space-y-3">
+                      {!formData.mediaId ? (
+                        <div className="p-4 border border-dashed border-zinc-700 bg-black rounded-lg flex flex-col items-center justify-center gap-3 transition-colors hover:border-zinc-500">
+                          <p className="text-sm text-zinc-400 text-center max-w-sm">No specific post selected. Automation will trigger on all eligible posts.</p>
+                          <button
+                            type="button"
+                            onClick={() => setIsModalOpen(true)}
+                            className="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-white rounded-md text-sm font-medium transition-colors border border-zinc-700"
+                          >
+                            Browse Recent Posts
+                          </button>
                         </div>
                       ) : (
-                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
-                          {mediaList.map((media) => {
-                            const isSelected = formData.mediaId === media.id;
-                            const imageUrl = media.thumbnail_url || media.media_url;
-                            return (
-                              <div
-                                key={media.id}
-                                onClick={() => handleMediaSelect(media.id)}
-                                className={`relative cursor-pointer group rounded-lg overflow-hidden border-2 transition-all ${isSelected ? 'border-red-500' : 'border-transparent hover:border-zinc-700'} bg-black`}
-                              >
-                                {imageUrl ? (
-                                  <img src={imageUrl} alt="Media" className="w-full aspect-square object-cover opacity-80 group-hover:opacity-100 transition-opacity" />
-                                ) : (
-                                  <div className="w-full aspect-square bg-zinc-900 flex items-center justify-center">
-                                    {media.media_type === 'VIDEO' ? <Video className="w-6 h-6 text-zinc-700" /> : <ImageIcon className="w-6 h-6 text-zinc-700" />}
-                                  </div>
-                                )}
-                                {isSelected && (
-                                  <div className="absolute inset-0 bg-red-500/20 pointer-events-none"></div>
-                                )}
+                        <div className="flex items-start gap-4 p-4 border border-zinc-700 bg-black rounded-lg relative group">
+                          {selectedMedia ? (
+                            <div className="w-16 h-16 rounded bg-zinc-900 shrink-0 overflow-hidden relative">
+                              <img src={selectedMedia.thumbnail_url || selectedMedia.media_url} alt="Media" className="w-full h-full object-cover" />
+                              <div className="absolute top-1 right-1 bg-black/60 p-0.5 rounded text-white backdrop-blur">
+                                {selectedMedia.media_type === 'VIDEO' ? <Video className="w-3 h-3" /> : <ImageIcon className="w-3 h-3" />}
                               </div>
-                            );
-                          })}
+                            </div>
+                          ) : (
+                            <div className="w-16 h-16 rounded bg-zinc-900 shrink-0 flex items-center justify-center">
+                              <ImageIcon className="w-6 h-6 text-zinc-700" />
+                            </div>
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-white mb-1 truncate">Media ID: {formData.mediaId}</p>
+                            {selectedMedia?.caption && (
+                              <p className="text-xs text-zinc-400 line-clamp-2">{selectedMedia.caption}</p>
+                            )}
+                          </div>
+                          <div className="flex flex-col gap-2 shrink-0">
+                            <button
+                              type="button"
+                              onClick={() => setIsModalOpen(true)}
+                              className="text-xs text-zinc-300 hover:text-white bg-zinc-800 px-3 py-1.5 rounded"
+                            >
+                              Change Post
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setFormData(prev => ({ ...prev, mediaId: "" }))}
+                              className="text-xs text-red-400 hover:text-red-300 bg-red-400/10 px-3 py-1.5 rounded"
+                            >
+                              Clear Selection
+                            </button>
+                          </div>
                         </div>
                       )}
                     </div>
@@ -477,6 +504,14 @@ export default function CreateInstagramAutoDmPage() {
                       When someone comments <span className="text-white font-mono bg-zinc-800 px-1.5 py-0.5 rounded text-xs">{formData.keyword || "..."}</span>
                     </p>
                   </div>
+                  {formData.mediaId && (
+                    <div className="flex items-start gap-3 mt-2">
+                      <div className="mt-0.5"><ImageIcon className="w-4 h-4 text-zinc-400" /></div>
+                      <p className="text-sm text-zinc-300 leading-relaxed">
+                        On specific post <span className="text-white font-mono bg-zinc-800 px-1.5 py-0.5 rounded text-xs">{formData.mediaId}</span>
+                      </p>
+                    </div>
+                  )}
                   <div className="flex items-start gap-3 pl-1">
                     <div className="border-l-2 border-zinc-700 h-6"></div>
                   </div>
@@ -537,9 +572,102 @@ export default function CreateInstagramAutoDmPage() {
           {loading ? "Saving..." : "Save Automation"}
         </button>
       </div>
+
+      {/* Post Selector Modal */}
+      {isModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+          <div className="bg-[#111] border border-zinc-800 rounded-xl shadow-2xl w-full max-w-3xl max-h-[85vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-800 bg-[#0a0a0a]">
+              <div>
+                <h3 className="text-lg font-bold text-white">Select Instagram Post</h3>
+                <p className="text-xs text-zinc-400">Choose a post to trigger this automation on.</p>
+              </div>
+              <button 
+                onClick={() => setIsModalOpen(false)}
+                className="text-zinc-400 hover:text-white p-2 rounded-full hover:bg-zinc-800 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <div className="flex-1 overflow-y-auto p-6">
+              {loadingMedia ? (
+                <div className="flex flex-col items-center justify-center py-20 gap-4">
+                  <Loader2 className="w-8 h-8 text-zinc-500 animate-spin" />
+                  <p className="text-sm text-zinc-400">Loading recent posts...</p>
+                </div>
+              ) : mediaError ? (
+                <div className="flex flex-col items-center justify-center py-16 gap-3 text-center">
+                  <div className="w-12 h-12 rounded-full bg-red-500/10 flex items-center justify-center mb-2">
+                    <Info className="w-6 h-6 text-red-400" />
+                  </div>
+                  <p className="text-sm font-medium text-white">{mediaError}</p>
+                  <p className="text-xs text-zinc-400 max-w-sm">Make sure you have an active Instagram connection with media permissions.</p>
+                </div>
+              ) : mediaList.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-16 text-center">
+                  <Instagram className="w-10 h-10 text-zinc-600 mb-4" />
+                  <p className="text-sm font-medium text-white">No posts found</p>
+                  <p className="text-xs text-zinc-400 mt-1">This account has no recent posts.</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                  {mediaList.map((media) => {
+                    const isSelected = formData.mediaId === media.id;
+                    const imageUrl = media.thumbnail_url || media.media_url;
+                    return (
+                      <div
+                        key={media.id}
+                        onClick={() => handleMediaSelect(media.id)}
+                        className={`relative cursor-pointer group rounded-xl overflow-hidden border-2 transition-all bg-black flex flex-col ${isSelected ? 'border-red-500 shadow-[0_0_0_2px_rgba(239,68,68,0.2)]' : 'border-zinc-800 hover:border-zinc-600'}`}
+                      >
+                        <div className="relative aspect-square bg-zinc-900 w-full overflow-hidden">
+                          {imageUrl ? (
+                            <img src={imageUrl} alt="Post preview" className="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity" />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center">
+                              {media.media_type === 'VIDEO' ? <Video className="w-6 h-6 text-zinc-700" /> : <ImageIcon className="w-6 h-6 text-zinc-700" />}
+                            </div>
+                          )}
+                          
+                          {/* Media Type Icon */}
+                          <div className="absolute top-2 right-2 bg-black/60 p-1 rounded-md text-white backdrop-blur">
+                            {media.media_type === 'VIDEO' ? <Video className="w-3.5 h-3.5" /> : <ImageIcon className="w-3.5 h-3.5" />}
+                          </div>
+                          
+                          {isSelected && (
+                            <div className="absolute inset-0 bg-red-500/20 pointer-events-none"></div>
+                          )}
+                        </div>
+                        
+                        <div className="p-3 bg-zinc-900/80 flex-1 flex flex-col justify-between">
+                          <p className="text-xs text-zinc-300 line-clamp-2 leading-relaxed mb-2">
+                            {media.caption || <span className="italic text-zinc-600">No caption</span>}
+                          </p>
+                          <p className="text-[10px] text-zinc-500 font-medium">
+                            {formatDate(media.timestamp)}
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+            
+            <div className="px-6 py-4 border-t border-zinc-800 bg-[#0a0a0a] flex items-center justify-between">
+              <p className="text-xs text-zinc-500">Only the latest posts are shown.</p>
+              <button 
+                onClick={() => setIsModalOpen(false)}
+                className="px-5 py-2 bg-zinc-800 hover:bg-zinc-700 text-white rounded-lg text-sm font-medium transition-colors"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
-
-
-
