@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PlatformIcon } from '@/components/ui/PlatformIcons';
+import { MediaThumbnail } from '@/components/ui/MediaThumbnail';
 import {
   CheckCircle2,
   Check,
@@ -26,6 +27,7 @@ interface PublishedPostItem {
   mediaAsset?: {
     url: string;
     thumbnailUrl?: string;
+    mimeType?: string;
   } | null;
   platformPosts: Array<{
     id: string;

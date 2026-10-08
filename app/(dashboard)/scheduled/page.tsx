@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PlatformIcon } from '@/components/ui/PlatformIcons';
+import { MediaThumbnail } from '@/components/ui/MediaThumbnail';
 import {
   AlertCircle,
   Calendar,
@@ -443,17 +444,11 @@ export default function ScheduledPostsPage() {
               >
                 {/* LEFT: THUMBNAIL & ACCOUNTS */}
                 <div className="flex flex-row lg:flex-col items-center lg:items-start gap-4 shrink-0 lg:w-48">
-                  <div className="relative w-20 h-20 lg:w-full lg:h-32 rounded-xl bg-[#18181f] overflow-hidden shrink-0 border border-[#33333e] flex items-center justify-center">
-                    {displayImageUrl ? (
-                      <img src={displayImageUrl} alt="" className="w-full h-full object-cover" />
-                    ) : isVideo ? (
-                      <div className="flex flex-col items-center gap-2 text-neutral-600">
-                        <Play className="w-8 h-8 opacity-50" />
-                      </div>
-                    ) : (
-                      <FileText className="w-8 h-8 text-neutral-600" />
-                    )}
-                  </div>
+                  <MediaThumbnail 
+                    mediaAsset={post.mediaAsset || null} 
+                    className="relative w-20 h-20 lg:w-full lg:h-32 rounded-xl shrink-0 border border-[#33333e]" 
+                    iconClassName="w-8 h-8 opacity-50 text-neutral-600"
+                  />
                   
                   <div className="flex flex-wrap gap-1.5 w-full">
                     {post.platformPosts.map((pp) => (
