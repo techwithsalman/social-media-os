@@ -28,9 +28,17 @@ function InstagramAutoDmContent() {
       setTimeout(() => setSuccessMsg(""), 5000);
     }
     fetchAutomations();
+    
+    // Add lightweight client-side polling every 5s
+    const interval = setInterval(() => {
+      fetchAutomations(true);
+    }, 5000);
+
+    return () => clearInterval(interval);
   }, [searchParams]);
 
-  const fetchAutomations = async () => {
+  const fetchAutomations = async (silent = false) => {
+    if (!silent) setLoading(true);
     try {
       const res = await fetch("/api/instagram-auto-dm");
       if (res.ok) {
@@ -41,7 +49,7 @@ function InstagramAutoDmContent() {
     } catch (error) {
       console.error("Failed to fetch automations", error);
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   };
 

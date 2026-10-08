@@ -9,8 +9,8 @@ export default function InstagramAutoDmActivityPage() {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("ALL"); // ALL, SENT, FAILED, SKIPPED
 
-  const fetchActivities = async () => {
-    setLoading(true);
+  const fetchActivities = async (silent = false) => {
+    if (!silent) setLoading(true);
     try {
       const res = await fetch("/api/instagram-auto-dm/activity");
       if (res.ok) {
@@ -20,12 +20,18 @@ export default function InstagramAutoDmActivityPage() {
     } catch (error) {
       console.error("Failed to fetch activities", error);
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   };
 
   useEffect(() => {
     fetchActivities();
+    
+    const interval = setInterval(() => {
+      fetchActivities(true);
+    }, 5000);
+
+    return () => clearInterval(interval);
   }, []);
 
   const getStatusIcon = (status: string) => {
