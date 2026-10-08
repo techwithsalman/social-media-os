@@ -21,6 +21,8 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const rawBody = await req.text();
+    console.log('[IG_WEBHOOK] POST_RECEIVED');
+    
     const signature = req.headers.get('x-hub-signature-256');
     const secret = process.env.AUTO_DM_INSTAGRAM_APP_SECRET || process.env.META_APP_SECRET;
 
@@ -49,6 +51,7 @@ export async function POST(req: NextRequest) {
     for (const entry of payload.entry || []) {
       const igAccountId = entry.id; // Instagram Account ID
       for (const change of entry.changes || []) {
+        console.log('[IG_WEBHOOK] FIELD=' + change.field);
         if (change.field === 'comments') {
           await processCommentWebhook(igAccountId, change.value);
         }
@@ -66,6 +69,8 @@ async function processCommentWebhook(igAccountId: string, value: any) {
   const { id: commentId, from, text, media } = value;
   
   if (!commentId || !from || !text || !media) return;
+  console.log('[IG_WEBHOOK] COMMENT_RECEIVED');
+  
   const commenterId = from.id;
   const mediaId = media.id;
 
@@ -78,7 +83,18 @@ async function processCommentWebhook(igAccountId: string, value: any) {
     include: { token: true }
   });
 
-  if (!account || !account.token || !account.token.autoDmAccessToken || account.token.accessToken) return;
+  if (!account) {
+    console.log('[IG_WEBHOOK] ACCOUNT_MATCH_NOT_FOUND');
+    return;
+  }
+  console.log('[IG_WEBHOOK] ACCOUNT_MATCH_FOUND');
+
+  // BUG FIX: Do not reject an account just because it has a publishing accessToken.
+  if (!account.token || !account.token.autoDmAccessToken) {
+    console.log('[IG_WEBHOOK] AUTO_DM_TOKEN_PRESENT=false');
+    return;
+  }
+  console.log('[IG_WEBHOOK] AUTO_DM_TOKEN_PRESENT=true');
 
   // Find active rules for this media
   const rules = await prisma.instagramAutoDmRule.findMany({
@@ -89,12 +105,15 @@ async function processCommentWebhook(igAccountId: string, value: any) {
     }
   });
 
+  console.log('[IG_WEBHOOK] ACTIVE_RULES_FOUND=' + rules.length);
   if (!rules.length) return;
 
   for (const rule of rules) {
     const isMatch = rule.matchType === 'EXACT'
       ? text.trim().toLowerCase() === rule.keyword.toLowerCase()
       : text.toLowerCase().includes(rule.keyword.toLowerCase());
+
+    console.log('[IG_WEBHOOK] KEYWORD_MATCH=' + isMatch);
 
     if (isMatch) {
       // Check idempotency
@@ -119,15 +138,17 @@ async function processCommentWebhook(igAccountId: string, value: any) {
 
       // Send the DM
       try {
-        const accessToken = decryptToken(account.token.autoDmAccessToken || account.token.accessToken);
+        console.log('[IG_WEBHOOK] DM_SEND_ATTEMPT');
+        const accessToken = decryptToken(account.token.autoDmAccessToken);
         await sendInstagramPrivateReply(igAccountId, commentId, rule, accessToken);
         
         await prisma.instagramAutoDmExecution.update({
           where: { id: execution.id },
           data: { status: 'SENT', sentAt: new Date() }
         });
+        console.log('[IG_WEBHOOK] DM_SEND_SUCCESS');
       } catch (err: any) {
-        console.error(`[Auto DM Error] ${err.message}`);
+        console.log('[IG_WEBHOOK] DM_SEND_FAILED code/status only: ' + (err.message || 'Unknown error'));
         await prisma.instagramAutoDmExecution.update({
           where: { id: execution.id },
           data: { status: 'FAILED', error: err.message || 'Unknown error' }
@@ -183,8 +204,3 @@ async function sendInstagramPrivateReply(igAccountId: string, commentId: string,
   }
   return data;
 }
-
-
-
-
-
