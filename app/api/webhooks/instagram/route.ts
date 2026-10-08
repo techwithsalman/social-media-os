@@ -50,6 +50,7 @@ export async function POST(req: NextRequest) {
     // Process entries
     for (const entry of payload.entry || []) {
       const igAccountId = entry.id; // Instagram Account ID
+      console.log(`[IG_WEBHOOK] ENTRY_ID_PRESENT=${!!igAccountId}`);
       for (const change of entry.changes || []) {
         console.log('[IG_WEBHOOK] FIELD=' + change.field);
         if (change.field === 'comments') {
@@ -65,6 +66,52 @@ export async function POST(req: NextRequest) {
   }
 }
 
+async function resolveAccountByEntryId(igAccountId: string) {
+  let account = await prisma.socialAccount.findFirst({
+    where: { platformAccountId: igAccountId, platform: 'INSTAGRAM' },
+    include: { token: true }
+  });
+
+  if (account) {
+    console.log('[IG_WEBHOOK] DB_ACCOUNT_MATCH_BY_ENTRY_ID=true (Exact Match)');
+    return account;
+  }
+
+  console.log('[IG_WEBHOOK] DB_ACCOUNT_MATCH_BY_ENTRY_ID=false');
+  console.log('[IG_WEBHOOK] MEDIA_OWNER_RESOLUTION_ATTEMPT');
+
+  // Fallback: Webhook might be sending an IGSID. Fetch accounts with Auto DM tokens to resolve.
+  const activeRules = await prisma.instagramAutoDmRule.findMany({
+    where: { enabled: true },
+    include: { socialAccount: { include: { token: true } } }
+  });
+
+  const candidateAccounts = new Map();
+  for (const rule of activeRules) {
+    if (rule.socialAccount?.token?.autoDmAccessToken) {
+      candidateAccounts.set(rule.socialAccount.id, rule.socialAccount);
+    }
+  }
+
+  for (const acc of Array.from(candidateAccounts.values())) {
+    try {
+      const token = decryptToken(acc.token.autoDmAccessToken);
+      const res = await fetch(`https://graph.instagram.com/v21.0/me?access_token=${encodeURIComponent(token)}`);
+      if (!res.ok) continue;
+      
+      const data = await res.json();
+      if (data.id === igAccountId) {
+        console.log('[IG_WEBHOOK] MEDIA_OWNER_RESOLUTION_SUCCESS');
+        return acc;
+      }
+    } catch (e) {
+      // Safely ignore errors during token verification
+    }
+  }
+
+  return null;
+}
+
 async function processCommentWebhook(igAccountId: string, value: any) {
   const { id: commentId, from, text, media } = value;
   
@@ -77,11 +124,7 @@ async function processCommentWebhook(igAccountId: string, value: any) {
   // Do not reply to self
   if (commenterId === igAccountId) return;
 
-  // Find social account
-  const account = await prisma.socialAccount.findFirst({
-    where: { platformAccountId: igAccountId, platform: 'INSTAGRAM' },
-    include: { token: true }
-  });
+  const account = await resolveAccountByEntryId(igAccountId);
 
   if (!account) {
     console.log('[IG_WEBHOOK] ACCOUNT_MATCH_NOT_FOUND');
