@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PlatformIcon } from '@/components/ui/PlatformIcons';
@@ -9,16 +9,23 @@ import {
   Layers,
   Sparkles,
   Calendar,
-  Clock,
   Trash2,
   CheckCircle2,
-  ArrowRight,
-  FileText,
   Sliders,
 } from 'lucide-react';
+import { zonedDateTimeToUtcIso, WORKSPACE_TIMEZONE } from '@/lib/timezone';
+
+interface SocialAccount {
+  id: string;
+  platform: string;
+  name: string;
+  username: string;
+  status: string;
+}
 
 interface BulkItem {
   id: string;
+  mediaAssetId?: string;
   name: string;
   url: string;
   size: number;
@@ -26,67 +33,55 @@ interface BulkItem {
   caption: string;
   scheduledDate: string;
   scheduledTime: string;
-  platforms: string[];
+  selectedAccountIds: string[];
+  status: 'PENDING' | 'UPLOADING' | 'UPLOADED' | 'ERROR';
 }
 
 export default function BulkUploadPage() {
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const [items, setItems] = useState<BulkItem[]>([
-    {
-      id: 'bulk_1',
-      name: 'Product-Teaser-Reel-01.mp4',
-      url: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=400&auto=format&fit=crop&q=80',
-      size: 14200000,
-      mimeType: 'video/mp4',
-      caption: 'Transform your social media workflow with Social Media OS! 🚀 #productivity #creator',
-      scheduledDate: '2026-09-01',
-      scheduledTime: '09:00',
-      platforms: ['INSTAGRAM', 'TIKTOK', 'YOUTUBE', 'FACEBOOK'],
-    },
-    {
-      id: 'bulk_2',
-      name: 'Behind-The-Scenes-Studio-02.mp4',
-      url: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=400&auto=format&fit=crop&q=80',
-      size: 19800000,
-      mimeType: 'video/mp4',
-      caption: 'A day in the life building next-gen web products. 💻✨ #buildinpublic #tech',
-      scheduledDate: '2026-09-01',
-      scheduledTime: '12:00',
-      platforms: ['INSTAGRAM', 'TIKTOK', 'LINKEDIN', 'X'],
-    },
-    {
-      id: 'bulk_3',
-      name: 'Feature-Breakdown-Clip-03.mp4',
-      url: 'https://images.unsplash.com/photo-1551836022-d5d88e9218df?w=400&auto=format&fit=crop&q=80',
-      size: 16500000,
-      mimeType: 'video/mp4',
-      caption: 'Top 3 tips for scaling multi-platform distribution simultaneously. 📈 #marketing',
-      scheduledDate: '2026-09-01',
-      scheduledTime: '15:00',
-      platforms: ['INSTAGRAM', 'FACEBOOK', 'YOUTUBE', 'LINKEDIN'],
-    },
-  ]);
+  const [accounts, setAccounts] = useState<SocialAccount[]>([]);
+  const [selectedAccountIds, setSelectedAccountIds] = useState<string[]>([]);
+  const [loadingAccounts, setLoadingAccounts] = useState(true);
 
+  const [items, setItems] = useState<BulkItem[]>([]);
   const [bulkMasterCaption, setBulkMasterCaption] = useState('');
   const [applyToAllVideos, setApplyToAllVideos] = useState(true);
 
   const [postsPerDay, setPostsPerDay] = useState(3);
   const [startDate, setStartDate] = useState('2026-09-01');
   const [timeSlots, setTimeSlots] = useState(['09:00', '12:00', '15:00', '18:00', '21:00']);
-  const [timezone, setTimezone] = useState('Asia/Karachi');
-  const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>([
-    'INSTAGRAM',
-    'FACEBOOK',
-    'TIKTOK',
-    'YOUTUBE',
-    'LINKEDIN',
-    'X',
-  ]);
+  const [timezone, setTimezone] = useState(WORKSPACE_TIMEZONE);
 
   const [saving, setSaving] = useState(false);
   const [successBanner, setSuccessBanner] = useState(false);
+
+  useEffect(() => {
+    async function loadAccounts() {
+      try {
+        setLoadingAccounts(true);
+        const res = await fetch('/api/accounts');
+        if (res.ok) {
+          const data = await res.json();
+          const fetchedAccounts = (data.accounts || []).filter((a: any) => a.status === 'CONNECTED');
+          setAccounts(fetchedAccounts);
+          setSelectedAccountIds(fetchedAccounts.map((a: any) => a.id));
+        }
+      } catch (e) {
+        console.error(e);
+      } finally {
+        setLoadingAccounts(false);
+      }
+    }
+    loadAccounts();
+    
+    const today = new Date();
+    const yyyy = today.getFullYear();
+    const mm = String(today.getMonth() + 1).padStart(2, '0');
+    const dd = String(today.getDate()).padStart(2, '0');
+    setStartDate(`${yyyy}-${mm}-${dd}`);
+  }, []);
 
   const handleApplyBulkCaption = () => {
     if (!bulkMasterCaption) return;
@@ -117,10 +112,55 @@ export default function BulkUploadPage() {
           ...item,
           scheduledDate: `${yyyy}-${mm}-${dd}`,
           scheduledTime: slotsToUse[slotIdx] || '12:00',
-          platforms: [...selectedPlatforms],
+          selectedAccountIds: applyToAllVideos ? [...selectedAccountIds] : item.selectedAccountIds,
         };
       })
     );
+  };
+
+  const uploadFile = async (file: File, itemId: string) => {
+    try {
+      setItems((prev) => prev.map((i) => i.id === itemId ? { ...i, status: 'UPLOADING' } : i));
+
+      const presignedRes = await fetch('/api/upload/presigned', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ filename: file.name, mimeType: file.type, size: file.size })
+      });
+      const presignedData = await presignedRes.json();
+      if (!presignedRes.ok) throw new Error(presignedData.error);
+
+      const r2Res = await fetch(presignedData.uploadUrl, {
+        method: 'PUT',
+        body: file,
+        headers: { 'Content-Type': file.type }
+      });
+      if (!r2Res.ok) throw new Error('Failed to upload to R2');
+
+      const finalizeRes = await fetch('/api/upload/finalize', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          objectKey: presignedData.objectKey,
+          filename: file.name,
+          mimeType: file.type,
+          size: file.size
+        })
+      });
+      const finalizeData = await finalizeRes.json();
+      if (!finalizeRes.ok) throw new Error(finalizeData.error);
+
+      setItems((prev) => prev.map((i) => i.id === itemId ? {
+        ...i,
+        status: 'UPLOADED',
+        mediaAssetId: finalizeData.media.id,
+        url: finalizeData.media.url
+      } : i));
+
+    } catch (err) {
+      console.error(err);
+      setItems((prev) => prev.map((i) => i.id === itemId ? { ...i, status: 'ERROR' } : i));
+    }
   };
 
   const handleBatchUpload = (files: FileList | null) => {
@@ -128,32 +168,76 @@ export default function BulkUploadPage() {
     const newItems: BulkItem[] = [];
 
     Array.from(files).forEach((file, idx) => {
+      const id = `bulk_${Date.now()}_${idx}`;
       newItems.push({
-        id: `bulk_new_${Date.now()}_${idx}`,
+        id,
         name: file.name,
-        url: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=400&auto=format&fit=crop&q=80',
+        url: '', // will be set after upload
         size: file.size,
         mimeType: file.type || 'video/mp4',
         caption: bulkMasterCaption || `Video content item #${items.length + idx + 1}`,
         scheduledDate: startDate,
         scheduledTime: '12:00',
-        platforms: [...selectedPlatforms],
+        selectedAccountIds: [...selectedAccountIds],
+        status: 'PENDING',
       });
     });
 
     setItems((prev) => [...prev, ...newItems]);
+
+    // Start uploads
+    const filesArray = Array.from(files);
+    newItems.forEach((item, idx) => {
+      uploadFile(filesArray[idx], item.id);
+    });
   };
 
   const handleSaveAllBulk = async () => {
+    if (items.some(i => i.status === 'UPLOADING' || i.status === 'PENDING')) {
+      alert("Please wait for all uploads to complete.");
+      return;
+    }
+
     setSaving(true);
     try {
-      await new Promise((r) => setTimeout(r, 1200));
+      const payloadItems = items.filter(i => i.status === 'UPLOADED').map(item => {
+        const utcIso = zonedDateTimeToUtcIso(item.scheduledDate, item.scheduledTime, timezone);
+        
+        const platformSettings = accounts
+          .filter(a => item.selectedAccountIds.includes(a.id))
+          .map(a => ({
+            socialAccountId: a.id,
+            platform: a.platform,
+            customCaption: item.caption,
+            contentType: item.mimeType.startsWith('video') ? 'VIDEO' : 'POST',
+            visibility: 'PUBLIC',
+          }));
+
+        return {
+          mediaAssetId: item.mediaAssetId,
+          masterCaption: item.caption,
+          scheduledFor: utcIso,
+          timezone,
+          platformSettings
+        };
+      });
+
+      const res = await fetch('/api/posts/bulk', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ items: payloadItems }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+
       setSuccessBanner(true);
       setTimeout(() => {
         router.push('/calendar');
       }, 1500);
     } catch (e) {
       console.error(e);
+      alert('Failed to save bulk posts');
     } finally {
       setSaving(false);
     }
@@ -201,6 +285,7 @@ export default function BulkUploadPage() {
               <option value="2">2 Posts / Day</option>
               <option value="3">3 Posts / Day</option>
               <option value="5">5 Posts / Day</option>
+              <option value="6">6 Posts / Day</option>
             </select>
           </div>
 
@@ -236,12 +321,16 @@ export default function BulkUploadPage() {
             <label className="block text-xs md:text-sm font-bold text-neutral-300 mb-2.5">
               Target Networks
             </label>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
-              {['INSTAGRAM', 'FACEBOOK', 'TIKTOK', 'YOUTUBE', 'LINKEDIN', 'X'].map((plat) => {
-                const isChecked = selectedPlatforms.includes(plat);
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 max-h-48 overflow-y-auto">
+              {loadingAccounts ? (
+                 <span className="text-neutral-500 text-sm">Loading...</span>
+              ) : accounts.length === 0 ? (
+                 <span className="text-neutral-500 text-sm">No accounts connected</span>
+              ) : accounts.map((acc) => {
+                const isChecked = selectedAccountIds.includes(acc.id);
                 return (
                   <label
-                    key={plat}
+                    key={acc.id}
                     className={`flex items-center gap-2.5 p-2.5 rounded-xl border text-xs md:text-sm font-semibold cursor-pointer ${
                       isChecked
                         ? 'bg-red-950/40 border-red-500/50 text-white'
@@ -252,14 +341,14 @@ export default function BulkUploadPage() {
                       type="checkbox"
                       checked={isChecked}
                       onChange={() => {
-                        setSelectedPlatforms((prev) =>
-                          prev.includes(plat) ? prev.filter((p) => p !== plat) : [...prev, plat]
+                        setSelectedAccountIds((prev) =>
+                          prev.includes(acc.id) ? prev.filter((p) => p !== acc.id) : [...prev, acc.id]
                         );
                       }}
                       className="rounded border-[#33333e] bg-[#0e0e12] text-red-600 w-4 h-4"
                     />
-                    <PlatformIcon platform={plat} size={16} className="w-4 h-4 rounded" />
-                    <span>{plat}</span>
+                    <PlatformIcon platform={acc.platform} size={16} className="w-4 h-4 rounded" />
+                    <span className="truncate">{acc.username || acc.name}</span>
                   </label>
                 );
               })}
@@ -296,7 +385,7 @@ export default function BulkUploadPage() {
                   onChange={(e) => setApplyToAllVideos(e.target.checked)}
                   className="rounded-md border-[#33333e] bg-[#0e0e12] text-red-600 w-4 h-4"
                 />
-                <span>Apply caption to all batch videos & platforms</span>
+                <span>Apply caption & networks to all items</span>
               </label>
 
               <button
@@ -328,7 +417,7 @@ export default function BulkUploadPage() {
               Drop batch video & image files here to add to queue
             </p>
             <p className="text-xs md:text-sm text-neutral-400 mt-1.5">
-              Supports 20+ videos at once (MP4, MOV, JPG, PNG)
+              Supports multiple files at once (MP4, MOV, JPG, PNG)
             </p>
           </div>
         </div>
@@ -366,22 +455,43 @@ export default function BulkUploadPage() {
               key={item.id}
               className="p-5 rounded-2xl bg-[#0e0e12]/60 border border-[#22222a] flex flex-col md:flex-row md:items-center justify-between gap-5"
             >
-              <div className="flex items-center gap-4 overflow-hidden">
+              <div className="flex items-center gap-4 overflow-hidden w-full md:w-auto flex-1">
                 <span className="w-7 text-center text-sm font-black text-neutral-500 shrink-0">
                   {String(idx + 1).padStart(2, '0')}
                 </span>
-                <div className="w-16 h-16 rounded-xl bg-[#18181f] overflow-hidden shrink-0 border border-[#33333e]">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={item.url} alt="" className="w-full h-full object-cover" />
+                <div className="w-16 h-16 rounded-xl bg-[#18181f] overflow-hidden shrink-0 border border-[#33333e] flex items-center justify-center">
+                  {item.status === 'UPLOADED' && item.url ? (
+                     item.mimeType.startsWith('video') ? (
+                       <video src={item.url} className="w-full h-full object-cover" />
+                     ) : (
+                       // eslint-disable-next-line @next/next/no-img-element
+                       <img src={item.url} alt="" className="w-full h-full object-cover" />
+                     )
+                  ) : item.status === 'UPLOADING' ? (
+                     <div className="w-6 h-6 border-2 border-red-500 border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    <span className="text-xs text-neutral-500">Wait</span>
+                  )}
                 </div>
-                <div className="overflow-hidden">
+                <div className="overflow-hidden flex-1">
                   <p className="text-sm md:text-base font-bold text-white truncate">{item.name}</p>
-                  <p className="text-xs md:text-sm text-neutral-300 mt-1 line-clamp-1">
-                    {item.caption}
-                  </p>
+                  
+                  <input 
+                    type="text" 
+                    value={item.caption}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setItems(prev => prev.map(i => i.id === item.id ? { ...i, caption: val } : i));
+                    }}
+                    className="w-full text-xs md:text-sm mt-1 p-1 bg-transparent border-b border-[#33333e] text-neutral-300 focus:outline-none focus:border-red-500"
+                    placeholder="Caption..."
+                  />
+
                   <div className="flex items-center gap-1.5 mt-2">
-                    {item.platforms.map((p) => (
-                      <PlatformIcon key={p} platform={p} size={16} className="w-4 h-4 rounded" />
+                    {accounts.filter(a => item.selectedAccountIds.includes(a.id)).map(a => (
+                       <div key={a.id} className="relative group">
+                         <PlatformIcon platform={a.platform} size={16} className="w-4 h-4 rounded" />
+                       </div>
                     ))}
                   </div>
                 </div>
@@ -428,7 +538,3 @@ export default function BulkUploadPage() {
     </AppLayout>
   );
 }
-
-
-
-
