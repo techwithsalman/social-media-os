@@ -95,7 +95,7 @@ export default function BulkUploadPage() {
           setAccounts(fetchedAccounts);
           setSelectedAccountIds(fetchedAccounts.map((a: any) => a.id));
         }
-      } catch (e) {
+      } catch (e: any) {
         console.error(e);
       } finally {
         setLoadingAccounts(false);
@@ -284,9 +284,9 @@ export default function BulkUploadPage() {
       setTimeout(() => {
         router.push('/calendar');
       }, 1500);
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
-      alert('Failed to save bulk posts');
+      alert(e.message || 'Failed to save bulk posts');
     } finally {
       setSaving(false);
     }

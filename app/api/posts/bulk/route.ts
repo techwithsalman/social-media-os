@@ -15,6 +15,34 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'No items provided' }, { status: 400 });
     }
 
+    // Validate that all accounts belong to the workspace
+    const accountIds = new Set(items.flatMap((i: any) => i.platformSettings.map((p: any) => p.socialAccountId)));
+    const accounts = await prisma.socialAccount.findMany({
+      where: {
+        id: { in: Array.from(accountIds) },
+        workspaceId: session.workspaceId
+      }
+    });
+
+    if (accounts.length !== accountIds.size) {
+      return NextResponse.json({ error: 'One or more selected social accounts are invalid or do not belong to this workspace.' }, { status: 400 });
+    }
+
+    // Validate that all media assets belong to the workspace
+    const mediaIds = Array.from(new Set(items.map((i: any) => i.mediaAssetId).filter(Boolean)));
+    if (mediaIds.length > 0) {
+      const media = await prisma.mediaAsset.findMany({
+        where: {
+          id: { in: mediaIds },
+          workspaceId: session.workspaceId
+        }
+      });
+      if (media.length !== mediaIds.length) {
+        return NextResponse.json({ error: 'One or more media assets are invalid or do not belong to this workspace.' }, { status: 400 });
+      }
+    }
+
+
     // Assert billing for the first item as a proxy for the batch (or check for all)
     // For simplicity, we just assert once to see if they can create at least one scheduled post.
     try {
@@ -26,7 +54,10 @@ export async function POST(req: Request) {
       throw error;
     }
 
+    
+    console.log('[BULK_POSTS] REQUEST_RECEIVED', { itemCount: items.length });
     const createdPosts = await prisma.$transaction(async (tx) => {
+  
       const posts = [];
       for (const item of items) {
         const {
@@ -56,8 +87,6 @@ export async function POST(req: Request) {
                 visibility: plat.visibility || 'PUBLIC',
                 metadata: JSON.stringify(plat.metadata || {}),
                 status: 'SCHEDULED',
-                scheduledFor: new Date(scheduledFor),
-                errorMessage: null,
               })),
             },
           },
@@ -74,7 +103,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ success: true, count: createdPosts.length });
   } catch (error: any) {
-    console.error('Bulk create post error:', error);
+    console.error('[BULK_POSTS] CREATE_FAILED', error instanceof Error ? error.stack : error);
     return NextResponse.json(
       { error: error.message || 'Failed to create bulk posts' },
       { status: 500 }
