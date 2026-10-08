@@ -1,4 +1,38 @@
+class Semaphore {
+  private queue: (() => void)[] = [];
+  private active = 0;
+  constructor(private maxConcurrency: number) {}
+  
+  async acquire(): Promise<void> {
+    if (this.active < this.maxConcurrency) {
+      this.active++;
+      return Promise.resolve();
+    }
+    return new Promise((resolve) => this.queue.push(resolve));
+  }
+  
+  release(): void {
+    this.active--;
+    const next = this.queue.shift();
+    if (next) {
+      this.active++;
+      next();
+    }
+  }
+}
+
+const thumbnailSemaphore = new Semaphore(3);
+
 export async function generateVideoThumbnail(file: File): Promise<File | null> {
+  await thumbnailSemaphore.acquire();
+  try {
+    return await extractFrame(file);
+  } finally {
+    thumbnailSemaphore.release();
+  }
+}
+
+async function extractFrame(file: File): Promise<File | null> {
   return new Promise((resolve) => {
     if (!file.type.startsWith('video/')) {
       return resolve(null);
@@ -14,9 +48,13 @@ export async function generateVideoThumbnail(file: File): Promise<File | null> {
     let resolved = false;
 
     const cleanup = () => {
-      URL.revokeObjectURL(objectUrl);
-      video.removeAttribute('src');
-      video.load();
+      try {
+        URL.revokeObjectURL(objectUrl);
+        video.removeAttribute('src');
+        video.load();
+      } catch (e) {
+        // ignore cleanup errors
+      }
     };
 
     const finish = (result: File | null) => {
@@ -64,7 +102,7 @@ export async function generateVideoThumbnail(file: File): Promise<File | null> {
           } else {
             finish(null);
           }
-        }, 'image/jpeg', 0.8);
+        }, 'image/jpeg', 0.82);
       } catch (err) {
         console.error('[THUMBNAIL] Failed to extract video frame', err);
         finish(null);

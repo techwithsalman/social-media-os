@@ -1,10 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Play, FileText } from 'lucide-react';
 
 interface MediaThumbnailProps {
   mediaAsset: {
     url?: string;
-    thumbnailUrl?: string;
+    thumbnailUrl?: string | null;
     mimeType?: string;
   } | null;
   className?: string;
@@ -12,6 +12,8 @@ interface MediaThumbnailProps {
 }
 
 export function MediaThumbnail({ mediaAsset, className = "", iconClassName = "w-8 h-8 opacity-50" }: MediaThumbnailProps) {
+  const [imageError, setImageError] = useState(false);
+
   if (!mediaAsset) {
     return (
       <div className={`flex items-center justify-center bg-[#18181f] text-neutral-600 ${className}`}>
@@ -26,14 +28,19 @@ export function MediaThumbnail({ mediaAsset, className = "", iconClassName = "w-
   
   const displayImageUrl = hasRealThumbnail ? mediaAsset.thumbnailUrl : (hasImageUrl ? mediaAsset.url : null);
 
-  if (displayImageUrl) {
+  if (displayImageUrl && !imageError) {
     return (
       <div className={`relative flex items-center justify-center bg-[#18181f] overflow-hidden ${className}`}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={displayImageUrl} alt="Media thumbnail" className="w-full h-full object-cover" />
+        <img 
+          src={displayImageUrl} 
+          alt="Media thumbnail" 
+          className="w-full h-full object-cover" 
+          onError={() => setImageError(true)}
+        />
         {isVideo && (
           <div className="absolute inset-0 flex items-center justify-center bg-black/30">
-            <Play className={`text-white ${iconClassName}`} />
+            <Play className={`text-white fill-white/20 ${iconClassName}`} />
           </div>
         )}
       </div>
