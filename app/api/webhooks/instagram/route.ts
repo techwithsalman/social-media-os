@@ -176,11 +176,18 @@ async function processCommentWebhook(igAccountId: string, value: any) {
   if (!rules.length) return;
 
   for (const rule of rules) {
-    const isMatch = rule.matchType === 'EXACT'
-      ? text.trim().toLowerCase() === rule.keyword.toLowerCase()
-      : text.toLowerCase().includes(rule.keyword.toLowerCase());
+    const isMatch = rule.matchType === 'ANY_COMMENT'
+      ? true
+      : rule.matchType === 'EXACT'
+        ? text.trim().toLowerCase() === rule.keyword.toLowerCase()
+        : text.toLowerCase().includes(rule.keyword.toLowerCase());
 
-    console.log('[IG_WEBHOOK] KEYWORD_MATCH=' + isMatch);
+    console.log('[IG_WEBHOOK] TRIGGER_MODE=' + rule.matchType);
+    if (rule.matchType === 'ANY_COMMENT') {
+      console.log('[IG_WEBHOOK] ANY_COMMENT_MATCH=true');
+    } else {
+      console.log('[IG_WEBHOOK] KEYWORD_MATCH=' + isMatch);
+    }
 
     if (isMatch) {
       console.log('[IG_WEBHOOK] DUPLICATE_CHECK');

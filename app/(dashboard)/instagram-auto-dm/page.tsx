@@ -200,11 +200,11 @@ function InstagramAutoDmContent() {
                         <div className="flex flex-col gap-1">
                           <div className="flex items-center gap-2">
                             <span className="text-xs font-mono bg-zinc-800 text-zinc-300 px-2 py-0.5 rounded border border-zinc-700">
-                              {rule.keyword}
+                              {rule.matchType === 'ANY_COMMENT' ? 'ANY' : rule.keyword}
                             </span>
                           </div>
                           <div className="text-[10px] text-zinc-500 uppercase tracking-wider">
-                            {rule.matchType === 'EXACT' ? 'Exact Match' : 'Contains Keyword'}
+                            {rule.matchType === 'ANY_COMMENT' ? 'Any Comment' : rule.matchType === 'EXACT' ? 'Exact Match' : 'Contains Keyword'}
                           </div>
                         </div>
                       </td>

@@ -102,7 +102,7 @@ export default function CreateInstagramAutoDmPage() {
     const newErrors: Record<string, string> = {};
     if (!formData.name.trim()) newErrors.name = "Automation Name is required.";
     if (!formData.socialAccountId) newErrors.socialAccountId = "Please select an Instagram account.";
-    if (!formData.keyword.trim()) newErrors.keyword = "Trigger Keyword is required.";
+    if (formData.matchType !== 'ANY_COMMENT' && !formData.keyword.trim()) newErrors.keyword = "Trigger Keyword is required.";
     if (!formData.message.trim()) newErrors.message = "Message Content is required.";
     
     if (formData.includeButton) {
@@ -124,6 +124,9 @@ export default function CreateInstagramAutoDmPage() {
     setLoading(true);
 
     const payload = { ...formData };
+      if (payload.matchType === 'ANY_COMMENT') {
+        payload.keyword = 'ANY';
+      }
     if (!payload.includeButton) {
       payload.buttonLabel = "";
       payload.destinationUrl = "";
@@ -370,35 +373,64 @@ export default function CreateInstagramAutoDmPage() {
                   </p>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-2">
-                  <div>
-                    <label className="block text-sm font-medium text-zinc-300 mb-2">Trigger Keyword</label>
-                    <input
-                      type="text"
-                      name="keyword"
-                      value={formData.keyword}
-                      onChange={handleChange}
-                      placeholder="e.g., LINK"
-                      className={`w-full bg-black border ${errors.keyword ? 'border-red-500' : 'border-zinc-800'} rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500 transition-all`}
-                    />
-                    {errors.keyword && <p className="text-red-500 text-xs mt-1.5">{errors.keyword}</p>}
+                <div className="pt-2 border-t border-zinc-800/60 mt-4 mb-4">
+                    <label className="block text-sm font-medium text-zinc-300 mb-3">Trigger Mode</label>
+                    <div className="flex bg-black p-1 rounded-lg border border-zinc-800 mb-6">
+                      <button
+                        type="button"
+                        onClick={() => setFormData(prev => ({ ...prev, matchType: 'EXACT' }))}
+                        className={`flex-1 py-2 px-3 text-sm font-medium rounded-md transition-colors ${formData.matchType !== 'ANY_COMMENT' ? 'bg-zinc-800 text-white shadow' : 'text-zinc-500 hover:text-zinc-300'}`}
+                      >
+                        Keyword Match
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setFormData(prev => ({ ...prev, matchType: 'ANY_COMMENT', keyword: 'ANY' }))}
+                        className={`flex-1 py-2 px-3 text-sm font-medium rounded-md transition-colors ${formData.matchType === 'ANY_COMMENT' ? 'bg-zinc-800 text-white shadow' : 'text-zinc-500 hover:text-zinc-300'}`}
+                      >
+                        Any Comment
+                      </button>
+                    </div>
                   </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-zinc-300 mb-2">Match Type</label>
-                    <select
-                      name="matchType"
-                      value={formData.matchType}
-                      onChange={handleChange}
-                      className="w-full bg-black border border-zinc-800 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500 transition-all appearance-none"
-                    >
-                      <option value="EXACT">Exact Match</option>
-                      <option value="CONTAINS">Contains Keyword</option>
-                    </select>
-                  </div>
+                  {formData.matchType === 'ANY_COMMENT' ? (
+                    <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-4 mb-2">
+                      <p className="text-sm font-medium text-red-400 flex items-center gap-2">
+                        <MessageCircle className="w-4 h-4" />
+                        Any comment on the selected post will trigger this automation.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-2">
+                      <div>
+                        <label className="block text-sm font-medium text-zinc-300 mb-2">Trigger Keyword</label>
+                        <input
+                          type="text"
+                          name="keyword"
+                          value={formData.keyword}
+                          onChange={handleChange}
+                          placeholder="e.g., LINK"
+                          className={`w-full bg-black border ${errors.keyword ? 'border-red-500' : 'border-zinc-800'} rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500 transition-all`}
+                        />
+                        {errors.keyword && <p className="text-red-500 text-xs mt-1.5">{errors.keyword}</p>}
+                      </div>
+    
+                      <div>
+                        <label className="block text-sm font-medium text-zinc-300 mb-2">Match Type</label>
+                        <select
+                          name="matchType"
+                          value={formData.matchType}
+                          onChange={handleChange}
+                          className="w-full bg-black border border-zinc-800 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500 transition-all appearance-none"
+                        >
+                          <option value="EXACT">Exact Match</option>
+                          <option value="CONTAINS">Contains Keyword</option>
+                        </select>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
-            </div>
 
             {/* Section 3: DM Response */}
             <div className="bg-zinc-900 border border-zinc-800 rounded-[16px] shadow-sm overflow-hidden">
@@ -501,7 +533,11 @@ export default function CreateInstagramAutoDmPage() {
                   <div className="flex items-start gap-3">
                     <div className="mt-0.5"><MessageCircle className="w-4 h-4 text-zinc-400" /></div>
                     <p className="text-sm text-zinc-300 leading-relaxed">
-                      When someone comments <span className="text-white font-mono bg-zinc-800 px-1.5 py-0.5 rounded text-xs">{formData.keyword || "..."}</span>
+                      {formData.matchType === 'ANY_COMMENT' ? (
+                        <span>When someone comments <span className="text-white font-mono bg-zinc-800 px-1.5 py-0.5 rounded text-xs">anything</span></span>
+                      ) : (
+                        <span>When someone comments <span className="text-white font-mono bg-zinc-800 px-1.5 py-0.5 rounded text-xs">{formData.keyword || "..."}</span></span>
+                      )}
                     </p>
                   </div>
                   {formData.mediaId && (
