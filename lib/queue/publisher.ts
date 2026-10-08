@@ -77,12 +77,23 @@ export class PublishingEngine {
 
               if (pubRes.ok && pubData.id) {
                 newChildStatus = 'PUBLISHED';
+                let permalink = '';
+                try {
+                  const metaRes = await fetch(`https://graph.instagram.com/v21.0/${pubData.id}?fields=permalink&access_token=${accessToken}`);
+                  const metaData = await metaRes.json();
+                  if (metaData && metaData.permalink) {
+                    permalink = metaData.permalink;
+                  }
+                } catch (err) {
+                  console.error('[RECONCILE] Failed to fetch permalink:', err);
+                }
+
                 await prisma.platformPost.update({
                   where: { id: pPost.id },
                   data: {
                     status: 'PUBLISHED',
                     externalPostId: pubData.id,
-                    externalPostUrl: `https://instagram.com/p/${pubData.id}`,
+                    externalPostUrl: permalink || undefined,
                     errorMessage: null,
                   },
                 });

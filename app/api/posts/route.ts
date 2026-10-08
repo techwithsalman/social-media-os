@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getSession } from '@/lib/auth';
+import { decryptToken } from '@/lib/crypto';
 import { PublishingEngine } from '@/lib/queue/publisher';
 import { WORKSPACE_TIMEZONE, zonedDateTimeToUtcDate } from '@/lib/timezone';
 import { EntitlementError, assertCanCreateBillablePost, recordPostUsage } from '@/lib/billing';
@@ -79,6 +80,7 @@ export async function GET(req: NextRequest) {
                 username: true,
                 profileImageUrl: true,
                 isMock: true,
+                token: true,
               },
             },
           },
@@ -90,17 +92,70 @@ export async function GET(req: NextRequest) {
 
     const resolvedPosts = await Promise.all(
       posts.map(async (p) => {
-        if (p.mediaAsset && p.mediaAsset.url) {
-          const resolvedUrl = await resolveMediaAccessUrl(p.mediaAsset.url, session.workspaceId);
-          return {
-            ...p,
-            mediaAsset: {
-              ...p.mediaAsset,
-              url: resolvedUrl,
-            },
+        // Process media asset
+        let resolvedMediaAsset = p.mediaAsset;
+        if (p.mediaAsset) {
+          let resolvedUrl = p.mediaAsset.url;
+          if (resolvedUrl) {
+            resolvedUrl = await resolveMediaAccessUrl(resolvedUrl, session.workspaceId);
+          }
+          let resolvedThumbnailUrl = p.mediaAsset.thumbnailUrl;
+          if (resolvedThumbnailUrl) {
+            resolvedThumbnailUrl = await resolveMediaAccessUrl(resolvedThumbnailUrl, session.workspaceId);
+          }
+          resolvedMediaAsset = {
+            ...p.mediaAsset,
+            url: resolvedUrl || '',
+            thumbnailUrl: resolvedThumbnailUrl || null,
           };
         }
-        return p;
+
+        // Process platform posts for Instagram permalinks
+        const resolvedPlatformPosts = await Promise.all(
+          p.platformPosts.map(async (pp) => {
+            let updatedPp = { ...pp };
+            
+            // If it's a published Instagram post with a numeric fallback URL
+            if (
+              pp.platform === 'INSTAGRAM' &&
+              pp.status === 'PUBLISHED' &&
+              pp.externalPostUrl &&
+              pp.externalPostUrl.includes('instagram.com/p/') &&
+              pp.externalPostId
+            ) {
+              const isNumericP = /\/p\/\d+$/.test(pp.externalPostUrl);
+              
+              if (isNumericP && (pp.socialAccount as any)?.token) {
+                try {
+                  const tokenData = typeof (pp.socialAccount as any).token === 'string' ? JSON.parse((pp.socialAccount as any).token) : (pp.socialAccount as any).token;
+                  if (tokenData && tokenData.accessToken) {
+                    const decryptedToken = decryptToken(tokenData.accessToken);
+                    const metaRes = await fetch(`https://graph.instagram.com/v21.0/${pp.externalPostId}?fields=permalink&access_token=${decryptedToken}`);
+                    const metaData = await metaRes.json();
+                    if (metaData && metaData.permalink) {
+                      updatedPp.externalPostUrl = metaData.permalink;
+                    }
+                  }
+                } catch (err) {
+                  console.error('[PUBLISHED_VIEW] Failed to resolve permalink dynamically:', err);
+                }
+              }
+            }
+
+            // Remove sensitive token
+            if (updatedPp.socialAccount && (updatedPp.socialAccount as any).token) {
+              delete (updatedPp.socialAccount as any).token;
+            }
+
+            return updatedPp;
+          })
+        );
+
+        return {
+          ...p,
+          mediaAsset: resolvedMediaAsset,
+          platformPosts: resolvedPlatformPosts,
+        };
       })
     );
 
