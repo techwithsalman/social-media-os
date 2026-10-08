@@ -95,17 +95,27 @@ async function resolveAccountByEntryId(igAccountId: string) {
 
   for (const acc of Array.from(candidateAccounts.values())) {
     try {
+      console.log(`[IG_WEBHOOK] CANDIDATE_DB_PLATFORM_ACCOUNT_ID=${acc.platformAccountId}`);
       const token = decryptToken(acc.token.autoDmAccessToken);
-      const res = await fetch(`https://graph.instagram.com/v21.0/me?access_token=${encodeURIComponent(token)}`);
-      if (!res.ok) continue;
+      const res = await fetch(`https://graph.instagram.com/v21.0/me?fields=id,username&access_token=${encodeURIComponent(token)}`);
+      
+      if (!res.ok) {
+        console.log(`[IG_WEBHOOK] GRAPH_ME_CALL_FAILED status=${res.status}`);
+        continue;
+      }
       
       const data = await res.json();
+      console.log(`[IG_WEBHOOK] GRAPH_ME_ID=${data.id}`);
+      if (data.username) {
+        console.log(`[IG_WEBHOOK] GRAPH_ME_USERNAME=${data.username}`);
+      }
+
       if (data.id === igAccountId) {
         console.log('[IG_WEBHOOK] MEDIA_OWNER_RESOLUTION_SUCCESS');
         return acc;
       }
-    } catch (e) {
-      // Safely ignore errors during token verification
+    } catch (e: any) {
+      console.log(`[IG_WEBHOOK] CANDIDATE_ERROR=${e.message}`);
     }
   }
 
@@ -120,6 +130,10 @@ async function processCommentWebhook(igAccountId: string, value: any) {
   
   const commenterId = from.id;
   const mediaId = media.id;
+
+  console.log(`[IG_WEBHOOK] ENTRY_ID=${igAccountId}`);
+  console.log(`[IG_WEBHOOK] MEDIA_ID=${mediaId}`);
+  console.log(`[IG_WEBHOOK] COMMENTER_ID=${commenterId}`);
 
   // Do not reply to self
   if (commenterId === igAccountId) return;
