@@ -183,25 +183,33 @@ async function processCommentWebhook(igAccountId: string, value: any) {
     console.log('[IG_WEBHOOK] KEYWORD_MATCH=' + isMatch);
 
     if (isMatch) {
-      // Check idempotency
-      const existing = await prisma.instagramAutoDmExecution.findUnique({
-        where: { ruleId_commentId: { ruleId: rule.id, commentId } }
-      });
-
-      if (existing) continue;
-
-      // Create pending execution
-      const execution = await prisma.instagramAutoDmExecution.create({
-        data: {
-          ruleId: rule.id,
-          workspaceId: rule.workspaceId,
-          socialAccountId: account.id,
-          commentId,
-          commenterId,
-          commentText: text,
-          status: 'PENDING'
+      console.log('[IG_WEBHOOK] DUPLICATE_CHECK');
+      let execution;
+      try {
+        // Create pending execution. If a race condition or replay occurs, Prisma throws P2002
+        // because of the @@unique([ruleId, commentId]) constraint in the schema.
+        execution = await prisma.instagramAutoDmExecution.create({
+          data: {
+            ruleId: rule.id,
+            workspaceId: rule.workspaceId,
+            socialAccountId: account.id,
+            commentId,
+            commenterId,
+            commentText: text,
+            status: 'PENDING'
+          }
+        });
+      } catch (err: any) {
+        if (err.code === 'P2002') {
+          console.log('[IG_WEBHOOK] DUPLICATE_COMMENT_SKIPPED=true');
+          // This comment was already processed for this rule.
+          // Return to prevent replay-spillover to other rules.
+          return;
         }
-      });
+        throw err;
+      }
+      
+      console.log('[IG_WEBHOOK] DUPLICATE_COMMENT_SKIPPED=false');
 
       // Send the DM
       try {
