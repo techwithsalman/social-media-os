@@ -50,12 +50,39 @@ export default function BulkUploadPage() {
   const [applyToAllVideos, setApplyToAllVideos] = useState(true);
 
   const [postsPerDay, setPostsPerDay] = useState(3);
+  const defaultTimeSlotsForCount = (count: number) => {
+    switch (count) {
+      case 1: return ['09:00'];
+      case 2: return ['09:00', '15:00'];
+      case 3: return ['09:00', '12:00', '15:00'];
+      case 4: return ['09:00', '12:00', '15:00', '18:00'];
+      case 5: return ['09:00', '11:00', '13:00', '15:00', '18:00'];
+      case 6: return ['08:00', '10:00', '12:00', '14:00', '16:00', '18:00'];
+      default: return Array.from({ length: count }, (_, i) => `${String(9 + i).padStart(2, '0')}:00`);
+    }
+  };
+  
+  const handlePostsPerDayChange = (newCount: number) => {
+    setPostsPerDay(newCount);
+    setTimeSlots(prev => {
+      const defaults = defaultTimeSlotsForCount(newCount);
+      const newSlots = [];
+      for (let i = 0; i < newCount; i++) {
+        newSlots.push(prev[i] || defaults[i] || '12:00');
+      }
+      return newSlots;
+    });
+    setScheduleGenerated(false);
+  };
+  
   const [startDate, setStartDate] = useState('2026-09-01');
   const [timeSlots, setTimeSlots] = useState(['09:00', '12:00', '15:00', '18:00', '21:00']);
   const [timezone, setTimezone] = useState(WORKSPACE_TIMEZONE);
 
   const [saving, setSaving] = useState(false);
   const [successBanner, setSuccessBanner] = useState(false);
+  const [scheduleGenerated, setScheduleGenerated] = useState(false);
+  const [generateError, setGenerateError] = useState('');
 
   useEffect(() => {
     async function loadAccounts() {
@@ -94,14 +121,35 @@ export default function BulkUploadPage() {
   };
 
   const handleGenerateSchedule = () => {
+    setGenerateError('');
+    if (items.length === 0) {
+      setGenerateError('Upload at least one media file.');
+      return;
+    }
+    if (selectedAccountIds.length === 0) {
+      setGenerateError('Select at least one social account.');
+      return;
+    }
+    if (!startDate) {
+      setGenerateError('Choose a starting date.');
+      return;
+    }
+    if (timeSlots.slice(0, postsPerDay).some((t) => !t)) {
+      setGenerateError(`Set all ${postsPerDay} posting times.`);
+      return;
+    }
+
     const slotsToUse = timeSlots.slice(0, postsPerDay);
-    const start = new Date(startDate);
+    const parts = startDate.split('-');
+    const yyyyStart = parseInt(parts[0], 10);
+    const mmStart = parseInt(parts[1], 10) - 1;
+    const ddStart = parseInt(parts[2], 10);
 
     setItems((prev) =>
       prev.map((item, idx) => {
         const dayOffset = Math.floor(idx / postsPerDay);
         const slotIdx = idx % postsPerDay;
-        const targetDate = new Date(start);
+        const targetDate = new Date(yyyyStart, mmStart, ddStart);
         targetDate.setDate(targetDate.getDate() + dayOffset);
 
         const yyyy = targetDate.getFullYear();
@@ -111,11 +159,12 @@ export default function BulkUploadPage() {
         return {
           ...item,
           scheduledDate: `${yyyy}-${mm}-${dd}`,
-          scheduledTime: slotsToUse[slotIdx] || '12:00',
+          scheduledTime: slotsToUse[slotIdx],
           selectedAccountIds: applyToAllVideos ? [...selectedAccountIds] : item.selectedAccountIds,
         };
       })
     );
+    setScheduleGenerated(true);
   };
 
   const uploadFile = async (file: File, itemId: string) => {
@@ -265,7 +314,7 @@ export default function BulkUploadPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-10">
         {/* Left: Schedule Matrix Generator (1 Col) */}
         <div className="bg-[#0e0e12] border border-[#22222a] rounded-3xl p-6 md:p-8 shadow-md space-y-5">
-          <div className="flex items-center gap-3 pb-4 border-b border-[#22222a]">
+                    <div className="flex items-center gap-3 pb-4 border-b border-[#22222a]">
             <Sliders className="w-5 h-5 text-red-500" />
             <h3 className="text-sm font-bold text-white uppercase tracking-wider">
               Automatic Matrix Config
@@ -278,12 +327,13 @@ export default function BulkUploadPage() {
             </label>
             <select
               value={postsPerDay}
-              onChange={(e) => setPostsPerDay(parseInt(e.target.value, 10))}
+              onChange={(e) => handlePostsPerDayChange(parseInt(e.target.value, 10))}
               className="w-full p-3 text-sm bg-[#0e0e12] border border-[#22222a] rounded-xl text-white"
             >
               <option value="1">1 Post / Day</option>
               <option value="2">2 Posts / Day</option>
               <option value="3">3 Posts / Day</option>
+              <option value="4">4 Posts / Day</option>
               <option value="5">5 Posts / Day</option>
               <option value="6">6 Posts / Day</option>
             </select>
@@ -296,9 +346,33 @@ export default function BulkUploadPage() {
             <input
               type="date"
               value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
+              onChange={(e) => { setStartDate(e.target.value); setScheduleGenerated(false); }}
               className="w-full p-3 text-sm bg-[#0e0e12] border border-[#22222a] rounded-xl text-white"
             />
+          </div>
+          
+          <div>
+            <label className="block text-xs md:text-sm font-bold text-neutral-300 mb-1.5">
+              Posting Times
+            </label>
+            <div className="space-y-2">
+              {timeSlots.slice(0, postsPerDay).map((time, idx) => (
+                <div key={idx} className="flex items-center gap-3">
+                  <div className="w-6 text-xs text-neutral-500 font-bold text-right">{idx + 1}.</div>
+                  <input
+                    type="time"
+                    value={time}
+                    onChange={(e) => {
+                      const newSlots = [...timeSlots];
+                      newSlots[idx] = e.target.value;
+                      setTimeSlots(newSlots);
+                      setScheduleGenerated(false);
+                    }}
+                    className="flex-1 p-2 text-sm bg-[#0e0e12] border border-[#22222a] rounded-xl text-white"
+                  />
+                </div>
+              ))}
+            </div>
           </div>
 
           <div>
@@ -307,7 +381,7 @@ export default function BulkUploadPage() {
             </label>
             <select
               value={timezone}
-              onChange={(e) => setTimezone(e.target.value)}
+              onChange={(e) => { setTimezone(e.target.value); setScheduleGenerated(false); }}
               className="w-full p-3 text-sm bg-[#0e0e12] border border-[#22222a] rounded-xl text-white"
             >
               <option value="Asia/Karachi">Asia/Karachi (PKT +05:00)</option>
@@ -344,6 +418,7 @@ export default function BulkUploadPage() {
                         setSelectedAccountIds((prev) =>
                           prev.includes(acc.id) ? prev.filter((p) => p !== acc.id) : [...prev, acc.id]
                         );
+                        setScheduleGenerated(false);
                       }}
                       className="rounded border-[#33333e] bg-[#0e0e12] text-red-600 w-4 h-4"
                     />
@@ -354,6 +429,12 @@ export default function BulkUploadPage() {
               })}
             </div>
           </div>
+          
+          {generateError && (
+             <div className="text-sm font-bold text-red-400 bg-red-500/10 border border-red-500/20 p-3 rounded-xl">
+               {generateError}
+             </div>
+          )}
 
           <button
             onClick={handleGenerateSchedule}
@@ -425,17 +506,27 @@ export default function BulkUploadPage() {
 
       {/* Generated Content Batch List */}
       <div className="bg-[#0e0e12] border border-[#22222a] rounded-3xl p-6 md:p-8 shadow-md">
-        <div className="flex items-center justify-between mb-6 pb-4 border-b border-[#22222a]">
-          <div className="flex items-center gap-3">
-            <Layers className="w-5 h-5 text-red-500" />
-            <h3 className="text-lg md:text-xl font-bold text-white">
-              Queued Content Items ({items.length})
-            </h3>
+        
+        <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 pb-4 border-b border-[#22222a] gap-4">
+          <div className="flex flex-col gap-1.5">
+            <div className="flex items-center gap-3">
+              <Layers className="w-5 h-5 text-red-500" />
+              <h3 className="text-lg md:text-xl font-bold text-white">
+                Queued Content Items ({items.length})
+              </h3>
+            </div>
+            {scheduleGenerated && items.length > 0 && (
+              <div className="text-sm font-semibold text-neutral-400">
+                {items.length} videos • {postsPerDay} posts/day • {Math.ceil(items.length / postsPerDay)} publishing days<br/>
+                Starts {items[0]?.scheduledDate} • Timezone: {timezone}
+              </div>
+            )}
           </div>
+
 
           <button
             onClick={handleSaveAllBulk}
-            disabled={saving || items.length === 0}
+            disabled={saving || items.length === 0 || !scheduleGenerated || items.some(i => i.status !== 'UPLOADED' && i.status !== 'ERROR')}
             className="flex items-center gap-2 px-6 py-3 rounded-2xl bg-gradient-to-r from-red-700 to-red-600 hover:from-red-600 hover:to-red-500 text-white text-sm font-black shadow-lg shadow-red-600/30 transition-all disabled:opacity-50"
           >
             {saving ? (
@@ -497,40 +588,31 @@ export default function BulkUploadPage() {
                 </div>
               </div>
 
+              
               {/* Schedule time controls & delete */}
-              <div className="flex items-center gap-3.5 shrink-0 pt-3 md:pt-0 border-t md:border-t-0 border-[#22222a]">
-                <div className="flex items-center gap-2.5">
-                  <input
-                    type="date"
-                    value={item.scheduledDate}
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      setItems((prev) =>
-                        prev.map((i) => (i.id === item.id ? { ...i, scheduledDate: val } : i))
-                      );
-                    }}
-                    className="p-2 text-xs md:text-sm bg-[#0e0e12] border border-[#22222a] rounded-xl text-white"
-                  />
-                  <input
-                    type="time"
-                    value={item.scheduledTime}
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      setItems((prev) =>
-                        prev.map((i) => (i.id === item.id ? { ...i, scheduledTime: val } : i))
-                      );
-                    }}
-                    className="p-2 text-xs md:text-sm bg-[#0e0e12] border border-[#22222a] rounded-xl text-white"
-                  />
+              <div className="flex flex-col items-start md:items-end justify-center gap-2 shrink-0 pt-3 md:pt-0 border-t md:border-t-0 border-[#22222a]">
+                {scheduleGenerated ? (
+                  <div className="flex flex-col items-start md:items-end mb-1">
+                    <span className="text-sm font-bold text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-lg border border-emerald-500/20">
+                      {item.scheduledDate} at {item.scheduledTime}
+                    </span>
+                    <span className="text-[10px] text-neutral-500 mt-1 font-semibold uppercase">{timezone}</span>
+                  </div>
+                ) : (
+                  <span className="text-[11px] font-bold text-red-400 bg-red-500/10 px-2 py-1 rounded-lg mb-1 border border-red-500/20">
+                    Needs Schedule Matrix
+                  </span>
+                )}
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setItems((prev) => prev.filter((i) => i.id !== item.id))}
+                    className="p-2 rounded-xl text-neutral-400 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
                 </div>
-
-                <button
-                  onClick={() => setItems((prev) => prev.filter((i) => i.id !== item.id))}
-                  className="p-2.5 rounded-xl text-neutral-400 hover:text-red-400 hover:bg-red-500/10 transition-colors"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
               </div>
+
             </div>
           ))}
         </div>
