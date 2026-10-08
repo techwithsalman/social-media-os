@@ -322,7 +322,7 @@ export default async function DashboardPage() {
       {/* Grid: Upcoming Scheduled Posts & Recent Activity */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Upcoming Posts Feed (2 Cols) */}
-        <div className="lg:col-span-2 bg-[#0e0e12] border border-[#22222a] rounded-3xl p-6 md:p-8 shadow-md flex flex-col justify-between">
+        <div className="lg:col-span-2 bg-[#0e0e12] border border-[#22222a] rounded-3xl p-6 md:p-8 shadow-md flex flex-col justify-between min-w-0">
           <div>
             <div className="flex items-center justify-between mb-6 pb-4 border-b border-[#22222a]">
               <div className="flex items-center gap-3">
@@ -364,7 +364,7 @@ export default async function DashboardPage() {
                     key={post.id}
                     className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 md:p-5 rounded-2xl bg-[#100606]/70 border border-[#22222a]/90 hover:border-[#33333e] transition-all shadow-sm"
                   >
-                    <div className="flex items-center gap-4 overflow-hidden">
+                    <div className="flex items-center gap-4 overflow-hidden flex-1 min-w-0">
                       {/* Media Thumbnail */}
                       <div className="w-16 h-16 rounded-xl bg-[#18181f] overflow-hidden shrink-0 border border-[#33333e]/80 flex items-center justify-center">
                         {post.mediaAsset?.thumbnailUrl || post.mediaAsset?.url ? (
@@ -444,7 +444,7 @@ export default async function DashboardPage() {
         </div>
 
         {/* Recent Activity Log (1 Col) */}
-        <div className="bg-[#0e0e12] border border-[#22222a] rounded-3xl p-6 md:p-8 shadow-md flex flex-col justify-between">
+        <div className="bg-[#0e0e12] border border-[#22222a] rounded-3xl p-6 md:p-8 shadow-md flex flex-col justify-between min-w-0">
           <div>
             <div className="flex items-center gap-3 mb-6 pb-4 border-b border-[#22222a]">
               <Activity className="w-5 h-5 text-red-500" />
@@ -475,7 +475,7 @@ export default async function DashboardPage() {
                         })}
                       </span>
                     </div>
-                    <p className="text-neutral-200 mt-1.5 text-sm leading-relaxed">
+                    <p className="text-neutral-200 mt-1.5 text-sm leading-relaxed break-words [overflow-wrap:anywhere]">
                       {act.details}
                     </p>
                   </div>

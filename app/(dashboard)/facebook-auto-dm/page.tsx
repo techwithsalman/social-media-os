@@ -73,6 +73,14 @@ function FacebookAutoDmContent() {
 
   return (
     <div className="p-8 max-w-7xl mx-auto space-y-8">
+      {/* Back to Dashboard Button */}
+      <div className="mb-4 sm:mb-6">
+        <Link href="/dashboard" className="inline-flex items-center gap-2 text-sm font-semibold text-neutral-400 hover:text-white transition-colors">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
+          Back to Dashboard
+        </Link>
+      </div>
+
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-white mb-2">Facebook Auto DM</h1>

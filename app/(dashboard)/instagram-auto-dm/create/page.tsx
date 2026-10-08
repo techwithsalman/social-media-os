@@ -158,6 +158,14 @@ export default function CreateInstagramAutoDmPage() {
 
   return (
     <div className="min-h-screen bg-[#0a0a0a] pb-24">
+      {/* Back to Dashboard Button */}
+      <div className="mb-4 sm:mb-6">
+        <Link href="/dashboard" className="inline-flex items-center gap-2 text-sm font-semibold text-neutral-400 hover:text-white transition-colors">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
+          Back to Dashboard
+        </Link>
+      </div>
+
       {/* Header */}
       <div className="border-b border-zinc-800 bg-[#0a0a0a]/80 backdrop-blur-md sticky top-0 z-30">
         <div className="max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
