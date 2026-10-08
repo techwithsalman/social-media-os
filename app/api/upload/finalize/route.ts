@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
         mimeType: mimeType,
         size: size || 0,
         url: objectKey, // We store the actual R2 key as the authoritative URL
-        thumbnailUrl: playbackUrl,
+        thumbnailUrl: null,
       },
     });
 

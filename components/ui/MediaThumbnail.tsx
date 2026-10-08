@@ -21,7 +21,7 @@ export function MediaThumbnail({ mediaAsset, className = "", iconClassName = "w-
   }
 
   const isVideo = mediaAsset.mimeType?.startsWith('video/');
-  const hasRealThumbnail = !!mediaAsset.thumbnailUrl;
+  const hasRealThumbnail = !!mediaAsset.thumbnailUrl && !mediaAsset.thumbnailUrl.includes('.mp4') && !mediaAsset.thumbnailUrl.includes('.mov');
   const hasImageUrl = !!mediaAsset.url && !isVideo;
   
   const displayImageUrl = hasRealThumbnail ? mediaAsset.thumbnailUrl : (hasImageUrl ? mediaAsset.url : null);

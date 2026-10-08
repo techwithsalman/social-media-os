@@ -334,10 +334,22 @@ export class InstagramAdapter implements ISocialPlatformAdapter {
 
       console.log(`[IG PUBLISH] STAGE D: media_publish SUCCESS. ID: ${publish.data.id}`);
 
+      let permalink = '';
+      try {
+        // Fetch real permalink
+        const metaRes = await fetch(`https://graph.instagram.com/v21.0/${publish.data.id}?fields=permalink&access_token=${payload.accessToken}`);
+        const metaData = await metaRes.json();
+        if (metaData.permalink) {
+          permalink = metaData.permalink;
+        }
+      } catch (err) {
+        console.error('[IG PUBLISH] Failed to fetch permalink for media:', publish.data.id, err);
+      }
+
       return {
         success: true,
         externalPostId: publish.data.id,
-        externalPostUrl: `https://instagram.com/p/${publish.data.id}`,
+        externalPostUrl: permalink || undefined,
         publishedAt: new Date(),
       };
     } catch (error: any) {
