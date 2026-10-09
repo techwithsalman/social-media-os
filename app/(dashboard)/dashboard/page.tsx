@@ -95,6 +95,7 @@ export default async function DashboardPage() {
       }}
       title="Dashboard Overview"
     >
+      <div className="max-w-[1440px] w-full mx-auto">
       {/* Premium Spacious Hero Banner */}
       <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-red-900/50 via-red-900/30 to-neutral-900/80 border border-red-500/25 p-8 md:p-12 mb-10 shadow-2xl backdrop-blur-2xl">
         <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-red-500/15 rounded-full blur-3xl pointer-events-none" />
@@ -132,7 +133,7 @@ export default async function DashboardPage() {
       </div>
 
       {/* Spacious Stat Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 mb-12">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 md:gap-5 mb-12">
         
         {/* Connected Card */}
         <div className="relative overflow-hidden p-5 md:p-6 rounded-2xl bg-[#0e0e12] border border-[#22222a] shadow-lg hover:border-[#33333e] transition-all flex flex-col justify-between min-h-[140px] group">
@@ -215,7 +216,7 @@ export default async function DashboardPage() {
         </div>
 
         {/* Drafts Card */}
-        <div className="relative overflow-hidden p-5 md:p-6 rounded-2xl bg-[#0e0e12] border border-[#22222a] shadow-lg hover:border-[#33333e] transition-all flex flex-col justify-between min-h-[140px] group">
+        <div className="col-span-2 sm:col-span-1 relative overflow-hidden p-5 md:p-6 rounded-2xl bg-[#0e0e12] border border-[#22222a] shadow-lg hover:border-[#33333e] transition-all flex flex-col justify-between min-h-[140px] group">
           <div className="absolute -bottom-8 -right-8 w-32 h-32 bg-neutral-600/20 blur-[30px] rounded-full pointer-events-none group-hover:bg-neutral-600/30 transition-all duration-500" />
           <div className="absolute bottom-0 right-0 w-full h-1/2 bg-gradient-to-tl from-neutral-600/10 to-transparent opacity-50 pointer-events-none rounded-br-2xl" />
           <div className="relative z-10 flex items-center gap-3 mb-4">
@@ -488,6 +489,7 @@ export default async function DashboardPage() {
             Audit Trail Multi-Tenancy Active
           </div>
         </div>
+      </div>
       </div>
     </AppLayout>
   );
