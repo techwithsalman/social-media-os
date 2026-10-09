@@ -87,7 +87,15 @@ export async function GET(req: NextRequest) {
           },
         },
       },
-      orderBy: status === 'SCHEDULED' ? { scheduledFor: 'asc' } : { createdAt: 'desc' },
+      orderBy: status === 'SCHEDULED' 
+        ? { scheduledFor: 'asc' } 
+        : (status === 'PUBLISHED' || status === 'HISTORY')
+          ? [
+              { publishedAt: { sort: 'desc', nulls: 'last' } },
+              { scheduledFor: { sort: 'desc', nulls: 'last' } },
+              { createdAt: 'desc' }
+            ]
+          : { createdAt: 'desc' },
       take: limit,
     });
 
