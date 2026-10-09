@@ -982,8 +982,9 @@ export default function CreatePostPage() {
   const selectedAccounts = accounts.filter((a) => selectedAccountIds.includes(a.id));
 
   const currentPreviewPlatform = previewPlatform;
+  const hasCaption = !!(platformSettings[currentPreviewPlatform]?.caption || masterCaption);
   const currentPreviewText =
-    platformSettings[currentPreviewPlatform]?.caption || masterCaption || 'Your caption preview will appear here in high fidelity...';
+    platformSettings[currentPreviewPlatform]?.caption || masterCaption || 'Your caption preview will appear here...';
   const currentPreviewHashtags = platformSettings[currentPreviewPlatform]?.hashtags || '';
   const scheduleDateLabel = scheduledDate ? formatDateKeyForDisplay(scheduledDate) : '';
   const scheduleTimeLabel = scheduledTime ? formatTimeInputForDisplay(scheduledTime) : '';
@@ -1016,7 +1017,7 @@ export default function CreatePostPage() {
   );
 
   return (
-    <AppLayout title={editPostId ? 'Edit Scheduled Post' : isDuplicating ? 'Duplicate Post' : 'Create & Schedule Post'}>
+    <AppLayout title={editPostId ? 'Edit Scheduled Post' : isDuplicating ? 'Duplicate Post' : 'Create & Schedule Post / Compose, schedule and publish to multiple platforms'}>
       {/* Duplicating Post Notice */}
       {isDuplicating && (
         <div className="mb-8 p-5 rounded-2xl bg-red-500/10 border border-red-500/30 text-red-400 text-sm font-semibold flex items-center justify-between shadow-md">
@@ -1145,21 +1146,22 @@ export default function CreatePostPage() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 md:gap-10">
-        {/* Left Composer Panel (7 Cols) */}
-        <div className="lg:col-span-7 space-y-8">
+      <div className="grid grid-cols-1 lg:grid-[minmax(0,2fr)_minmax(340px,1fr)] gap-6">
+        {/* Left Composer Panel */}
+        <div className="space-y-8">
           {/* STEP 1: SELECT ACCOUNTS */}
           <div className="p-6 md:p-8 rounded-3xl bg-[#0e0e12] border border-[#22222a] shadow-md">
-            <div className="flex items-center justify-between mb-5">
+            <div className="flex items-start md:items-center justify-between mb-5 flex-col md:flex-row gap-4">
               <div>
                 <h3 className="text-sm md:text-base font-bold text-neutral-200 uppercase tracking-wider flex items-center gap-3">
-                  <span className="flex items-center justify-center w-7 h-7 rounded-xl bg-red-600 text-white text-xs font-black shadow-md">
+                  <span className="flex items-center justify-center w-7 h-7 rounded-full bg-red-600 text-white text-xs font-black shadow-md">
                     1
                   </span>
-                  <span>Select Target Channels</span>
+                  <span>SELECT TARGET CHANNELS</span>
                 </h3>
+                <p className="text-sm text-neutral-400 mt-2 ml-10">Choose the social media accounts where you want to publish this post.</p>
               </div>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3 ml-10 md:ml-0">
                 <button
                   type="button"
                   onClick={handleResetForm}
@@ -1189,14 +1191,20 @@ export default function CreatePostPage() {
                 Loading connected accounts...
               </div>
             ) : accounts.length === 0 ? (
-              <div className="p-6 rounded-2xl bg-[#0e0e12]/60 border border-dashed border-[#22222a] text-center">
-                <p className="text-sm text-neutral-300">No social accounts connected yet.</p>
+              <div className="p-6 md:p-8 rounded-3xl bg-[#0e0e12]/60 border border-dashed border-[#22222a] text-center flex flex-col items-center">
+                <p className="text-sm md:text-base text-neutral-300 font-semibold mb-3">No social accounts connected yet.</p>
                 <button
                   onClick={() => router.push('/accounts')}
-                  className="mt-3 text-sm font-bold text-red-500 hover:underline"
+                  className="mb-5 text-sm font-bold text-white bg-red-600 hover:bg-red-500 px-5 py-2.5 rounded-xl shadow-md transition-all"
                 >
-                  Connect Channels &rarr;
+                  Connect Channels
                 </button>
+                <div className="flex items-center justify-center gap-2 opacity-50">
+                  <PlatformIcon platform="INSTAGRAM" size={24} className="w-6 h-6 rounded-lg grayscale" />
+                  <PlatformIcon platform="FACEBOOK" size={24} className="w-6 h-6 rounded-lg grayscale" />
+                  <PlatformIcon platform="TIKTOK" size={24} className="w-6 h-6 rounded-lg grayscale" />
+                  <PlatformIcon platform="YOUTUBE" size={24} className="w-6 h-6 rounded-lg grayscale" />
+                </div>
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
@@ -1211,7 +1219,7 @@ export default function CreatePostPage() {
                       onClick={() => toggleAccountSelection(acc.id)}
                       className={`cursor-pointer p-4 rounded-2xl border transition-all flex items-center gap-3.5 ${
                         isSelected
-                          ? 'bg-red-950/40 border-red-500/60 shadow-md'
+                          ? 'bg-red-950/40 border-red-500 shadow-[0_0_15px_rgba(239,68,68,0.3)]'
                           : 'bg-[#0e0e12]/40 border-[#22222a] opacity-60 hover:opacity-100'
                       }`}
                     >
@@ -1239,12 +1247,15 @@ export default function CreatePostPage() {
 
           {/* STEP 2: MEDIA UPLOAD */}
           <div className="p-6 md:p-8 rounded-3xl bg-[#0e0e12] border border-[#22222a] shadow-md">
-            <h3 className="text-sm md:text-base font-bold text-neutral-200 uppercase tracking-wider mb-5 flex items-center gap-3">
-              <span className="flex items-center justify-center w-7 h-7 rounded-xl bg-red-600 text-white text-xs font-black shadow-md">
-                2
-              </span>
-              <span>Upload Media</span>
-            </h3>
+            <div className="mb-5">
+              <h3 className="text-sm md:text-base font-bold text-neutral-200 uppercase tracking-wider flex items-center gap-3">
+                <span className="flex items-center justify-center w-7 h-7 rounded-full bg-red-600 text-white text-xs font-black shadow-md">
+                  2
+                </span>
+                <span>UPLOAD MEDIA</span>
+              </h3>
+              <p className="text-sm text-neutral-400 mt-2 ml-10">Add photos or videos to your post.</p>
+            </div>
 
             {!mediaFile ? (
               <div
@@ -1358,15 +1369,18 @@ export default function CreatePostPage() {
 
           {/* STEP 3: MASTER CAPTION & SYNC */}
           <div className="p-6 md:p-8 rounded-3xl bg-[#0e0e12] border border-[#22222a] shadow-md">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm md:text-base font-bold text-neutral-200 uppercase tracking-wider flex items-center gap-3">
-                <span className="flex items-center justify-center w-7 h-7 rounded-xl bg-red-600 text-white text-xs font-black shadow-md">
-                  3
-                </span>
-                <span>Master Caption</span>
-              </h3>
+            <div className="flex items-start justify-between mb-4 flex-col md:flex-row gap-2">
+              <div>
+                <h3 className="text-sm md:text-base font-bold text-neutral-200 uppercase tracking-wider flex items-center gap-3">
+                  <span className="flex items-center justify-center w-7 h-7 rounded-full bg-red-600 text-white text-xs font-black shadow-md">
+                    3
+                  </span>
+                  <span>MASTER CAPTION</span>
+                </h3>
+                <p className="text-sm text-neutral-400 mt-2 ml-10">Write a caption that will be used for all selected platforms.</p>
+              </div>
 
-              <div className="text-sm font-semibold text-neutral-400">
+              <div className="text-sm font-semibold text-neutral-400 ml-10 md:ml-0">
                 {masterCaption.length} characters
               </div>
             </div>
@@ -1376,7 +1390,7 @@ export default function CreatePostPage() {
                 rows={5}
                 value={masterCaption}
                 onChange={(e) => handleMasterCaptionChange(e.target.value)}
-                placeholder="Write the main caption for your content..."
+                placeholder="Write your post caption here..."
                 className="w-full p-4 text-base bg-[#100606]/90 border border-[#22222a] rounded-2xl text-white placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all resize-y leading-relaxed"
               />
             </div>
@@ -2014,20 +2028,29 @@ export default function CreatePostPage() {
           </div>
         </div>
 
-        {/* Right Live Preview Panel (5 Cols) */}
-        <div className="lg:col-span-5 space-y-6">
+        {/* Right Live Preview Panel */}
+        <div className="space-y-6">
           <div className="sticky top-28 p-6 md:p-8 rounded-3xl bg-[#0e0e12] border border-[#22222a] shadow-md">
-            <div className="flex items-center justify-between mb-5">
-              <div className="flex items-center gap-2.5">
-                <Eye className="w-5 h-5 text-red-500" />
-                <h3 className="text-sm font-bold text-neutral-200 uppercase tracking-wider">
-                  Live Platform Preview
-                </h3>
+            <div className="flex items-center justify-between mb-5 flex-wrap gap-4">
+              <div>
+                <div className="flex items-center gap-2.5">
+                  <Eye className="w-5 h-5 text-red-500" />
+                  <h3 className="text-sm font-bold text-neutral-200 uppercase tracking-wider">
+                    Live Platform Preview
+                  </h3>
+                </div>
+                <p className="text-sm text-neutral-400 mt-2">See how your post will look on each platform.</p>
               </div>
 
               {/* Platform Switcher Buttons */}
               <div className="flex items-center gap-1.5">
-                {SUPPORTED_PLATFORM_IDS.map((plat) => (
+                {SUPPORTED_PLATFORM_IDS.filter(plat => 
+                  selectedAccounts.length > 0 
+                    ? selectedAccounts.some(a => a.platform === plat) 
+                    : accounts.length > 0 
+                      ? accounts.some(a => a.platform === plat) 
+                      : true
+                ).map((plat) => (
                   <button
                     key={plat}
                     onClick={() => setPreviewPlatform(plat)}
@@ -2077,10 +2100,10 @@ export default function CreatePostPage() {
                 )}
 
                 {/* Caption / Description Preview */}
-                <div className="text-sm md:text-base text-neutral-200 mb-4 whitespace-pre-wrap leading-relaxed">
+                <div className={`text-sm md:text-base mb-4 whitespace-pre-wrap leading-relaxed ${hasCaption ? 'text-neutral-200' : 'text-neutral-500 italic'}`}>
                   {currentPreviewText}
                   {currentPreviewHashtags && (
-                    <span className="text-red-500 font-bold ml-2">
+                    <span className="text-red-500 font-bold ml-2 not-italic">
                       {currentPreviewHashtags}
                     </span>
                   )}
@@ -2118,12 +2141,6 @@ export default function CreatePostPage() {
                 </div>
               </div>
 
-              {/* Simulated Action Bar */}
-              <div className="pt-4 mt-4 border-t border-neutral-900 flex items-center justify-between text-xs font-bold text-neutral-500">
-                <span>❤️ 248 Likes</span>
-                <span>💬 32 Comments</span>
-                <span>↗ 18 Shares</span>
-              </div>
             </div>
 
             <div className="mt-4 text-center text-xs text-neutral-500 font-medium">
