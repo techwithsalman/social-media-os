@@ -50,7 +50,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
           unreadCount={unreadCount}
         />
 
-        <main className="flex-1 p-4 md:p-6 lg:p-10 max-w-[1440px] w-full mx-auto pb-24">
+        <main className="flex-1 p-4 md:p-6 lg:px-8 lg:py-8 w-full max-w-none mx-auto pb-24">
           {children}
         </main>
       </div>
