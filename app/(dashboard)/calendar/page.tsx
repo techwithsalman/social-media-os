@@ -210,54 +210,28 @@ export default function CalendarPage() {
 
   return (
     <AppLayout>
-      <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
-        <div>
-          <h1 className="text-2xl md:text-3xl font-bold text-white tracking-tight flex items-center gap-3">
-            <CalendarIcon className="w-8 h-8 text-red-500" />
-            Content Calendar
-          </h1>
-          <p className="text-neutral-400 mt-2 text-sm md:text-base">
-            Plan, organize, and track your content pipeline globally.
-          </p>
+      {/* Calendar Hero */}
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-red-950/40 to-black border border-red-900/30 mb-8 p-6 md:p-10 shadow-[0_0_40px_-15px_rgba(220,38,38,0.15)]">
+        <div className="absolute top-0 right-0 w-full h-full overflow-hidden pointer-events-none opacity-50">
+          <div className="absolute -top-[50%] -right-[10%] w-[70%] h-[150%] bg-red-900/10 blur-[100px] rounded-full mix-blend-screen"></div>
+          <div className="absolute bottom-[-20%] left-[-10%] w-[50%] h-[100%] bg-red-950/20 blur-[80px] rounded-full mix-blend-screen"></div>
         </div>
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => setViewMode('MONTH')}
-            className={`px-4 py-2.5 rounded-xl text-sm font-bold transition-all ${
-              viewMode === 'MONTH'
-                ? 'bg-[#18181f] text-white border border-[#33333e]'
-                : 'text-neutral-400 hover:text-white'
-            }`}
-          >
-            Month
-          </button>
-          <button
-            onClick={() => setViewMode('WEEK')}
-            className={`px-4 py-2.5 rounded-xl text-sm font-bold transition-all ${
-              viewMode === 'WEEK'
-                ? 'bg-[#18181f] text-white border border-[#33333e]'
-                : 'text-neutral-400 hover:text-white'
-            }`}
-          >
-            Week
-          </button>
-          <button
-            onClick={() => setViewMode('DAY')}
-            className={`px-4 py-2.5 rounded-xl text-sm font-bold transition-all ${
-              viewMode === 'DAY'
-                ? 'bg-[#18181f] text-white border border-[#33333e]'
-                : 'text-neutral-400 hover:text-white'
-            }`}
-          >
-            Day
-          </button>
-          <Link
-            href="/create-post"
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white font-bold transition-all shadow-lg shadow-red-600/20 ml-2"
-          >
-            <Plus className="w-4 h-4" />
-            <span className="hidden sm:inline">New Post</span>
-          </Link>
+
+        <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center gap-6">
+          <div className="w-16 h-16 rounded-2xl bg-black/50 border border-red-500/30 flex items-center justify-center shadow-[0_0_20px_rgba(220,38,38,0.2)] shrink-0">
+            <CalendarIcon className="w-8 h-8 text-red-500 drop-shadow-[0_0_10px_rgba(220,38,38,0.8)]" />
+          </div>
+          <div>
+            <div className="flex items-center gap-2 mb-2 text-neutral-400 text-sm font-bold">
+              <Link href="/" className="hover:text-white transition-colors">← Back</Link>
+            </div>
+            <div className="flex items-center gap-2 mb-2">
+              <h1 className="text-3xl md:text-4xl font-bold text-white tracking-tight">Content Calendar</h1>
+            </div>
+            <p className="text-red-200/70 max-w-xl text-sm md:text-base">
+              Plan, manage, and schedule your content across all connected platforms.
+            </p>
+          </div>
         </div>
       </div>
 
@@ -311,39 +285,57 @@ export default function CalendarPage() {
         </div>
       </div>
 
-      <div className="flex items-center justify-between bg-[#0e0e12] border border-[#22222a] rounded-2xl p-4 mb-6">
-        <h2 className="text-xl md:text-2xl font-bold text-white">
-          {monthNames[month]} {year}
-        </h2>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={handleToday}
-            className="px-4 py-2 rounded-xl text-sm font-bold text-neutral-300 hover:text-white bg-[#18181f] border border-[#33333e] hover:border-red-500/50 transition-colors mr-2"
-          >
+      {/* Calendar Toolbar */}
+      <div className="flex flex-col xl:flex-row xl:items-center justify-between mb-6 gap-4">
+        <div className="flex items-center gap-2 overflow-x-auto pb-2 xl:pb-0">
+          <button onClick={handlePrevMonth} className="px-3 py-2 rounded-lg border border-[#22222a] bg-[#0e0e12] hover:bg-[#18181f] text-neutral-400 hover:text-white transition-colors flex items-center gap-1.5 font-medium text-sm whitespace-nowrap">
+            <ChevronLeft className="w-4 h-4" /> Previous
+          </button>
+          <button onClick={handleToday} className="px-4 py-2 rounded-lg border border-[#22222a] bg-[#0e0e12] hover:bg-[#18181f] text-neutral-300 hover:text-white transition-colors font-medium text-sm">
             Today
           </button>
-          <button
-            onClick={handlePrevMonth}
-            className="p-2 rounded-xl bg-[#18181f] border border-[#33333e] hover:border-red-500/50 text-neutral-400 hover:text-white transition-colors"
-          >
-            <ChevronLeft className="w-5 h-5" />
+          <div className="flex items-center gap-2 px-4 py-2 rounded-lg border border-red-900/30 bg-red-950/20 text-red-100 font-bold whitespace-nowrap">
+            <CalendarIcon className="w-4 h-4 text-red-500" />
+            {monthNames[month]} {year}
+          </div>
+          <button onClick={handleNextMonth} className="px-3 py-2 rounded-lg border border-[#22222a] bg-[#0e0e12] hover:bg-[#18181f] text-neutral-400 hover:text-white transition-colors flex items-center gap-1.5 font-medium text-sm whitespace-nowrap">
+            Next <ChevronRight className="w-4 h-4" />
           </button>
-          <button
-            onClick={handleNextMonth}
-            className="p-2 rounded-xl bg-[#18181f] border border-[#33333e] hover:border-red-500/50 text-neutral-400 hover:text-white transition-colors"
+        </div>
+
+        <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center p-1 rounded-xl bg-[#0e0e12] border border-[#22222a]">
+            {(['MONTH', 'WEEK', 'DAY'] as const).map(mode => (
+              <button
+                key={mode}
+                onClick={() => setViewMode(mode)}
+                className={`px-4 py-1.5 rounded-lg text-sm font-bold transition-all ${
+                  viewMode === mode
+                    ? 'bg-red-600 text-white shadow-md'
+                    : 'text-neutral-500 hover:text-neutral-300'
+                }`}
+              >
+                {mode.charAt(0) + mode.slice(1).toLowerCase()}
+              </button>
+            ))}
+          </div>
+          <Link
+            href="/create-post"
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white font-bold transition-all shadow-[0_0_15px_rgba(220,38,38,0.3)] ml-2"
           >
-            <ChevronRight className="w-5 h-5" />
-          </button>
+            <Plus className="w-4 h-4" />
+            <span className="hidden sm:inline">Schedule</span>
+          </Link>
         </div>
       </div>
 
       {viewMode === 'MONTH' && (
-        <div className="bg-[#0e0e12] border border-[#22222a] rounded-3xl overflow-hidden shadow-lg">
-          <div className="grid grid-cols-7 border-b border-[#22222a]">
+        <div className="bg-[#0e0e12] border border-[#22222a] rounded-2xl overflow-hidden shadow-2xl">
+          <div className="grid grid-cols-7 border-b border-[#22222a] bg-[#141419]">
             {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
               <div
                 key={day}
-                className="py-4 text-center text-xs md:text-sm font-bold text-neutral-500 uppercase tracking-wider"
+                className="py-3.5 text-center text-[11px] font-bold text-neutral-500 uppercase tracking-widest"
               >
                 {day}
               </div>
@@ -354,82 +346,80 @@ export default function CalendarPage() {
             {Array.from({ length: firstDayOfMonth }).map((_, i) => (
               <div
                 key={`empty-start-${i}`}
-                className="min-h-[120px] md:min-h-[160px] p-2 border-r border-b border-[#22222a] bg-[#18181f]/30"
+                className="min-h-[140px] p-2 border-r border-b border-[#22222a] bg-[#0a0a0c]"
               />
             ))}
             {Array.from({ length: daysInMonth }).map((_, i) => {
               const day = i + 1;
-              const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(
-                day
-              ).padStart(2, '0')}`;
+              const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
               const dayPosts = postsByDate[dateKey] || [];
               const isToday = dateKey === getTodayDateKey(WORKSPACE_TIMEZONE);
-              const isSelected = dateKey === selectedDateKey;
+
+              const displayPosts = dayPosts.slice(0, 3);
+              const remainingCount = dayPosts.length - 3;
 
               return (
                 <div
                   key={dateKey}
                   onClick={() => handleDayClick(dateKey)}
-                  className={`min-h-[120px] md:min-h-[160px] p-2 border-r border-b border-[#22222a] cursor-pointer transition-colors relative ${
-                    isSelected
-                      ? 'bg-red-950/20 ring-1 ring-inset ring-red-500'
-                      : 'hover:bg-[#18181f] bg-[#0e0e12]'
+                  className={`min-h-[140px] p-2.5 border-r border-b border-[#22222a] cursor-pointer transition-all relative group ${
+                    isToday
+                      ? 'bg-red-950/10 shadow-[inset_0_0_20px_rgba(220,38,38,0.05)]'
+                      : 'hover:bg-[#141419] bg-[#0e0e12]'
                   }`}
                 >
-                  <div className="flex items-center justify-between mb-2">
+                  {isToday && (
+                    <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-red-500 to-transparent opacity-70"></div>
+                  )}
+                  <div className="flex items-center justify-between mb-2.5">
                     <span
-                      className={`text-sm font-bold w-7 h-7 flex items-center justify-center rounded-full ${
+                      className={`text-xs font-bold w-6 h-6 flex items-center justify-center rounded-full ${
                         isToday
-                          ? 'bg-red-600 text-white shadow-md'
-                          : 'text-neutral-300'
+                          ? 'bg-red-600 text-white shadow-[0_0_10px_rgba(220,38,38,0.5)]'
+                          : 'text-neutral-400 group-hover:text-neutral-200'
                       }`}
                     >
                       {day}
                     </span>
-                    {dayPosts.length > 0 && (
-                      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-[#18181f] text-neutral-400 border border-[#33333e]">
-                        {dayPosts.length}
-                      </span>
-                    )}
                   </div>
 
-                  <div className="space-y-1.5 max-h-[100px] overflow-y-auto no-scrollbar">
-                    {dayPosts.map((post) => {
-                      const isVideo = post.mediaAsset?.mimeType?.startsWith('video/');
-                      const hasRealThumbnail = !!post.mediaAsset?.thumbnailUrl;
-                      const hasImageUrl = !!post.mediaAsset?.url && !isVideo;
-                      const displayImageUrl = hasRealThumbnail ? post.mediaAsset!.thumbnailUrl : (hasImageUrl ? post.mediaAsset!.url : null);
-
-                      return (
+                  <div className="space-y-1.5">
+                    {displayPosts.map((post) => {
+                       return (
                         <div
                           key={post.id}
                           onClick={(e) => {
                             e.stopPropagation();
                             setSelectedPost(post);
                           }}
-                          className="cursor-pointer p-1.5 rounded-lg bg-[#100606]/90 border border-[#22222a] hover:border-red-500/60 text-xs flex items-center gap-1.5 transition-all shadow-sm group"
+                          className="flex items-center gap-1.5 p-1.5 rounded bg-[#18181f] border border-[#2a2a35] hover:border-red-500/50 transition-colors"
                         >
-                          <div className="w-5 h-5 rounded overflow-hidden shrink-0 bg-[#18181f] flex flex-col items-center justify-center">
-                            {displayImageUrl ? (
-                              <img src={displayImageUrl} alt="" className="w-full h-full object-cover" />
-                            ) : isVideo ? (
-                                <Play className="w-2.5 h-2.5 text-neutral-500" />
-                            ) : (
-                                <FileText className="w-2.5 h-2.5 text-neutral-500" />
+                          <div className="flex -space-x-1 shrink-0">
+                            {post.platformPosts.slice(0, 2).map((p, idx) => (
+                              <PlatformIcon key={idx} platform={p.platform} size={12} className="w-3.5 h-3.5 rounded-sm ring-1 ring-[#18181f]" />
+                            ))}
+                            {post.platformPosts.length > 2 && (
+                              <div className="w-3.5 h-3.5 rounded-sm ring-1 ring-[#18181f] bg-neutral-800 flex items-center justify-center text-[7px] font-bold text-white z-10">
+                                +{post.platformPosts.length - 2}
+                              </div>
                             )}
                           </div>
-                          
-                          <div className="flex-1 min-w-0 flex flex-col">
-                            <span className="text-neutral-100 truncate font-semibold text-[10px]">
-                              {post.masterCaption || 'No caption'}
-                            </span>
-                            <div className="flex items-center gap-1 mt-0.5">
-                              {renderStatusBadge(post.status)}
-                            </div>
-                          </div>
+                          <span className="text-[10px] text-neutral-300 font-medium truncate flex-1">
+                            {post.scheduledFor ? formatTimeInTimeZone(post.scheduledFor, getPostTimezone(post)) : 'Draft'}
+                          </span>
+                          <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${
+                            post.status.toUpperCase() === 'PUBLISHED' ? 'bg-emerald-500 shadow-[0_0_5px_rgba(16,185,129,0.5)]' :
+                            post.status.toUpperCase() === 'SCHEDULED' ? 'bg-amber-500 shadow-[0_0_5px_rgba(245,158,11,0.5)]' :
+                            post.status.toUpperCase() === 'FAILED' ? 'bg-red-500 shadow-[0_0_5px_rgba(239,68,68,0.5)]' : 'bg-neutral-500'
+                          }`} />
                         </div>
-                      )
+                       )
                     })}
+                    {remainingCount > 0 && (
+                      <div className="text-[10px] font-semibold text-neutral-500 hover:text-neutral-300 px-1 mt-1 text-center bg-[#141419] rounded py-1 border border-transparent">
+                        +{remainingCount} more
+                      </div>
+                    )}
                   </div>
                 </div>
               );
