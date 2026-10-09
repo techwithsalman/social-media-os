@@ -1042,7 +1042,7 @@ export default function CreatePostPage() {
 
       {/* Top Banner Alert / Error */}
       {errorMessage && (
-    <div className="mb-8 p-5 rounded-2xl bg-red-500/10 border border-red-500/30 text-red-400 text-sm font-semibold flex items-start sm:items-center justify-between shadow-md gap-4">
+    <div className="mb-8 p-5 rounded-2xl bg-red-500/10 border border-red-500/30 text-red-400 text-sm font-semibold flex  sm:items-center justify-between shadow-md gap-4">
       <div className="flex flex-col gap-1">
         <div className="flex items-center gap-3">
           <AlertCircle className="w-5 h-5 shrink-0" />
@@ -1147,12 +1147,12 @@ export default function CreatePostPage() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-[minmax(0,2fr)_minmax(340px,1fr)] gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,2fr)_minmax(340px,1fr)] gap-6 lg:gap-8 ">
         {/* Left Composer Panel */}
         <div className="space-y-8">
           {/* STEP 1: SELECT ACCOUNTS */}
           <div className="p-6 md:p-8 rounded-3xl bg-[#0e0e12] border border-[#22222a] shadow-md">
-            <div className="flex items-start md:items-center justify-between mb-5 flex-col md:flex-row gap-4">
+            <div className="flex  md:items-center justify-between mb-5 flex-col md:flex-row gap-4">
               <div>
                 <h3 className="text-sm md:text-base font-bold text-neutral-200 uppercase tracking-wider flex items-center gap-3">
                   <span className="flex items-center justify-center w-7 h-7 rounded-full bg-red-600 text-white text-xs font-black shadow-md">
@@ -1370,7 +1370,7 @@ export default function CreatePostPage() {
 
           {/* STEP 3: MASTER CAPTION & SYNC */}
           <div className="p-6 md:p-8 rounded-3xl bg-[#0e0e12] border border-[#22222a] shadow-md">
-            <div className="flex items-start justify-between mb-4 flex-col md:flex-row gap-2">
+            <div className="flex  justify-between mb-4 flex-col md:flex-row gap-2">
               <div>
                 <h3 className="text-sm md:text-base font-bold text-neutral-200 uppercase tracking-wider flex items-center gap-3">
                   <span className="flex items-center justify-center w-7 h-7 rounded-full bg-red-600 text-white text-xs font-black shadow-md">
