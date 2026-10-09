@@ -314,7 +314,8 @@ export default function ScheduledPostsPage() {
   };
 
   return (
-    <AppLayout>
+    <AppLayout title="Scheduled Posts">
+      <div className="max-w-[1440px] w-full mx-auto">
       <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold text-white tracking-tight flex items-center gap-3">
@@ -668,6 +669,7 @@ export default function ScheduledPostsPage() {
           </div>
         </div>
       )}
+          </div>
     </AppLayout>
   );
 }

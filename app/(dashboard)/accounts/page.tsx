@@ -371,6 +371,7 @@ export default function ConnectedAccountsPage() {
 
   return (
     <AppLayout title="Connected Social Channels">
+      <div className="max-w-[1440px] w-full mx-auto">
       {/* Top Header */}
       <div className="flex items-center gap-4 mb-6">
         <button onClick={() => window.history.back()} className="flex items-center gap-2 px-3 py-1.5 text-sm font-semibold text-neutral-400 hover:text-white transition-colors border border-[#22222a] rounded-lg bg-[#0e0e12]">
@@ -545,6 +546,7 @@ export default function ConnectedAccountsPage() {
             </div>
           );
         })}</div>
+          </div>
     </AppLayout>
   );
 }

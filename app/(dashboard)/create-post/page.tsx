@@ -1017,7 +1017,8 @@ export default function CreatePostPage() {
   );
 
   return (
-    <AppLayout title={editPostId ? 'Edit Scheduled Post' : isDuplicating ? 'Duplicate Post' : 'Create & Schedule Post / Compose, schedule and publish to multiple platforms'}>
+    <AppLayout title={editPostId ? 'Edit Scheduled Post' : isDuplicating ? 'Duplicate Post' : 'Create & Schedule Post'}>
+      <div className="max-w-[1440px] w-full mx-auto">
       {/* Duplicating Post Notice */}
       {isDuplicating && (
         <div className="mb-8 p-5 rounded-2xl bg-red-500/10 border border-red-500/30 text-red-400 text-sm font-semibold flex items-center justify-between shadow-md">
@@ -2422,6 +2423,7 @@ export default function CreatePostPage() {
           </div>
         </div>
       )}
+          </div>
     </AppLayout>
   );
 }

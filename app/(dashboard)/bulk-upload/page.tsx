@@ -295,6 +295,7 @@ export default function BulkUploadPage() {
 
   return (
     <AppLayout title="Bulk Upload & Automatic Schedule Generator">
+      <div className="max-w-[1440px] w-full mx-auto">
       <div className="mb-8">
         <h1 className="text-2xl md:text-3xl font-black text-white tracking-tight">
           Batch Media Uploader & Schedule Matrix
@@ -618,6 +619,7 @@ export default function BulkUploadPage() {
           ))}
         </div>
       </div>
+          </div>
     </AppLayout>
   );
 }

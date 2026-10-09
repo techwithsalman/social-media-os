@@ -114,6 +114,7 @@ export default function PublishedPostsPage() {
 
   return (
     <AppLayout title="Published Posts History">
+      <div className="max-w-[1440px] w-full mx-auto">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <div>
           <h1 className="text-2xl md:text-3xl font-black text-white tracking-tight">
@@ -345,6 +346,7 @@ export default function PublishedPostsPage() {
           ))}
         </div>
       )}
+          </div>
     </AppLayout>
   );
 }

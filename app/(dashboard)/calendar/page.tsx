@@ -209,7 +209,8 @@ export default function CalendarPage() {
   };
 
   return (
-    <AppLayout>
+    <AppLayout title="Content Calendar">
+      <div className="max-w-[1440px] w-full mx-auto">
       {/* Calendar Hero */}
       <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-red-950/40 to-black border border-red-900/30 mb-8 p-6 md:p-10 shadow-[0_0_40px_-15px_rgba(220,38,38,0.15)]">
         <div className="absolute top-0 right-0 w-full h-full overflow-hidden pointer-events-none opacity-50">
@@ -636,6 +637,7 @@ export default function CalendarPage() {
           </div>
         </div>
       )}
+          </div>
     </AppLayout>
   );
 }
