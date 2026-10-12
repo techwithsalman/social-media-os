@@ -56,7 +56,7 @@ export async function createPinterestAuthorizationUrl(session: SessionPayload) {
     },
   });
 
-  const scopes = ['user_accounts:read', 'boards:read', 'pins:read', 'pins:write'];
+  const scopes = ['user_accounts:read', 'boards:read', 'boards:write', 'pins:read', 'pins:write'];
 
   const params = new URLSearchParams({
     client_id: clientId,

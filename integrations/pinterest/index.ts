@@ -18,7 +18,7 @@ export class PinterestAdapter implements ISocialPlatformAdapter {
       name: 'Pinterest Content Publishing API',
       platform: 'PINTEREST',
       developerPortalUrl: 'https://developers.pinterest.com',
-      requiredScopes: ['user_accounts:read', 'boards:read', 'pins:read', 'pins:write'],
+      requiredScopes: ['user_accounts:read', 'boards:read', 'boards:write', 'pins:read', 'pins:write'],
       requiredCredentials: ['PINTEREST_CLIENT_ID', 'PINTEREST_CLIENT_SECRET', 'PINTEREST_REDIRECT_URI'],
       mediaRequirements: {
         supportedImageTypes: ['image/jpeg', 'image/png'],
