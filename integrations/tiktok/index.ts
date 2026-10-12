@@ -149,7 +149,7 @@ export class TikTokAdapter implements ISocialPlatformAdapter {
         creatorUsername: info.creator_username,
         creatorNickname: info.creator_nickname,
         creatorAvatarUrl: info.creator_avatar_url,
-        privacyLevelOptions: info.privacy_level_options || ['PUBLIC_TO_EVERYONE', 'SELF_ONLY'],
+        privacyLevelOptions: Array.isArray(info.privacy_level_options) ? info.privacy_level_options : [],
         commentDisabled: info.comment_disabled,
         duetDisabled: info.duet_disabled,
         stitchDisabled: info.stitch_disabled,
@@ -265,15 +265,45 @@ export class TikTokAdapter implements ISocialPlatformAdapter {
 
       console.log(`[TikTok Direct Post] Using transfer method: ${sourceInfo.source} for media host '${mediaHost}'`);
 
+      if (!isInboxDraft) {
+        if (!payload.visibility || payload.visibility.trim() === '' || payload.visibility === 'PUBLIC') {
+          return {
+            success: false,
+            errorCode: 'TIKTOK_PRIVACY_REQUIRED',
+            errorMessage: 'TikTok Error: Privacy level must be explicitly selected before publishing directly to TikTok.',
+          };
+        }
+
+        if (creatorInfo?.privacyLevelOptions && creatorInfo.privacyLevelOptions.length > 0) {
+          if (!creatorInfo.privacyLevelOptions.includes(payload.visibility)) {
+            return {
+              success: false,
+              errorCode: 'TIKTOK_INVALID_PRIVACY',
+              errorMessage: `TikTok Error: Selected privacy level '${payload.visibility}' is not permitted for this TikTok account. Permitted options: ${creatorInfo.privacyLevelOptions.join(', ')}`,
+            };
+          }
+        }
+      }
+
+      const disableComment = creatorInfo?.commentDisabled
+        ? true
+        : !(payload.metadata?.allowComments === true);
+      const disableDuet = creatorInfo?.duetDisabled
+        ? true
+        : !(payload.metadata?.allowDuet === true);
+      const disableStitch = creatorInfo?.stitchDisabled
+        ? true
+        : !(payload.metadata?.allowStitch === true);
+
       let requestBody: any = isInboxDraft
         ? { source_info: sourceInfo }
         : {
             post_info: {
               title: `${payload.caption} ${payload.hashtags || ''}`.trim(),
-              privacy_level: payload.visibility || creatorInfo?.privacyLevelOptions?.[0] || 'PUBLIC_TO_EVERYONE',
-              disable_comment: !(payload.metadata?.allowComments ?? true),
-              disable_duet: !(payload.metadata?.allowDuet ?? true),
-              disable_stitch: !(payload.metadata?.allowStitch ?? true),
+              privacy_level: payload.visibility,
+              disable_comment: disableComment,
+              disable_duet: disableDuet,
+              disable_stitch: disableStitch,
             },
             source_info: sourceInfo,
           };

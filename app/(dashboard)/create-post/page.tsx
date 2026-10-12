@@ -143,11 +143,11 @@ const DEFAULT_PLATFORM_SETTINGS: Record<string, PlatformSettingsState> = {
     caption: '',
     hashtags: '#fyp #trending #viral',
     contentType: 'VIDEO',
-    visibility: 'PUBLIC_TO_EVERYONE',
-    allowComments: true,
+    visibility: '',
+    allowComments: false,
     hideLikes: false,
-    allowDuet: true,
-    allowStitch: true,
+    allowDuet: false,
+    allowStitch: false,
     linkUrl: '',
     youtubeTitle: '',
     categoryId: '22',
@@ -275,6 +275,20 @@ export default function CreatePostPage() {
   const [fetchingBoards, setFetchingBoards] = useState(false);
   const [previewPlatform, setPreviewPlatform] = useState<string>('INSTAGRAM');
 
+  // TikTok dynamic creator capabilities
+  const [tiktokCreatorInfo, setTiktokCreatorInfo] = useState<{
+    creatorUsername: string;
+    creatorNickname: string;
+    creatorAvatarUrl?: string | null;
+    privacyLevelOptions: string[];
+    commentDisabled: boolean;
+    duetDisabled: boolean;
+    stitchDisabled: boolean;
+    maxVideoPostDurationSec: number;
+  } | null>(null);
+  const [tiktokCreatorInfoLoading, setTiktokCreatorInfoLoading] = useState(false);
+  const [tiktokCreatorInfoError, setTiktokCreatorInfoError] = useState<string | null>(null);
+
   // Modals
   const [showSyncWarningModal, setShowSyncWarningModal] = useState(false);
   const [showPublishConfirmModal, setShowPublishConfirmModal] = useState(false);
@@ -360,6 +374,9 @@ export default function CreatePostPage() {
     setIsDuplicating(false);
     editingPostRef.current = false;
     hasStoredComposerRef.current = false;
+    setTiktokCreatorInfo(null);
+    setTiktokCreatorInfoLoading(false);
+    setTiktokCreatorInfoError(null);
 
     if (typeof window !== 'undefined') {
       try {
@@ -681,6 +698,93 @@ export default function CreatePostPage() {
     );
   };
 
+  const selectedTikTokAccount = accounts.find(
+    (a) => a.platform === 'TIKTOK' && selectedAccountIds.includes(a.id)
+  );
+  const selectedTikTokAccountId = selectedTikTokAccount?.id || null;
+
+  useEffect(() => {
+    // Whenever selected TikTok account changes, reset privacy selection
+    updatePlatformSetting('TIKTOK', 'visibility', '');
+
+    if (!selectedTikTokAccountId) {
+      setTiktokCreatorInfo(null);
+      setTiktokCreatorInfoLoading(false);
+      setTiktokCreatorInfoError(null);
+      return;
+    }
+
+    let isMounted = true;
+    setTiktokCreatorInfoLoading(true);
+    setTiktokCreatorInfoError(null);
+
+    fetch('/api/tiktok/creator-info', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ accountId: selectedTikTokAccountId }),
+    })
+      .then(async (res) => {
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          throw new Error(data.error || 'Failed to query TikTok creator capabilities.');
+        }
+        return data;
+      })
+      .then((info) => {
+        if (!isMounted) return;
+        setTiktokCreatorInfo(info);
+        if (info.commentDisabled) updatePlatformSetting('TIKTOK', 'allowComments', false);
+        if (info.duetDisabled) updatePlatformSetting('TIKTOK', 'allowDuet', false);
+        if (info.stitchDisabled) updatePlatformSetting('TIKTOK', 'allowStitch', false);
+      })
+      .catch((err: any) => {
+        if (!isMounted) return;
+        console.error('[TikTok Creator Info Load Error]:', err);
+        setTiktokCreatorInfo(null);
+        setTiktokCreatorInfoError(err.message || 'Unable to retrieve TikTok creator capabilities.');
+      })
+      .finally(() => {
+        if (isMounted) setTiktokCreatorInfoLoading(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [selectedTikTokAccountId]);
+
+  const retryLoadTikTokCreatorInfo = () => {
+    if (!selectedTikTokAccountId) return;
+    setTiktokCreatorInfoLoading(true);
+    setTiktokCreatorInfoError(null);
+
+    fetch('/api/tiktok/creator-info', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ accountId: selectedTikTokAccountId }),
+    })
+      .then(async (res) => {
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          throw new Error(data.error || 'Failed to query TikTok creator capabilities.');
+        }
+        return data;
+      })
+      .then((info) => {
+        setTiktokCreatorInfo(info);
+        if (info.commentDisabled) updatePlatformSetting('TIKTOK', 'allowComments', false);
+        if (info.duetDisabled) updatePlatformSetting('TIKTOK', 'allowDuet', false);
+        if (info.stitchDisabled) updatePlatformSetting('TIKTOK', 'allowStitch', false);
+      })
+      .catch((err: any) => {
+        console.error('[TikTok Creator Info Retry Error]:', err);
+        setTiktokCreatorInfo(null);
+        setTiktokCreatorInfoError(err.message || 'Unable to retrieve TikTok creator capabilities.');
+      })
+      .finally(() => {
+        setTiktokCreatorInfoLoading(false);
+      });
+  };
+
   const handleFileUpload = async (file: File) => {
     if (!file) return;
 
@@ -817,6 +921,35 @@ export default function CreatePostPage() {
     return null;
   };
 
+  const validateTikTokRequirements = () => {
+    const hasTikTok = accounts.filter((a) => selectedAccountIds.includes(a.id)).some((acc) => acc.platform === 'TIKTOK');
+    if (!hasTikTok) return null;
+
+    const tikTokSettings = platformSettings.TIKTOK || DEFAULT_PLATFORM_SETTINGS.TIKTOK;
+    const isDirectPost = tikTokSettings.contentType !== 'INBOX_DRAFT';
+
+    if (isDirectPost) {
+      if (tiktokCreatorInfoLoading) {
+        return 'Please wait while TikTok creator capabilities are being loaded.';
+      }
+      if (tiktokCreatorInfoError || !tiktokCreatorInfo) {
+        return `Cannot publish Direct Post to TikTok: ${tiktokCreatorInfoError || 'Unable to load creator capabilities. Please retry.'}`;
+      }
+      if (!tikTokSettings.visibility || tikTokSettings.visibility.trim() === '') {
+        return 'Please explicitly select a Privacy Level for TikTok before publishing or scheduling.';
+      }
+      if (
+        tiktokCreatorInfo.privacyLevelOptions &&
+        tiktokCreatorInfo.privacyLevelOptions.length > 0 &&
+        !tiktokCreatorInfo.privacyLevelOptions.includes(tikTokSettings.visibility)
+      ) {
+        return `Selected privacy level is not supported for this TikTok account. Permitted options: ${tiktokCreatorInfo.privacyLevelOptions.join(', ')}`;
+      }
+    }
+
+    return null;
+  };
+
   const handleReviewSchedule = () => {
     setErrorMessage('');
     setScheduleError('');
@@ -824,6 +957,12 @@ export default function CreatePostPage() {
     const ytError = validateYouTubeMedia();
     if (ytError) {
       setScheduleError(ytError);
+      return;
+    }
+
+    const ttError = validateTikTokRequirements();
+    if (ttError) {
+      setScheduleError(ttError);
       return;
     }
 
@@ -894,6 +1033,12 @@ export default function CreatePostPage() {
       return;
     }
 
+    const ttError = validateTikTokRequirements();
+    if (ttError) {
+      setDiagnosticError(ttError, 'FORM_VALIDATION');
+      return;
+    }
+
     setShowPublishConfirmModal(false);
     setPublishing(true);
     setErrorMessage('');
@@ -936,6 +1081,12 @@ export default function CreatePostPage() {
 
     if (selectedAccounts.length === 0) {
       setScheduleError('Please select at least one account to schedule.');
+      return;
+    }
+
+    const ttError = validateTikTokRequirements();
+    if (ttError) {
+      setScheduleError(ttError);
       return;
     }
 
@@ -1653,18 +1804,74 @@ export default function CreatePostPage() {
                     </div>
 
                     <div>
-                      <label className="block text-xs md:text-sm font-bold text-neutral-300 mb-1.5">
-                        Privacy Level
+                      <label className="block text-xs md:text-sm font-bold text-neutral-300 mb-1.5 flex items-center justify-between">
+                        <span>Privacy Level <span className="text-red-400">*</span></span>
+                        {tiktokCreatorInfoLoading && (
+                          <span className="text-[10px] text-neutral-400 font-normal flex items-center gap-1">
+                            <RefreshCw className="w-2.5 h-2.5 animate-spin text-red-500" />
+                            Loading options...
+                          </span>
+                        )}
                       </label>
-                      <select
-                        value={platformSettings.TIKTOK?.visibility}
-                        onChange={(e) => updatePlatformSetting('TIKTOK', 'visibility', e.target.value)}
-                        className="w-full p-3 text-sm bg-[#0e0e12] border border-[#22222a] rounded-xl text-white focus:outline-none focus:ring-1 focus:ring-red-500"
-                      >
-                        <option value="PUBLIC_TO_EVERYONE">Public to Everyone</option>
-                        <option value="MUTUAL_FOLLOW_FRIENDS">Friends Only</option>
-                        <option value="SELF_ONLY">Private (Self Only)</option>
-                      </select>
+
+                      {platformSettings.TIKTOK?.contentType === 'INBOX_DRAFT' ? (
+                        <div className="w-full p-3 text-sm bg-[#0e0e12] border border-[#22222a] rounded-xl text-neutral-500 italic">
+                          Selected in TikTok App
+                        </div>
+                      ) : !selectedTikTokAccountId ? (
+                        <div className="w-full p-3 text-sm bg-[#0e0e12] border border-[#22222a] rounded-xl text-neutral-500">
+                          Select a TikTok account above
+                        </div>
+                      ) : tiktokCreatorInfoLoading ? (
+                        <div className="w-full p-3 text-sm bg-[#0e0e12] border border-[#22222a] rounded-xl text-neutral-400 flex items-center gap-2">
+                          <RefreshCw className="w-3.5 h-3.5 animate-spin text-red-500 shrink-0" />
+                          <span>Checking account privacy options...</span>
+                        </div>
+                      ) : tiktokCreatorInfoError ? (
+                        <div className="p-2.5 bg-red-950/40 border border-red-500/40 rounded-xl text-xs text-red-300 space-y-1">
+                          <p className="font-semibold line-clamp-2">{tiktokCreatorInfoError}</p>
+                          <button
+                            type="button"
+                            onClick={retryLoadTikTokCreatorInfo}
+                            className="inline-flex items-center gap-1 text-[11px] text-red-400 hover:text-white underline font-bold"
+                          >
+                            <RefreshCw className="w-3 h-3" /> Retry Checking Options
+                          </button>
+                        </div>
+                      ) : (
+                        <div>
+                          <select
+                            value={platformSettings.TIKTOK?.visibility || ''}
+                            onChange={(e) => updatePlatformSetting('TIKTOK', 'visibility', e.target.value)}
+                            className={`w-full p-3 text-sm bg-[#0e0e12] border rounded-xl text-white focus:outline-none focus:ring-1 focus:ring-red-500 ${
+                              !platformSettings.TIKTOK?.visibility
+                                ? 'border-amber-500/60 ring-1 ring-amber-500/20'
+                                : 'border-[#22222a]'
+                            }`}
+                          >
+                            <option value="" disabled>
+                              -- Select Privacy Level (Required) --
+                            </option>
+                            {(tiktokCreatorInfo?.privacyLevelOptions || []).map((opt) => {
+                              let label = opt;
+                              if (opt === 'PUBLIC_TO_EVERYONE') label = 'Public to Everyone';
+                              else if (opt === 'MUTUAL_FOLLOW_FRIENDS') label = 'Friends Only (Mutual Followers)';
+                              else if (opt === 'FOLLOWER_OF_CREATOR') label = 'Followers Only';
+                              else if (opt === 'SELF_ONLY') label = 'Only Me (Private)';
+                              return (
+                                <option key={opt} value={opt}>
+                                  {label}
+                                </option>
+                              );
+                            })}
+                          </select>
+                          {!platformSettings.TIKTOK?.visibility && (
+                            <p className="text-[11px] text-amber-400/90 mt-1 font-medium">
+                              Explicit selection required before publishing.
+                            </p>
+                          )}
+                        </div>
+                      )}
                     </div>
 
                     <div>
@@ -1681,34 +1888,68 @@ export default function CreatePostPage() {
                     </div>
                   </div>
 
-                  <div className="flex flex-wrap items-center gap-6 pt-2 text-sm text-neutral-300">
-                    <label className="flex items-center gap-2.5 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={platformSettings.TIKTOK?.allowComments}
-                        onChange={(e) => updatePlatformSetting('TIKTOK', 'allowComments', e.target.checked)}
-                        className="rounded border-[#33333e] bg-[#0e0e12] text-red-600 w-4 h-4"
-                      />
-                      <span>Allow Comments</span>
+                  <div className="pt-2 border-t border-[#22222a]/60">
+                    <label className="block text-xs font-bold text-neutral-400 mb-2 uppercase tracking-wider">
+                      Interaction Controls
                     </label>
-                    <label className="flex items-center gap-2.5 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={platformSettings.TIKTOK?.allowDuet}
-                        onChange={(e) => updatePlatformSetting('TIKTOK', 'allowDuet', e.target.checked)}
-                        className="rounded border-[#33333e] bg-[#0e0e12] text-red-600 w-4 h-4"
-                      />
-                      <span>Allow Duet</span>
-                    </label>
-                    <label className="flex items-center gap-2.5 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={platformSettings.TIKTOK?.allowStitch}
-                        onChange={(e) => updatePlatformSetting('TIKTOK', 'allowStitch', e.target.checked)}
-                        className="rounded border-[#33333e] bg-[#0e0e12] text-red-600 w-4 h-4"
-                      />
-                      <span>Allow Stitch</span>
-                    </label>
+                    <div className="flex flex-wrap items-center gap-6 text-sm text-neutral-300">
+                      {/* Comments */}
+                      <div className="flex flex-col">
+                        <label className={`flex items-center gap-2.5 ${tiktokCreatorInfo?.commentDisabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}>
+                          <input
+                            type="checkbox"
+                            disabled={Boolean(tiktokCreatorInfo?.commentDisabled)}
+                            checked={Boolean(platformSettings.TIKTOK?.allowComments) && !tiktokCreatorInfo?.commentDisabled}
+                            onChange={(e) => updatePlatformSetting('TIKTOK', 'allowComments', e.target.checked)}
+                            className="rounded border-[#33333e] bg-[#0e0e12] text-red-600 w-4 h-4 disabled:opacity-50"
+                          />
+                          <span className="font-medium">Allow Comments</span>
+                        </label>
+                        {tiktokCreatorInfo?.commentDisabled && (
+                          <span className="text-[10px] text-amber-400/90 mt-0.5 ml-6.5">
+                            Disabled by creator account in TikTok
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Duet */}
+                      <div className="flex flex-col">
+                        <label className={`flex items-center gap-2.5 ${tiktokCreatorInfo?.duetDisabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}>
+                          <input
+                            type="checkbox"
+                            disabled={Boolean(tiktokCreatorInfo?.duetDisabled)}
+                            checked={Boolean(platformSettings.TIKTOK?.allowDuet) && !tiktokCreatorInfo?.duetDisabled}
+                            onChange={(e) => updatePlatformSetting('TIKTOK', 'allowDuet', e.target.checked)}
+                            className="rounded border-[#33333e] bg-[#0e0e12] text-red-600 w-4 h-4 disabled:opacity-50"
+                          />
+                          <span className="font-medium">Allow Duet</span>
+                        </label>
+                        {tiktokCreatorInfo?.duetDisabled && (
+                          <span className="text-[10px] text-amber-400/90 mt-0.5 ml-6.5">
+                            Disabled by creator account in TikTok
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Stitch */}
+                      <div className="flex flex-col">
+                        <label className={`flex items-center gap-2.5 ${tiktokCreatorInfo?.stitchDisabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}>
+                          <input
+                            type="checkbox"
+                            disabled={Boolean(tiktokCreatorInfo?.stitchDisabled)}
+                            checked={Boolean(platformSettings.TIKTOK?.allowStitch) && !tiktokCreatorInfo?.stitchDisabled}
+                            onChange={(e) => updatePlatformSetting('TIKTOK', 'allowStitch', e.target.checked)}
+                            className="rounded border-[#33333e] bg-[#0e0e12] text-red-600 w-4 h-4 disabled:opacity-50"
+                          />
+                          <span className="font-medium">Allow Stitch</span>
+                        </label>
+                        {tiktokCreatorInfo?.stitchDisabled && (
+                          <span className="text-[10px] text-amber-400/90 mt-0.5 ml-6.5">
+                            Disabled by creator account in TikTok
+                          </span>
+                        )}
+                      </div>
+                    </div>
                   </div>
                 </div>
               )}

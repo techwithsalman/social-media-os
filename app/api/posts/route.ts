@@ -233,6 +233,19 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Please select at least one social account.' }, { status: 400 });
     }
 
+    // Validate TikTok requirements: Direct Post requires an explicit valid privacy setting
+    for (const setting of uniquePlatformSettings) {
+      if (setting.platform === 'TIKTOK' && setting.contentType !== 'INBOX_DRAFT') {
+        const validTikTokPrivacy = ['PUBLIC_TO_EVERYONE', 'MUTUAL_FOLLOW_FRIENDS', 'FOLLOWER_OF_CREATOR', 'SELF_ONLY'];
+        if (!setting.visibility || !validTikTokPrivacy.includes(setting.visibility)) {
+          return NextResponse.json(
+            { error: 'Please select a valid privacy level for TikTok (Public to Everyone, Friends Only, Followers Only, or Only Me).' },
+            { status: 400 }
+          );
+        }
+      }
+    }
+
     // Determine initial status
     let initialStatus = 'DRAFT';
     let scheduleDate: Date | null = null;

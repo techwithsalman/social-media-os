@@ -266,6 +266,27 @@ export default function LoginPage() {
               Sign Up
             </Link>
           </div>
+
+          <div className="mt-6 pt-4 border-t border-slate-800 text-center text-[11px] text-slate-400">
+            By continuing, you agree to our{' '}
+            <a
+              href="https://techwithsalman.online/terms"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline hover:text-white transition-colors"
+            >
+              Terms of Service
+            </a>{' '}
+            and{' '}
+            <a
+              href="https://techwithsalman.online/privacy-policy"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline hover:text-white transition-colors"
+            >
+              Privacy Policy
+            </a>.
+          </div>
         </div>
       </div>
     </div>

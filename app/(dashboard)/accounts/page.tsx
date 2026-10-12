@@ -573,7 +573,49 @@ export default function ConnectedAccountsPage() {
             </div>
           );
         })}</div>
+
+        {/* Legal & Platform Compliance Footer */}
+        <div className="mt-8 pt-6 border-t border-[#22222a] flex flex-wrap items-center justify-between text-xs text-neutral-400 gap-4">
+          <p>
+            Connected account authorizations are subject to platform terms and API permissions. By connecting, you agree to our{' '}
+            <a
+              href="https://techwithsalman.online/terms"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-red-400 hover:text-red-300 underline"
+            >
+              Terms of Service
+            </a>{' '}
+            and{' '}
+            <a
+              href="https://techwithsalman.online/privacy-policy"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-red-400 hover:text-red-300 underline"
+            >
+              Privacy Policy
+            </a>.
+          </p>
+          <div className="flex items-center gap-4 text-neutral-400">
+            <a
+              href="https://techwithsalman.online/terms"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-neutral-200 underline"
+            >
+              Terms of Service
+            </a>
+            <a
+              href="https://techwithsalman.online/privacy-policy"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-neutral-200 underline"
+            >
+              Privacy Policy
+            </a>
           </div>
+        </div>
+      </div>
     </AppLayout>
   );
 }

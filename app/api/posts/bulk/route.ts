@@ -43,6 +43,21 @@ export async function POST(req: Request) {
       }
     }
 
+    // Validate TikTok requirements across items: Direct Post requires an explicit valid privacy setting
+    for (const item of items) {
+      for (const plat of item.platformSettings || []) {
+        if (plat.platform === 'TIKTOK' && plat.contentType !== 'INBOX_DRAFT') {
+          const validTikTokPrivacy = ['PUBLIC_TO_EVERYONE', 'MUTUAL_FOLLOW_FRIENDS', 'FOLLOWER_OF_CREATOR', 'SELF_ONLY'];
+          if (!plat.visibility || !validTikTokPrivacy.includes(plat.visibility)) {
+            return NextResponse.json(
+              { error: 'Please select a valid privacy level for TikTok on all items before scheduling.' },
+              { status: 400 }
+            );
+          }
+        }
+      }
+    }
+
 
     const { postsThisMonth } = await getWorkspaceUsage(session.workspaceId);
     try {
