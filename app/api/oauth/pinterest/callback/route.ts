@@ -11,8 +11,8 @@ import {
 
 export const dynamic = 'force-dynamic';
 
-function redirectToAccounts(req: NextRequest, success?: boolean, error?: string) {
-  return createOAuthCallbackResponse('PINTEREST', !!success, error, getBaseUrl(req));
+function redirectToAccounts(req: NextRequest, success?: boolean, error?: string, errorDesc?: string) {
+  return createOAuthCallbackResponse('PINTEREST', !!success, error, getBaseUrl(req), errorDesc);
 }
 
 export async function GET(req: NextRequest) {
@@ -50,8 +50,8 @@ export async function GET(req: NextRequest) {
   } catch (error: any) {
     console.error('[Pinterest Callback Error]:', error);
     if (error instanceof PinterestOAuthError) {
-      return redirectToAccounts(req, false, error.code.toLowerCase());
+      return redirectToAccounts(req, false, error.code.toLowerCase(), error.message);
     }
-    return redirectToAccounts(req, false, 'callback_failed');
+    return redirectToAccounts(req, false, 'callback_failed', error?.message || 'Failed to complete Pinterest authorization');
   }
 }

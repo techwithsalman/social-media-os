@@ -139,6 +139,40 @@ function getOAuthNotice(search: string) {
     };
   }
 
+  if (params.get('pinterest_connected') || params.get('connected') === 'pinterest') {
+    return {
+      type: 'success' as const,
+      message: 'Pinterest account connected successfully.',
+    };
+  }
+
+  const pinError = params.get('pinterest_error');
+  const pinErrorDesc = params.get('pinterest_error_desc');
+  if (pinError) {
+    const pinMessages: Record<string, string> = {
+      access_denied: 'Pinterest authorization was cancelled or denied.',
+      missing_credentials: 'Pinterest API credentials (PINTEREST_CLIENT_ID / PINTEREST_CLIENT_SECRET) are missing.',
+      invalid_state: 'Pinterest OAuth security verification failed. Please try connecting again.',
+      state_mismatch: 'Pinterest OAuth state did not match your session. Please try connecting again.',
+      state_consumed: 'Pinterest OAuth state was already used. Please initiate a fresh connection.',
+      state_expired: 'Pinterest OAuth session expired. Please try connecting again.',
+      missing_params: 'Pinterest callback did not return required authorization parameters.',
+      token_exchange_failed: 'Failed to exchange Pinterest authorization code for access tokens.',
+      profile_fetch_failed: 'Failed to retrieve profile info from Pinterest API.',
+      social_account_limit_reached: 'You have reached your connected account limit for your current plan.',
+      pinterest_oauth_failed: 'Pinterest connection failed. Please try again.',
+      callback_failed: 'Pinterest OAuth callback encountered an error.',
+    };
+
+    const baseMessage = pinMessages[pinError] || `Pinterest Connection Error (${pinError})`;
+    const fullMessage = pinErrorDesc ? `${baseMessage} [Details: ${pinErrorDesc}]` : baseMessage;
+
+    return {
+      type: 'error' as const,
+      message: fullMessage,
+    };
+  }
+
   const error = params.get('meta_error');
   if (!error) return null;
 
@@ -306,6 +340,12 @@ export default function ConnectedAccountsPage() {
     if (platform === 'YOUTUBE') {
       setActionLoadingPlatform(platform);
       openOAuthPopup(`/api/oauth/youtube/connect`);
+      return;
+    }
+
+    if (platform === 'PINTEREST') {
+      setActionLoadingPlatform(platform);
+      openOAuthPopup(`/api/oauth/pinterest/connect`);
       return;
     }
 

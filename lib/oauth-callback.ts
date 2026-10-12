@@ -8,6 +8,7 @@ export function createOAuthCallbackResponse(
   errorDesc?: string
 ) {
   const isTikTok = platform.toUpperCase() === 'TIKTOK';
+  const isPinterest = platform.toUpperCase() === 'PINTEREST';
 
   let fallbackUrl: string;
   if (success) {
@@ -16,6 +17,11 @@ export function createOAuthCallbackResponse(
     const params = new URLSearchParams();
     params.set('tiktok_error', errorToken || 'tiktok_oauth_failed');
     if (errorDesc) params.set('tiktok_error_desc', errorDesc);
+    fallbackUrl = `${baseUrl}/accounts?${params.toString()}`;
+  } else if (isPinterest) {
+    const params = new URLSearchParams();
+    params.set('pinterest_error', errorToken || 'pinterest_oauth_failed');
+    if (errorDesc) params.set('pinterest_error_desc', errorDesc);
     fallbackUrl = `${baseUrl}/accounts?${params.toString()}`;
   } else {
     fallbackUrl = `${baseUrl}/accounts?meta_error=${errorToken || 'oauth_failed'}`;
