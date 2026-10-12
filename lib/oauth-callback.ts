@@ -25,6 +25,25 @@ export function createOAuthCallbackResponse(
       <p style="color: #a1a1aa;">You can safely close this window.</p>
       <script>
         try {
+          if (typeof BroadcastChannel !== 'undefined') {
+            var bc = new BroadcastChannel('social_oauth_channel');
+            bc.postMessage({
+              type: '${success ? 'SOCIAL_ACCOUNT_CONNECTED' : 'SOCIAL_ACCOUNT_ERROR'}',
+              platform: '${platform}',
+              ${!success ? `error: '${errorToken}'` : ''}
+            });
+            bc.close();
+          }
+          if (typeof localStorage !== 'undefined') {
+            localStorage.setItem('social_account_event', JSON.stringify({
+              type: '${success ? 'SOCIAL_ACCOUNT_CONNECTED' : 'SOCIAL_ACCOUNT_ERROR'}',
+              platform: '${platform}',
+              time: Date.now()
+            }));
+          }
+        } catch (err) {}
+
+        try {
           if (window.opener && !window.opener.closed) {
             window.opener.postMessage(
               { 
@@ -32,9 +51,9 @@ export function createOAuthCallbackResponse(
                 platform: '${platform}',
                 ${!success ? `error: '${errorToken}'` : ''}
               }, 
-              '${targetOrigin}'
+              '*'
             );
-            window.close();
+            setTimeout(function() { window.close(); }, 350);
           } else {
             window.location.href = '${fallbackUrl}';
           }

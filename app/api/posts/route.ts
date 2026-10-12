@@ -89,13 +89,10 @@ export async function GET(req: NextRequest) {
       },
       orderBy: status === 'SCHEDULED' 
         ? { scheduledFor: 'asc' } 
-        : (status === 'PUBLISHED' || status === 'HISTORY')
-          ? [
-              { publishedAt: { sort: 'desc', nulls: 'last' } },
-              { scheduledFor: { sort: 'desc', nulls: 'last' } },
-              { createdAt: 'desc' }
-            ]
-          : { createdAt: 'desc' },
+        : [
+            { updatedAt: 'desc' },
+            { createdAt: 'desc' },
+          ],
       take: limit,
     });
 
@@ -168,7 +165,27 @@ export async function GET(req: NextRequest) {
       })
     );
 
-    return NextResponse.json({ posts: resolvedPosts });
+    if (status === 'PUBLISHED' || status === 'HISTORY') {
+      resolvedPosts.sort((a, b) => {
+        const timeA = a.publishedAt
+          ? new Date(a.publishedAt).getTime()
+          : a.scheduledFor
+          ? new Date(a.scheduledFor).getTime()
+          : new Date(a.createdAt).getTime();
+        const timeB = b.publishedAt
+          ? new Date(b.publishedAt).getTime()
+          : b.scheduledFor
+          ? new Date(b.scheduledFor).getTime()
+          : new Date(b.createdAt).getTime();
+
+        if (timeB !== timeA) return timeB - timeA;
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      });
+    }
+
+    return NextResponse.json({
+      posts: resolvedPosts,
+    });
   } catch (error: any) {
     console.error('Fetch posts error:', error);
     return NextResponse.json({ error: error.message || 'Failed to fetch posts' }, { status: 500 });

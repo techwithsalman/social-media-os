@@ -293,15 +293,22 @@ export async function POST(
               const publicPostId = statusData.data.public_post_id || statusData.data.video_id;
               const failReason = statusData.data.fail_reason;
 
-              if (rawStatus === 'SUCCESS' || rawStatus === 'PUBLISHED') {
+              if (rawStatus === 'PUBLISH_COMPLETE' || rawStatus === 'SUCCESS' || rawStatus === 'PUBLISHED') {
+                const username = pPost.socialAccount?.username || '';
+                const postUrl = publicPostId
+                  ? `https://www.tiktok.com/@${username || 'creator'}/video/${publicPostId}`
+                  : pPost.externalPostUrl && !pPost.externalPostUrl.endsWith('/@creator') && pPost.externalPostUrl !== 'https://www.tiktok.com/'
+                  ? pPost.externalPostUrl
+                  : username
+                  ? `https://www.tiktok.com/@${username}`
+                  : `https://www.tiktok.com/`;
+
                 await prisma.platformPost.update({
                   where: { id: pPost.id },
                   data: {
                     status: 'PUBLISHED',
                     errorMessage: null,
-                    externalPostUrl: publicPostId
-                      ? `https://www.tiktok.com/@creator/video/${publicPostId}`
-                      : pPost.externalPostUrl || `https://www.tiktok.com/`,
+                    externalPostUrl: postUrl,
                   },
                 });
               } else if (rawStatus === 'FAILED') {

@@ -397,10 +397,10 @@ export class TikTokAdapter implements ISocialPlatformAdapter {
           failReason = statusData.data.fail_reason;
 
           if (
+            pollStatus === 'PUBLISH_COMPLETE' ||
             pollStatus === 'SUCCESS' ||
             pollStatus === 'PUBLISHED' ||
             pollStatus === 'SEND_TO_USER_INBOX' ||
-            pollStatus === 'PROCESSING_UPLOAD' ||
             pollStatus === 'FAILED'
           ) {
             break;
@@ -419,8 +419,12 @@ export class TikTokAdapter implements ISocialPlatformAdapter {
         };
       }
 
-      const isPubliclyPublished = pollStatus === 'SUCCESS' || pollStatus === 'PUBLISHED';
-      const isInboxDraftStatus = pollStatus === 'SEND_TO_USER_INBOX' || isInboxDraft;
+      const isPubliclyPublished =
+        pollStatus === 'PUBLISH_COMPLETE' ||
+        pollStatus === 'SUCCESS' ||
+        pollStatus === 'PUBLISHED';
+      const isInboxDraftStatus =
+        pollStatus === 'SEND_TO_USER_INBOX' || (isInboxDraft && pollStatus !== 'FAILED');
 
       const finalStatus = isPubliclyPublished
         ? 'PUBLISHED'
@@ -434,14 +438,19 @@ export class TikTokAdapter implements ISocialPlatformAdapter {
         ? 'Sent to TikTok Creator Inbox (Draft upload)'
         : `TikTok Status: ${pollStatus}`;
 
+      const username = creatorInfo?.creatorUsername || payload.metadata?.username || '';
+      const externalPostUrl = publicPostId
+        ? `https://www.tiktok.com/@${username || 'creator'}/video/${publicPostId}`
+        : username
+        ? `https://www.tiktok.com/@${username}`
+        : `https://www.tiktok.com/`;
+
       return {
         success: true,
         status: finalStatus,
         statusMessage,
         externalPostId: publishId,
-        externalPostUrl: publicPostId
-          ? `https://www.tiktok.com/@creator/video/${publicPostId}`
-          : `https://www.tiktok.com/`,
+        externalPostUrl,
         publishedAt: isPubliclyPublished ? new Date() : undefined,
       };
     } catch (error: any) {

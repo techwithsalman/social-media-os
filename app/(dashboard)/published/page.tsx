@@ -33,6 +33,7 @@ interface PublishedPostItem {
     id: string;
     platform: string;
     status: string;
+    contentType?: string | null;
     customCaption?: string | null;
     hashtags?: string | null;
     externalPostUrl?: string | null;
@@ -68,6 +69,38 @@ export default function PublishedPostsPage() {
     }
     loadPublished();
   }, []);
+
+  // Bounded auto-refresh when any post is PROCESSING
+  useEffect(() => {
+    const hasProcessing = posts.some((p) => p.status === 'PROCESSING');
+    if (!hasProcessing) return;
+
+    let attempts = 0;
+    const maxAttempts = 12; // 48 seconds bounded polling
+    const interval = setInterval(async () => {
+      attempts++;
+      if (attempts > maxAttempts || (typeof document !== 'undefined' && document.hidden)) {
+        clearInterval(interval);
+        return;
+      }
+      try {
+        const res = await fetch('/api/posts?status=HISTORY');
+        if (res.ok) {
+          const data = await res.json();
+          if (data.posts) {
+            setPosts(data.posts);
+            if (!data.posts.some((p: PublishedPostItem) => p.status === 'PROCESSING')) {
+              clearInterval(interval);
+            }
+          }
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    }, 4000);
+
+    return () => clearInterval(interval);
+  }, [posts]);
 
   const [refreshingPostId, setRefreshingPostId] = useState<string | null>(null);
 
@@ -168,16 +201,7 @@ export default function PublishedPostsPage() {
               <div className="flex flex-col md:flex-row md:items-start justify-between gap-5 mb-5">
                 <div className="flex items-start gap-5 overflow-hidden">
                   <div className="w-20 h-20 rounded-2xl bg-[#18181f] overflow-hidden shrink-0 border border-[#33333e] flex items-center justify-center">
-                    {post.mediaAsset?.thumbnailUrl || post.mediaAsset?.url ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={post.mediaAsset.thumbnailUrl || post.mediaAsset.url}
-                        alt=""
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <FileText className="w-8 h-8 text-neutral-600" />
-                    )}
+                    <MediaThumbnail mediaAsset={post.mediaAsset || null} className="w-full h-full" iconClassName="w-8 h-8" />
                   </div>
 
                   <div>
@@ -187,8 +211,8 @@ export default function PublishedPostsPage() {
                     <div className="flex items-center gap-3 mt-3 text-xs md:text-sm text-neutral-400">
                       <span className="flex items-center gap-1.5 font-medium">
                         <Calendar className="w-4 h-4 text-red-500" />
-                        {post.publishedAt
-                          ? new Date(post.publishedAt).toLocaleString([], {
+                        {post.publishedAt || (post as any).createdAt
+                          ? new Date(post.publishedAt || (post as any).createdAt).toLocaleString([], {
                               month: 'short',
                               day: 'numeric',
                               year: 'numeric',
@@ -291,7 +315,7 @@ export default function PublishedPostsPage() {
                       </p>
                     )}
 
-                    {p.platform === 'TIKTOK' && (p.status === 'INBOX_DRAFT' || p.status === 'PROCESSING') && (
+                    {p.platform === 'TIKTOK' && (p.contentType === 'INBOX_DRAFT' || p.status === 'INBOX_DRAFT') && (
                       <div className="mt-2.5 p-3 rounded-xl bg-[#0e0e12] border border-[#22222a] space-y-2">
                         <div className="flex items-center justify-between gap-2">
                           <span className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">

@@ -1638,12 +1638,16 @@ export default function CreatePostPage() {
                         onChange={(e) => updatePlatformSetting('TIKTOK', 'contentType', e.target.value)}
                         className="w-full p-3 text-sm bg-[#0e0e12] border border-[#22222a] rounded-xl text-white focus:outline-none focus:ring-1 focus:ring-red-500 font-semibold"
                       >
-                        <option value="VIDEO">Direct Post (video.publish - Production)</option>
-                        <option value="INBOX_DRAFT">Creator Inbox (video.upload - Sandbox Demo)</option>
+                        <option value="VIDEO">Direct Post (video.publish)</option>
+                        <option value="INBOX_DRAFT">Creator Inbox (video.upload)</option>
                       </select>
-                      {platformSettings.TIKTOK?.contentType === 'INBOX_DRAFT' && (
-                        <p className="text-[11px] text-red-500 mt-1 font-medium">
-                          ✓ Supported for Sandbox testing & recording App Review demo video.
+                      {platformSettings.TIKTOK?.contentType === 'INBOX_DRAFT' ? (
+                        <p className="text-[11px] text-neutral-400 mt-1 font-medium">
+                          Transfers video as a draft into your TikTok app inbox.
+                        </p>
+                      ) : (
+                        <p className="text-[11px] text-neutral-400 mt-1 font-medium">
+                          Publishes video directly to your TikTok account.
                         </p>
                       )}
                     </div>

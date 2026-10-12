@@ -97,7 +97,7 @@ function getOAuthNotice(search: string) {
     };
   }
 
-  if (params.get('tiktok_connected')) {
+  if (params.get('tiktok_connected') || params.get('connected') === 'tiktok') {
     return {
       type: 'success' as const,
       message: 'Official TikTok account connected successfully via OAuth Login Kit.',
@@ -219,25 +219,51 @@ export default function ConnectedAccountsPage() {
   }, []);
 
   useEffect(() => {
-    const handleMessage = (event: MessageEvent) => {
-      const expectedOrigin = process.env.NODE_ENV === 'production' 
-        ? 'https://app.techwithsalman.online' 
-        : window.location.origin;
-      
-      if (event.origin !== expectedOrigin) return;
+    const handleConnected = () => {
+      fetchAccounts();
+      setOauthNotice({ type: 'success', message: 'Account connected successfully.' });
+      setActionLoadingPlatform(null);
+    };
 
+    const handleMessage = (event: MessageEvent) => {
       if (event.data?.type === 'SOCIAL_ACCOUNT_CONNECTED') {
-        fetchAccounts();
-        setOauthNotice({ type: 'success', message: 'Account connected successfully.' });
-        setActionLoadingPlatform(null);
+        handleConnected();
       } else if (event.data?.type === 'SOCIAL_ACCOUNT_ERROR') {
-        setOauthNotice({ type: 'error', message: 'Connection failed: ' + event.data.error });
+        setOauthNotice({ type: 'error', message: 'Connection failed: ' + (event.data.error || 'Unknown error') });
         setActionLoadingPlatform(null);
       }
     };
 
+    let bc: BroadcastChannel | null = null;
+    if (typeof BroadcastChannel !== 'undefined') {
+      try {
+        bc = new BroadcastChannel('social_oauth_channel');
+        bc.onmessage = (event) => {
+          if (event.data?.type === 'SOCIAL_ACCOUNT_CONNECTED') {
+            handleConnected();
+          }
+        };
+      } catch (e) {}
+    }
+
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key === 'social_account_event' && e.newValue) {
+        try {
+          const parsed = JSON.parse(e.newValue);
+          if (parsed.type === 'SOCIAL_ACCOUNT_CONNECTED') {
+            handleConnected();
+          }
+        } catch (err) {}
+      }
+    };
+
     window.addEventListener('message', handleMessage);
-    return () => window.removeEventListener('message', handleMessage);
+    window.addEventListener('storage', handleStorage);
+    return () => {
+      window.removeEventListener('message', handleMessage);
+      window.removeEventListener('storage', handleStorage);
+      if (bc) bc.close();
+    };
   }, []);
 
   useEffect(() => {
@@ -261,6 +287,7 @@ export default function ConnectedAccountsPage() {
         if (popup.closed) {
           clearInterval(timer);
           setActionLoadingPlatform(null);
+          fetchAccounts();
         }
       }, 500);
     }

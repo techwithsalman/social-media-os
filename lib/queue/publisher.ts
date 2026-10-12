@@ -127,6 +127,71 @@ export class PublishingEngine {
           } catch (err: any) {
             console.error(`[RECONCILE] Error querying Meta API:`, err);
           }
+        } else if (pPost.platform === 'TIKTOK') {
+          try {
+            console.log(`[RECONCILE] Checking TikTok Publish ${pPost.externalPostId}...`);
+            const rawToken = pPost.socialAccount.token?.accessToken || '';
+            const accessToken = decryptToken(rawToken);
+
+            const statusRes = await fetch('https://open.tiktokapis.com/v2/post/publish/status/fetch/', {
+              method: 'POST',
+              headers: {
+                Authorization: `Bearer ${accessToken}`,
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({ publish_id: pPost.externalPostId }),
+            });
+
+            const statusData = await statusRes.json().catch(() => ({}));
+            if (statusRes.ok && statusData.data) {
+              const rawStatus = statusData.data.status || '';
+              const publicPostId = statusData.data.public_post_id || statusData.data.video_id;
+              const username = pPost.socialAccount?.username || '';
+
+              if (rawStatus === 'PUBLISH_COMPLETE' || rawStatus === 'SUCCESS' || rawStatus === 'PUBLISHED') {
+                newChildStatus = 'PUBLISHED';
+                const postUrl = publicPostId
+                  ? `https://www.tiktok.com/@${username || 'creator'}/video/${publicPostId}`
+                  : pPost.externalPostUrl && !pPost.externalPostUrl.endsWith('/@creator') && pPost.externalPostUrl !== 'https://www.tiktok.com/'
+                  ? pPost.externalPostUrl
+                  : username
+                  ? `https://www.tiktok.com/@${username}`
+                  : `https://www.tiktok.com/`;
+
+                await prisma.platformPost.update({
+                  where: { id: pPost.id },
+                  data: {
+                    status: 'PUBLISHED',
+                    externalPostUrl: postUrl,
+                    errorMessage: null,
+                  },
+                });
+                console.log(`[RECONCILE] TikTok post marked PUBLISHED`);
+              } else if (rawStatus === 'SEND_TO_USER_INBOX') {
+                newChildStatus = 'INBOX_DRAFT';
+                await prisma.platformPost.update({
+                  where: { id: pPost.id },
+                  data: {
+                    status: 'INBOX_DRAFT',
+                    errorMessage: 'Sent to TikTok Creator Inbox (Draft upload)',
+                  },
+                });
+                console.log(`[RECONCILE] TikTok post marked INBOX_DRAFT`);
+              } else if (rawStatus === 'FAILED') {
+                newChildStatus = 'FAILED';
+                await prisma.platformPost.update({
+                  where: { id: pPost.id },
+                  data: {
+                    status: 'FAILED',
+                    errorMessage: statusData.data.fail_reason || 'TikTok publishing failed',
+                  },
+                });
+                console.log(`[RECONCILE] TikTok post marked FAILED`);
+              }
+            }
+          } catch (err: any) {
+            console.error(`[RECONCILE] Error querying TikTok status API:`, err);
+          }
         } else if (pPost.platform === 'YOUTUBE') {
           try {
             console.log(`[RECONCILE] Checking YouTube Video ${pPost.externalPostId}...`);
