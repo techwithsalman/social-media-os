@@ -238,35 +238,9 @@ export default function ConnectedAccountsPage() {
       }
     };
 
-    let bc: BroadcastChannel | null = null;
-    if (typeof BroadcastChannel !== 'undefined') {
-      try {
-        bc = new BroadcastChannel('social_oauth_channel');
-        bc.onmessage = (event) => {
-          if (event.data?.type === 'SOCIAL_ACCOUNT_CONNECTED') {
-            handleConnected();
-          }
-        };
-      } catch (e) {}
-    }
-
-    const handleStorage = (e: StorageEvent) => {
-      if (e.key === 'social_account_event' && e.newValue) {
-        try {
-          const parsed = JSON.parse(e.newValue);
-          if (parsed.type === 'SOCIAL_ACCOUNT_CONNECTED') {
-            handleConnected();
-          }
-        } catch (err) {}
-      }
-    };
-
     window.addEventListener('message', handleMessage);
-    window.addEventListener('storage', handleStorage);
     return () => {
       window.removeEventListener('message', handleMessage);
-      window.removeEventListener('storage', handleStorage);
-      if (bc) bc.close();
     };
   }, []);
 

@@ -53,25 +53,6 @@ export function createOAuthCallbackResponse(
       </div>
 
       <script>
-        try {
-          if (typeof BroadcastChannel !== 'undefined') {
-            var bc = new BroadcastChannel('social_oauth_channel');
-            bc.postMessage({
-              type: '${success ? 'SOCIAL_ACCOUNT_CONNECTED' : 'SOCIAL_ACCOUNT_ERROR'}',
-              platform: '${platform}',
-              ${!success ? `error: '${safeErrorToken}', errorDesc: '${safeErrorDesc}'` : ''}
-            });
-            bc.close();
-          }
-          if (typeof localStorage !== 'undefined') {
-            localStorage.setItem('social_account_event', JSON.stringify({
-              type: '${success ? 'SOCIAL_ACCOUNT_CONNECTED' : 'SOCIAL_ACCOUNT_ERROR'}',
-              platform: '${platform}',
-              ${!success ? `error: '${safeErrorToken}', errorDesc: '${safeErrorDesc}',` : ''}
-              time: Date.now()
-            }));
-          }
-        } catch (err) {}
 
         try {
           if (window.opener && !window.opener.closed) {
