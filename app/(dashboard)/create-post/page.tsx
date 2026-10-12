@@ -273,6 +273,7 @@ export default function CreatePostPage() {
   const [activeTab, setActiveTab] = useState<string>('ALL');
   const [pinterestBoards, setPinterestBoards] = useState<any[]>([]);
   const [fetchingBoards, setFetchingBoards] = useState(false);
+  const [pinterestBoardsError, setPinterestBoardsError] = useState<string | null>(null);
   const [previewPlatform, setPreviewPlatform] = useState<string>('INSTAGRAM');
 
   // TikTok dynamic creator capabilities
@@ -377,6 +378,7 @@ export default function CreatePostPage() {
     setTiktokCreatorInfo(null);
     setTiktokCreatorInfoLoading(false);
     setTiktokCreatorInfoError(null);
+    setPinterestBoardsError(null);
 
     if (typeof window !== 'undefined') {
       try {
@@ -782,6 +784,81 @@ export default function CreatePostPage() {
       })
       .finally(() => {
         setTiktokCreatorInfoLoading(false);
+      });
+  };
+
+  const selectedPinterestAccount = accounts.find(
+    (a) => a.platform === 'PINTEREST' && selectedAccountIds.includes(a.id)
+  );
+  const selectedPinterestAccountId = selectedPinterestAccount?.id || null;
+
+  useEffect(() => {
+    // Clear stale board selection when switching or deselecting Pinterest accounts
+    updatePlatformSetting('PINTEREST', 'boardName', '');
+
+    if (!selectedPinterestAccountId) {
+      setPinterestBoards([]);
+      setFetchingBoards(false);
+      setPinterestBoardsError(null);
+      return;
+    }
+
+    let isMounted = true;
+    setFetchingBoards(true);
+    setPinterestBoardsError(null);
+
+    fetch(`/api/pinterest/boards?accountId=${encodeURIComponent(selectedPinterestAccountId)}`)
+      .then(async (res) => {
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          throw new Error(data.message || data.error || 'Failed to fetch Pinterest boards.');
+        }
+        return data;
+      })
+      .then((data) => {
+        if (!isMounted) return;
+        const boards = data.boards || [];
+        setPinterestBoards(boards);
+      })
+      .catch((err: any) => {
+        if (!isMounted) return;
+        console.error('[Pinterest Boards Load Error]:', err);
+        setPinterestBoards([]);
+        setPinterestBoardsError(err.message || 'Unable to load Pinterest boards.');
+      })
+      .finally(() => {
+        if (isMounted) setFetchingBoards(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [selectedPinterestAccountId]);
+
+  const retryLoadPinterestBoards = () => {
+    if (!selectedPinterestAccountId) return;
+    setFetchingBoards(true);
+    setPinterestBoardsError(null);
+
+    fetch(`/api/pinterest/boards?accountId=${encodeURIComponent(selectedPinterestAccountId)}`)
+      .then(async (res) => {
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          throw new Error(data.message || data.error || 'Failed to fetch Pinterest boards.');
+        }
+        return data;
+      })
+      .then((data) => {
+        const boards = data.boards || [];
+        setPinterestBoards(boards);
+      })
+      .catch((err: any) => {
+        console.error('[Pinterest Boards Retry Error]:', err);
+        setPinterestBoards([]);
+        setPinterestBoardsError(err.message || 'Unable to load Pinterest boards.');
+      })
+      .finally(() => {
+        setFetchingBoards(false);
       });
   };
 
@@ -2164,14 +2241,45 @@ export default function CreatePostPage() {
                       <select
                           value={platformSettings.PINTEREST?.boardName || ''}
                           onChange={(e) => updatePlatformSetting('PINTEREST', 'boardName', e.target.value)}
-                          className="w-full p-3 text-sm bg-[#0e0e12] border border-[#22222a] rounded-xl text-white focus:outline-none focus:ring-1 focus:ring-red-500"
+                          disabled={fetchingBoards}
+                          className="w-full p-3 text-sm bg-[#0e0e12] border border-[#22222a] rounded-xl text-white focus:outline-none focus:ring-1 focus:ring-red-500 disabled:opacity-60"
                         >
-                          <option value="">-- Select a Board --</option>
-                          {pinterestBoards.map(b => (
-                             <option key={b.id} value={b.id}>{b.name} ({b.accountName})</option>
+                          <option value="">
+                            {fetchingBoards
+                              ? 'Loading boards...'
+                              : pinterestBoards.length === 0
+                              ? '-- No Boards Found --'
+                              : '-- Select a Board --'}
+                          </option>
+                          {pinterestBoards.map((b) => (
+                            <option key={b.id} value={b.id}>
+                              {b.name} ({b.accountName})
+                            </option>
                           ))}
                         </select>
-                        {fetchingBoards && <p className="text-xs text-red-500 mt-1">Loading boards...</p>}
+                        {fetchingBoards && (
+                          <p className="text-xs text-neutral-400 mt-1.5 flex items-center gap-1.5">
+                            <span className="w-2.5 h-2.5 border-2 border-red-500 border-t-transparent rounded-full animate-spin" />
+                            <span>Loading Pinterest boards...</span>
+                          </p>
+                        )}
+                        {pinterestBoardsError && (
+                          <div className="mt-2 p-2.5 rounded-lg bg-red-950/40 border border-red-800/60 text-xs text-red-300 flex items-center justify-between gap-2">
+                            <span>{pinterestBoardsError}</span>
+                            <button
+                              type="button"
+                              onClick={retryLoadPinterestBoards}
+                              className="px-2 py-1 rounded bg-red-800/80 hover:bg-red-700 text-white font-bold text-[11px] shrink-0"
+                            >
+                              Retry
+                            </button>
+                          </div>
+                        )}
+                        {!fetchingBoards && !pinterestBoardsError && selectedPinterestAccountId && pinterestBoards.length === 0 && (
+                          <p className="text-xs text-amber-400 mt-1.5">
+                            No boards found for this Pinterest account. Create a board on Pinterest first.
+                          </p>
+                        )}
                     </div>
 
                     <div>
