@@ -115,7 +115,13 @@ export async function GET(req: NextRequest) {
     if (tokenResult.userId !== session.userId || tokenResult.workspaceId !== session.workspaceId) {
       throw new TikTokOAuthError('OAuth state does not match your current session. Possible CSRF attack prevented.', 'STATE_MISMATCH');
     }
-    const userInfo = await fetchTikTokUserInfo(tokenResult.accessToken);
+
+    const canonicalOpenId = (tokenResult.openId || '').trim();
+    if (!canonicalOpenId) {
+      throw new TikTokOAuthError('TikTok OAuth failed: No valid account identifier (open_id) was returned by TikTok.', 'MISSING_OPEN_ID');
+    }
+
+    const userInfo = await fetchTikTokUserInfo(tokenResult.accessToken, canonicalOpenId);
 
     const tokenData = {
       accessToken: encryptToken(tokenResult.accessToken),
@@ -128,17 +134,21 @@ export async function GET(req: NextRequest) {
       where: {
         workspaceId: tokenResult.workspaceId,
         platform: 'TIKTOK',
-        platformAccountId: userInfo.openId,
+        platformAccountId: canonicalOpenId,
       },
     });
 
-    if (existing) {
+    if (existing && existing.platformAccountId === canonicalOpenId) {
+      const updatedName = userInfo.displayName || existing.name || 'TikTok Creator';
+      const updatedUsername = userInfo.username || existing.username || '';
+      const updatedAvatar = userInfo.avatarUrl || existing.profileImageUrl;
+
       await prisma.socialAccount.update({
         where: { id: existing.id },
         data: {
-          name: userInfo.displayName,
-          username: userInfo.username,
-          profileImageUrl: userInfo.avatarUrl,
+          name: updatedName,
+          username: updatedUsername,
+          profileImageUrl: updatedAvatar,
           status: 'CONNECTED',
           isMock: false,
           token: {
@@ -156,10 +166,10 @@ export async function GET(req: NextRequest) {
         data: {
           workspaceId: tokenResult.workspaceId,
           platform: 'TIKTOK',
-          platformAccountId: userInfo.openId,
-          name: userInfo.displayName,
-          username: userInfo.username,
-          profileImageUrl: userInfo.avatarUrl,
+          platformAccountId: canonicalOpenId,
+          name: userInfo.displayName || 'TikTok Creator',
+          username: userInfo.username || '',
+          profileImageUrl: userInfo.avatarUrl || null,
           status: 'CONNECTED',
           isMock: false,
           token: {
@@ -169,12 +179,13 @@ export async function GET(req: NextRequest) {
       });
     }
 
+    const displayHandle = userInfo.username ? `@${userInfo.username}` : (userInfo.displayName || 'TikTok Account');
     await prisma.activityLog.create({
       data: {
         workspaceId: tokenResult.workspaceId,
         userId: tokenResult.userId,
         action: 'ACCOUNT_CONNECTED',
-        details: `Connected official TikTok account (@${userInfo.username}) via OAuth Login Kit`,
+        details: `Connected official TikTok account (${displayHandle}) via OAuth Login Kit`,
       },
     });
 

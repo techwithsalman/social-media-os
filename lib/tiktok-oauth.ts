@@ -203,17 +203,22 @@ export async function exchangeTikTokCodeForTokens(code: string, state: string) {
     throw new TikTokOAuthError(errorMsg, String(errorCode).toUpperCase());
   }
 
-  const accessToken = (data.access_token || data.data?.access_token) as string;
-  const refreshToken = (data.refresh_token || data.data?.refresh_token) as string;
+  const accessToken = ((data.access_token || data.data?.access_token) as string || '').trim();
+  const refreshToken = ((data.refresh_token || data.data?.refresh_token) as string || '').trim();
   const expiresIn = (data.expires_in || data.data?.expires_in || 86400) as number;
-  const openId = (data.open_id || data.data?.open_id) as string;
+  const rawOpenId = (data.open_id || data.data?.open_id || data.openId || data.data?.openId) as string;
+  const openId = (rawOpenId || '').trim();
   const scope = (data.scope || data.data?.scope || 'user.info.basic,video.upload,video.publish') as string;
 
   if (!accessToken) {
     throw new TikTokOAuthError('No access token returned from TikTok token endpoint', 'MISSING_ACCESS_TOKEN');
   }
 
-  console.log('[TikTok OAuth Token Exchange Success] Tokens received successfully');
+  if (!openId) {
+    throw new TikTokOAuthError('TikTok OAuth failed: No valid account identifier (open_id) was returned by TikTok.', 'MISSING_OPEN_ID');
+  }
+
+  console.log('[TikTok OAuth Token Exchange Success] Tokens and canonical open_id received successfully');
 
   return {
     accessToken,
@@ -226,17 +231,17 @@ export async function exchangeTikTokCodeForTokens(code: string, state: string) {
   };
 }
 
-export async function fetchTikTokUserInfo(accessToken: string) {
-  let openId = '';
+export async function fetchTikTokUserInfo(accessToken: string, canonicalOpenId?: string) {
+  let openId = (canonicalOpenId || '').trim();
   let displayName = '';
   let username = '';
   let avatarUrl = '';
   let isTokenAuthError = false;
   let lastErrorMessage = '';
 
-  // 1. Fetch user info via /v2/user/info/ with basic fields authorized under user.info.basic
+  // 1. Fetch user info via /v2/user/info/ with only supported fields under user.info.basic (no union_id)
   try {
-    const fields = 'open_id,union_id,avatar_url,avatar_url_100,avatar_large_url,display_name';
+    const fields = 'open_id,avatar_url,avatar_url_100,avatar_large_url,display_name';
     const url = `https://open.tiktokapis.com/v2/user/info/?fields=${fields}`;
     const res = await fetch(url, {
       headers: {
@@ -244,7 +249,7 @@ export async function fetchTikTokUserInfo(accessToken: string) {
       },
     });
 
-    const data = await res.json();
+    const data = await res.json().catch(() => ({}));
     console.log('[TikTok User Info API] Status:', res.status, 'Error Code:', data.error?.code);
 
     if (res.status === 401 || data.error?.code === 'access_token_invalid' || data.error?.code === 'token_expired') {
@@ -252,7 +257,7 @@ export async function fetchTikTokUserInfo(accessToken: string) {
       lastErrorMessage = data.error?.message || 'Access token invalid or expired';
     } else if (res.ok && data.error?.code === 'ok' && data.data?.user) {
       const u = data.data.user;
-      openId = u.open_id || '';
+      if (u.open_id) openId = u.open_id.trim();
       displayName = u.display_name || '';
       avatarUrl = u.avatar_url || u.avatar_large_url || u.avatar_url_100 || '';
     } else if (data.error?.message) {
@@ -273,7 +278,7 @@ export async function fetchTikTokUserInfo(accessToken: string) {
       body: JSON.stringify({}),
     });
 
-    const data = await res.json();
+    const data = await res.json().catch(() => ({}));
     console.log('[TikTok Creator Info Query API] Status:', res.status, 'Error Code:', data.error?.code);
 
     if (res.status === 401 || data.error?.code === 'access_token_invalid' || data.error?.code === 'token_expired') {
@@ -309,8 +314,8 @@ export async function fetchTikTokUserInfo(accessToken: string) {
 
   return {
     openId,
-    displayName: displayName || 'TikTok Creator',
-    username: username || 'tiktok_creator',
+    displayName: displayName || (username ? `@${username}` : 'TikTok Creator'),
+    username: username || '',
     avatarUrl: avatarUrl || null,
   };
 }
