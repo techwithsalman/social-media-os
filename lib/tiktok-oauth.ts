@@ -300,12 +300,13 @@ export async function fetchTikTokUserInfo(accessToken: string, canonicalOpenId?:
     console.warn('[TikTok Creator Info Query API Exception]:', err?.message || err);
   }
 
-  if (isTokenAuthError && !openId && !displayName && !username) {
+  if (isTokenAuthError && !openId) {
     throw new TikTokOAuthError(lastErrorMessage || 'TikTok access token is expired or invalid', 'TOKEN_EXPIRED');
   }
 
-  if (!openId && !displayName && !username) {
-    throw new TikTokOAuthError(lastErrorMessage || 'Failed to retrieve TikTok profile info', 'USER_INFO_FAILED');
+  // If both openId and profile info are completely absent, we cannot identify the account
+  if (!openId) {
+    throw new TikTokOAuthError(lastErrorMessage || 'Failed to retrieve TikTok account identifier', 'USER_INFO_FAILED');
   }
 
   if (!username && displayName) {

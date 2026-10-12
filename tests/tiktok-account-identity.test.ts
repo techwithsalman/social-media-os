@@ -432,7 +432,89 @@ async function runTestSuite() {
   assert.strictEqual(freshAcc.platformAccountId, freshOpenId);
   console.log('✅ Scenario 8 Passed: Ambiguous record with empty platformAccountId was NOT overwritten.\n');
 
-  console.log('🎉 ALL 8 TIKTOK ACCOUNT IDENTITY REGRESSION SCENARIOS VERIFIED SUCCESSFULLY!');
+  // -------------------------------------------------------------
+  // Scenario 9: Callback error visibility in lib/oauth-callback.ts
+  // -------------------------------------------------------------
+  console.log('[Scenario 9] Validating callback error visibility and no auto-close on error...');
+  const oauthCallbackSource = fs.readFileSync(path.join(process.cwd(), 'lib/oauth-callback.ts'), 'utf8');
+  assert.ok(oauthCallbackSource.includes("tiktok_error"), 'Fallback URL must include tiktok_error parameter');
+  assert.ok(oauthCallbackSource.includes("tiktok_error_desc"), 'Fallback URL must include tiktok_error_desc parameter');
+  assert.ok(oauthCallbackSource.includes("Connection Failed"), 'Error modal heading must indicate failure');
+  assert.ok(oauthCallbackSource.includes("Close Window"), 'Close Window button must be provided');
+  assert.ok(oauthCallbackSource.includes("${success ? 'setTimeout(function() { window.close(); }, 800);' : ''}"), 'Popup must NOT automatically close on error');
+  console.log('✅ Scenario 9 Passed: Callback error visibility and persistent window verified.\n');
+
+  // -------------------------------------------------------------
+  // Scenario 10: Connection succeeds when profile metadata is completely missing/blank (open_id is valid)
+  // -------------------------------------------------------------
+  console.log('[Scenario 10] Connection succeeds with valid open_id when optional profile metadata is empty...');
+  const bareOpenId = `bare_open_id_${Date.now()}`;
+  const bareAccount = await processTikTokCallbackPersistence(
+    mockDb,
+    session1,
+    {
+      accessToken: 'token_bare',
+      expiresIn: 86400,
+      openId: bareOpenId,
+      scope: 'user.info.basic,video.upload,video.publish',
+      userId: user1,
+      workspaceId: ws1,
+    },
+    {
+      openId: bareOpenId,
+      displayName: '', // completely missing
+      username: '', // completely missing
+      avatarUrl: null,
+    }
+  );
+
+  assert.strictEqual(bareAccount.platformAccountId, bareOpenId, 'Account identity must use canonical open_id');
+  assert.strictEqual(bareAccount.name, 'TikTok Creator', 'Default display name used');
+  assert.strictEqual(bareAccount.username, '', 'Empty username stored cleanly without placeholder identity');
+  assert.strictEqual(bareAccount.status, 'CONNECTED');
+  console.log('✅ Scenario 10 Passed: Bare connection succeeds without optional profile metadata.\n');
+
+  // -------------------------------------------------------------
+  // Scenario 11: Database failure handling returns safe error without exposing credentials or fake success
+  // -------------------------------------------------------------
+  console.log('[Scenario 11] Database failure simulation ensures safe error reporting...');
+  class BrokenMockDb extends MockPrismaSocialAccount {
+    async create(): Promise<MockSocialAccount> {
+      const err: any = new Error('Unique constraint failed on the fields: (`workspaceId`,`platform`,`platformAccountId`)');
+      err.code = 'P2002';
+      throw err;
+    }
+  }
+  const brokenDb = new BrokenMockDb();
+  await assert.rejects(
+    async () => {
+      await processTikTokCallbackPersistence(
+        brokenDb,
+        session1,
+        {
+          accessToken: 'tok_fail',
+          expiresIn: 86400,
+          openId: 'open_id_collision',
+          scope: 'user.info.basic',
+          userId: user1,
+          workspaceId: ws1,
+        },
+        {
+          openId: 'open_id_collision',
+          displayName: 'Test',
+          username: 'test',
+          avatarUrl: null,
+        }
+      );
+    },
+    (err: any) => {
+      assert.strictEqual(err.code, 'P2002', 'Prisma error code preserved for safe handler mapping');
+      return true;
+    }
+  );
+  console.log('✅ Scenario 11 Passed: Database failure handled with safe diagnostic code.\n');
+
+  console.log('🎉 ALL 11 TIKTOK ACCOUNT IDENTITY & ERROR VISIBILITY SCENARIOS VERIFIED SUCCESSFULLY!');
 }
 
 runTestSuite().catch((err) => {

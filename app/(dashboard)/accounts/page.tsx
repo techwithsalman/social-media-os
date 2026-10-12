@@ -123,6 +123,8 @@ function getOAuthNotice(search: string) {
       invalid_scope: 'Requested TikTok OAuth scopes are invalid or not approved in the TikTok Developer Portal.',
       token_exchange_failed: 'TikTok token exchange failed. Check client key, secret, and redirect URI.',
       missing_access_token: 'TikTok token endpoint did not return a valid access token.',
+      missing_open_id: 'TikTok did not return an account identifier (open_id).',
+      database_error: 'Database error saving TikTok account.',
       token_expired: 'TikTok access token is expired or invalid.',
       user_info_failed: 'Failed to retrieve TikTok profile info.',
       tiktok_oauth_failed: 'TikTok login failed. Please try again.',
@@ -229,7 +231,9 @@ export default function ConnectedAccountsPage() {
       if (event.data?.type === 'SOCIAL_ACCOUNT_CONNECTED') {
         handleConnected();
       } else if (event.data?.type === 'SOCIAL_ACCOUNT_ERROR') {
-        setOauthNotice({ type: 'error', message: 'Connection failed: ' + (event.data.error || 'Unknown error') });
+        const errToken = event.data.error || 'Unknown error';
+        const errDetail = event.data.errorDesc ? ` [${event.data.errorDesc}]` : '';
+        setOauthNotice({ type: 'error', message: `Connection failed: ${errToken}${errDetail}` });
         setActionLoadingPlatform(null);
       }
     };

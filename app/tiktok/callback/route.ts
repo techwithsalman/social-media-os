@@ -17,7 +17,7 @@ function sanitizeErrorDescription(desc: string | null | undefined): string | und
 }
 
 function redirectToAccounts(req: NextRequest, params: { connected?: boolean; error?: string; errorDesc?: string }) {
-  return createOAuthCallbackResponse('TIKTOK', !!params.connected, params.error, getBaseUrl(req));
+  return createOAuthCallbackResponse('TIKTOK', !!params.connected, params.error, getBaseUrl(req), params.errorDesc);
 }
 
 export async function GET(req: NextRequest) {
@@ -191,13 +191,27 @@ export async function GET(req: NextRequest) {
 
     return redirectToAccounts(req, { connected: true });
   } catch (err: any) {
-    console.error('[TikTok OAuth Exchange Error]:', err?.message || err);
+    const isPrismaError = Boolean(err?.code && typeof err.code === 'string' && err.code.startsWith('P'));
+    console.error('[TikTok OAuth Exchange Error]:', {
+      isPrismaError,
+      prismaCode: isPrismaError ? err.code : undefined,
+      message: err?.message ? sanitizeErrorDescription(err.message) : 'Unknown error',
+    });
+
     if (err instanceof TikTokOAuthError) {
       return redirectToAccounts(req, {
         error: err.code.toLowerCase(),
         errorDesc: sanitizeErrorDescription(err.message),
       });
     }
+
+    if (isPrismaError) {
+      return redirectToAccounts(req, {
+        error: 'database_error',
+        errorDesc: `Database error [${err.code}]: Failed to persist account record safely.`,
+      });
+    }
+
     return redirectToAccounts(req, {
       error: 'tiktok_oauth_failed',
       errorDesc: sanitizeErrorDescription(err?.message),
