@@ -9,7 +9,7 @@ export interface CleanupResult {
 }
 
 const TERMINAL_PLATFORM_STATUSES = ['PUBLISHED', 'INBOX_DRAFT', 'CANCELLED'];
-const ACTIVE_POST_STATUSES = ['SCHEDULED', 'QUEUED', 'PROCESSING', 'UPLOADING', 'RETRYING', 'DRAFT'];
+const ACTIVE_POST_STATUSES = ['SCHEDULED', 'QUEUED', 'PROCESSING', 'UPLOADING', 'RETRYING', 'DRAFT', 'MANUAL_READY', 'AWAITING_MANUAL_PUBLISH'];
 
 export const DEFAULT_FAILED_RETENTION_HOURS = 48; // Give creators 48h to retry failed posts before cleanup
 export const DEFAULT_ABANDONED_RETENTION_HOURS = 24; // Clean unattached uploads after 24h

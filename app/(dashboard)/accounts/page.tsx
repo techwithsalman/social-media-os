@@ -203,6 +203,7 @@ function getOAuthNotice(search: string) {
     switch(platId) {
       case 'INSTAGRAM': return 'Add Instagram Account';
       case 'FACEBOOK': return 'Add Facebook Page';
+      case 'FACEBOOK_PROFILE': return 'Add Personal Profile (Manual)';
       case 'TIKTOK': return 'Add TikTok Account';
       case 'YOUTUBE': return 'Add YouTube Channel';
       case 'LINKEDIN': return 'Add LinkedIn Account';
@@ -226,6 +227,13 @@ export default function ConnectedAccountsPage() {
   const [loading, setLoading] = useState(true);
   const [actionLoadingPlatform, setActionLoadingPlatform] = useState<string | null>(null);
   const [activeDocPlatform, setActiveDocPlatform] = useState<string | null>(null);
+
+  // Facebook Personal Profile (Manual) modal state
+  const [showManualModal, setShowManualModal] = useState(false);
+  const [manualName, setManualName] = useState('');
+  const [manualProfileUrl, setManualProfileUrl] = useState('');
+  const [manualSaving, setManualSaving] = useState(false);
+  const [manualError, setManualError] = useState('');
 
   const supportedPlatforms = SUPPORTED_PLATFORM_CONFIGS;
   const connectedPlatformCount = supportedPlatforms.filter((platform) =>
@@ -310,6 +318,13 @@ export default function ConnectedAccountsPage() {
       alert(`You've reached your ${entitlements.plan.name} plan limit of ${entitlements.limits.maxSocialAccounts} connected social accounts.`);
       return;
     }
+    if (platform === 'FACEBOOK_PROFILE') {
+      setManualName('');
+      setManualProfileUrl('');
+      setManualError('');
+      setShowManualModal(true);
+      return;
+    }
     if (platform === 'LINKEDIN') { openOAuthPopup('/api/oauth/linkedin/connect'); return; }
     if (platform === 'X') {
       window.open('https://developer.x.com/', '_blank', 'noopener,noreferrer');
@@ -367,6 +382,49 @@ export default function ConnectedAccountsPage() {
       console.error(e);
     } finally {
       setActionLoadingPlatform(null);
+    }
+  };
+
+  const handleSaveManualProfile = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setManualError('');
+    if (!manualName.trim()) {
+      setManualError('Please enter your Facebook profile name.');
+      return;
+    }
+    if (!manualProfileUrl.trim()) {
+      setManualError('Please enter your Facebook profile link or username.');
+      return;
+    }
+
+    try {
+      setManualSaving(true);
+      const res = await fetch('/api/accounts/manual', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: manualName.trim(),
+          profileUrl: manualProfileUrl.trim(),
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to save Facebook Profile');
+      }
+
+      setShowManualModal(false);
+      setManualName('');
+      setManualProfileUrl('');
+      await fetchAccounts();
+      setOauthNotice({
+        type: 'success',
+        message: 'Facebook Personal Profile (Manual Publishing) configured successfully.',
+      });
+    } catch (err: any) {
+      setManualError(err.message || 'Failed to connect profile.');
+    } finally {
+      setManualSaving(false);
     }
   };
 
@@ -475,7 +533,14 @@ export default function ConnectedAccountsPage() {
                   <div className="flex items-center gap-4">
                     <PlatformIcon platform={plat.id} size={42} className="w-11 h-11 rounded-2xl shrink-0" />
                     <div>
-                      <h3 className="text-lg font-bold text-white">{plat.name}</h3>
+                      <div className="flex items-center gap-2">
+                        <h3 className="text-lg font-bold text-white">{plat.name}</h3>
+                        {plat.id === 'FACEBOOK_PROFILE' && (
+                          <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/10 text-amber-300 border border-amber-500/20">
+                            Manual
+                          </span>
+                        )}
+                      </div>
                       <p className="text-xs md:text-sm text-neutral-400 mt-1 leading-relaxed">{plat.desc}</p>
                     </div>
                   </div>
@@ -633,6 +698,92 @@ export default function ConnectedAccountsPage() {
             </a>
           </div>
         </div>
+      {showManualModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md">
+          <div className="w-full max-w-lg bg-[#0e0e12] border border-[#22222a] rounded-3xl p-7 md:p-8 shadow-2xl relative">
+            <div className="flex items-center justify-between pb-4 border-b border-[#22222a] mb-5">
+              <div className="flex items-center gap-3">
+                <PlatformIcon platform="FACEBOOK_PROFILE" size={28} className="w-7 h-7 rounded-lg" />
+                <div>
+                  <h3 className="text-lg font-bold text-white">Add Facebook Profile</h3>
+                  <span className="text-xs font-semibold text-amber-400">Manual Publishing Workflow</span>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowManualModal(false)}
+                className="p-1.5 rounded-xl text-neutral-400 hover:text-white bg-[#18181f]"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-xs text-amber-200/90 leading-relaxed mb-5">
+              <p className="font-bold text-amber-300 mb-1">ℹ️ Why is this Manual Publishing?</p>
+              Meta's Graph API restricts automated publishing exclusively to Facebook Pages. Direct API posting to personal user profiles is not supported by Meta. Social Media OS prepares your media, formats your caption, and sets reminders for manual posting.
+            </div>
+
+            {manualError && (
+              <div className="mb-4 p-3 rounded-xl bg-red-500/10 border border-red-500/30 text-xs text-red-300 flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 shrink-0 text-red-400" />
+                <span>{manualError}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleSaveManualProfile} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-neutral-300 uppercase tracking-wider mb-1.5">
+                  Your Full Name / Profile Name *
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={manualName}
+                  onChange={(e) => setManualName(e.target.value)}
+                  placeholder="e.g. Salman Khan"
+                  className="w-full px-4 py-2.5 rounded-xl bg-[#18181f] border border-[#22222a] text-white text-sm focus:outline-none focus:ring-1 focus:ring-red-500 placeholder-neutral-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-neutral-300 uppercase tracking-wider mb-1.5">
+                  Facebook Profile Link or Username *
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={manualProfileUrl}
+                  onChange={(e) => setManualProfileUrl(e.target.value)}
+                  placeholder="e.g. https://facebook.com/salmaneditz or salmaneditz"
+                  className="w-full px-4 py-2.5 rounded-xl bg-[#18181f] border border-[#22222a] text-white text-sm focus:outline-none focus:ring-1 focus:ring-red-500 placeholder-neutral-500"
+                />
+                <p className="text-[11px] text-neutral-500 mt-1">
+                  We use this link so you can open your Facebook Profile in 1 click when you are ready to post.
+                </p>
+              </div>
+
+              <div className="pt-4 border-t border-[#22222a] flex items-center justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => setShowManualModal(false)}
+                  disabled={manualSaving}
+                  className="px-4 py-2 rounded-xl bg-[#18181f] text-neutral-300 hover:text-white text-sm font-semibold border border-[#33333e]"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={manualSaving}
+                  className="px-5 py-2 rounded-xl bg-red-600 hover:bg-red-500 text-white text-sm font-bold shadow-md transition-all disabled:opacity-50 flex items-center gap-2"
+                >
+                  {manualSaving && <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
+                  <span>{manualSaving ? 'Saving...' : 'Save Facebook Profile'}</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
       </div>
     </AppLayout>
   );

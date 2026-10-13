@@ -95,6 +95,17 @@ export async function getPresignedDownloadUrl(
 /**
   * Enforce workspace tenant boundary on R2 object key
   */
+export function extractObjectKey(mediaUrl: string): string {
+  if (!mediaUrl) return '';
+  if (mediaUrl.startsWith('workspaces/')) return mediaUrl;
+  try {
+    const url = new URL(mediaUrl);
+    return url.pathname.replace(/^\//, '');
+  } catch {
+    return mediaUrl;
+  }
+}
+
 export function verifyR2ObjectWorkspaceOwnership(objectKey: string, workspaceId: string): boolean {
   const expectedPrefix = `workspaces/${workspaceId}/`;
   return objectKey.startsWith(expectedPrefix);

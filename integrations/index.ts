@@ -1,6 +1,7 @@
 import { ISocialPlatformAdapter, SocialPlatformType, PlatformRequirementInfo } from './types';
 import { InstagramAdapter } from './instagram';
 import { FacebookAdapter } from './facebook';
+import { FacebookProfileManualAdapter } from './facebook-profile';
 import { TikTokAdapter } from './tiktok';
 import { LinkedInAdapter } from './linkedin';
 import { YouTubeAdapter } from './youtube';
@@ -16,6 +17,7 @@ class PlatformRegistry {
   constructor() {
     this.register(new InstagramAdapter());
     this.register(new FacebookAdapter());
+    this.register(new FacebookProfileManualAdapter());
     this.register(new TikTokAdapter());
     this.register(new LinkedInAdapter());
     this.register(new YouTubeAdapter());

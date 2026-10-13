@@ -59,7 +59,7 @@ export async function GET(req: NextRequest) {
       if (status === 'SCHEDULED') {
         whereClause.status = 'SCHEDULED';
       } else if (status === 'PUBLISHED' || status === 'HISTORY') {
-        whereClause.status = { in: ['PUBLISHED', 'INBOX_DRAFT', 'PROCESSING', 'PARTIALLY_FAILED', 'FAILED'] };
+        whereClause.status = { in: ['PUBLISHED', 'INBOX_DRAFT', 'MANUAL_READY', 'AWAITING_MANUAL_PUBLISH', 'PROCESSING', 'PARTIALLY_FAILED', 'FAILED'] };
       } else if (status === 'DRAFT') {
         whereClause.status = 'DRAFT';
       } else if (status === 'FAILED') {

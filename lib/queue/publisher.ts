@@ -13,7 +13,7 @@ import {
 
 export interface PublishExecutionResult {
   contentPostId: string;
-  overallStatus: 'PUBLISHED' | 'INBOX_DRAFT' | 'PROCESSING' | 'PARTIALLY_FAILED' | 'FAILED';
+  overallStatus: 'PUBLISHED' | 'INBOX_DRAFT' | 'MANUAL_READY' | 'PROCESSING' | 'PARTIALLY_FAILED' | 'FAILED';
   platformResults: Array<{
     platformPostId: string;
     platform: string;
@@ -325,6 +325,7 @@ export class PublishingEngine {
     const platformResults: PublishExecutionResult['platformResults'] = [];
     let successCount = 0;
     let inboxDraftCount = 0;
+    let manualReadyCount = 0;
     let processingCount = 0;
     let failCount = 0;
 
@@ -462,6 +463,8 @@ export class PublishingEngine {
             successCount++;
           } else if (postStatus === 'INBOX_DRAFT') {
             inboxDraftCount++;
+          } else if (postStatus === 'MANUAL_READY') {
+            manualReadyCount++;
           } else {
             processingCount++;
           }
@@ -480,7 +483,7 @@ export class PublishingEngine {
           await prisma.publishingJob.update({
             where: { id: job.id },
             data: {
-              status: postStatus === 'PUBLISHED' || postStatus === 'INBOX_DRAFT' ? 'PUBLISHED' : 'PROCESSING',
+              status: postStatus === 'PUBLISHED' || postStatus === 'INBOX_DRAFT' || postStatus === 'MANUAL_READY' ? 'PUBLISHED' : 'PROCESSING',
               completedAt: new Date(),
             },
           });
@@ -572,21 +575,25 @@ export class PublishingEngine {
     }
 
     // Determine final master status
-    let finalStatus: 'PUBLISHED' | 'INBOX_DRAFT' | 'PROCESSING' | 'PARTIALLY_FAILED' | 'FAILED' = 'PUBLISHED';
-      const totalCount = successCount + failCount + processingCount + inboxDraftCount;
-      if (successCount === totalCount && successCount > 0) {
-        finalStatus = 'PUBLISHED';
-      } else if (inboxDraftCount === totalCount && inboxDraftCount > 0) {
-        finalStatus = 'INBOX_DRAFT';
-      } else if (successCount + inboxDraftCount === totalCount && (successCount > 0 || inboxDraftCount > 0)) {
-        finalStatus = successCount > 0 ? 'PUBLISHED' : 'INBOX_DRAFT';
-      } else if (failCount === totalCount && failCount > 0) {
-        finalStatus = 'FAILED';
-      } else if (processingCount > 0 && failCount === 0) {
-        finalStatus = 'PROCESSING';
-      } else if (failCount > 0) {
-        finalStatus = 'PARTIALLY_FAILED';
-      }
+    let finalStatus: 'PUBLISHED' | 'INBOX_DRAFT' | 'MANUAL_READY' | 'PROCESSING' | 'PARTIALLY_FAILED' | 'FAILED' = 'PUBLISHED';
+    const totalCount = successCount + failCount + processingCount + inboxDraftCount + manualReadyCount;
+    if (successCount === totalCount && successCount > 0) {
+      finalStatus = 'PUBLISHED';
+    } else if (inboxDraftCount === totalCount && inboxDraftCount > 0) {
+      finalStatus = 'INBOX_DRAFT';
+    } else if (manualReadyCount === totalCount && manualReadyCount > 0) {
+      finalStatus = 'MANUAL_READY';
+    } else if (successCount + inboxDraftCount === totalCount && (successCount > 0 || inboxDraftCount > 0)) {
+      finalStatus = successCount > 0 ? 'PUBLISHED' : 'INBOX_DRAFT';
+    } else if (manualReadyCount > 0 && failCount === 0 && processingCount === 0) {
+      finalStatus = successCount > 0 ? 'PUBLISHED' : 'MANUAL_READY';
+    } else if (failCount === totalCount && failCount > 0) {
+      finalStatus = 'FAILED';
+    } else if (processingCount > 0 && failCount === 0) {
+      finalStatus = 'PROCESSING';
+    } else if (failCount > 0) {
+      finalStatus = 'PARTIALLY_FAILED';
+    }
 
     await prisma.contentPost.update({
       where: { id: contentPostId },
@@ -601,8 +608,10 @@ export class PublishingEngine {
       data: {
         workspaceId: post.workspaceId,
         userId: post.userId,
-        action: 'POST_PUBLISHED',
-        details: `Published post across ${successCount + inboxDraftCount + processingCount}/${post.platformPosts.length} platforms (${finalStatus})`,
+        action: finalStatus === 'MANUAL_READY' ? 'POST_PREPARED_MANUAL' : 'POST_PUBLISHED',
+        details: finalStatus === 'MANUAL_READY'
+          ? 'Prepared content for manual publishing on Facebook Personal Profile'
+          : `Published post across ${successCount + inboxDraftCount + processingCount + manualReadyCount}/${post.platformPosts.length} platforms (${finalStatus})`,
       },
     });
 
@@ -615,6 +624,8 @@ export class PublishingEngine {
           ? 'Post Published'
           : finalStatus === 'INBOX_DRAFT'
           ? 'Post Sent to Creator Inbox'
+          : finalStatus === 'MANUAL_READY'
+          ? 'Manual Publishing Reminder: Facebook Profile'
           : finalStatus === 'PROCESSING'
           ? 'Post Processing / Draft Uploaded'
           : finalStatus === 'PARTIALLY_FAILED'
@@ -625,16 +636,19 @@ export class PublishingEngine {
             ? `Your content was successfully published to ${successCount} platform(s).`
             : finalStatus === 'INBOX_DRAFT'
             ? `Your content was sent to TikTok Creator Inbox draft.`
+            : finalStatus === 'MANUAL_READY'
+            ? `Your content and media are prepared. Download media and copy caption to publish to your Facebook Personal Profile.`
             : finalStatus === 'PROCESSING'
             ? `Your content was uploaded to ${processingCount} channel(s) and is currently processing / in draft.`
             : `${successCount} published, ${failCount} failed across connected accounts.`,
-        type: finalStatus === 'PUBLISHED' ? 'SUCCESS' : finalStatus === 'INBOX_DRAFT' ? 'INFO' : finalStatus === 'PROCESSING' ? 'INFO' : finalStatus === 'PARTIALLY_FAILED' ? 'WARNING' : 'ERROR',
+        type: finalStatus === 'PUBLISHED' ? 'SUCCESS' : finalStatus === 'INBOX_DRAFT' || finalStatus === 'MANUAL_READY' || finalStatus === 'PROCESSING' ? 'INFO' : finalStatus === 'PARTIALLY_FAILED' ? 'WARNING' : 'ERROR',
         link: `/published`,
       },
     });
 
     // Safe automatic R2 media asset cleanup check
-    if (post.mediaAssetId) {
+    // Preserve media if manual posting is pending so user can download assets!
+    if (post.mediaAssetId && manualReadyCount === 0) {
       try {
         const cleanupResult = await safeCleanupMediaAsset(post.mediaAssetId, post.workspaceId);
         if (cleanupResult.action === 'DELETED') {

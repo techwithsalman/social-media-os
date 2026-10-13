@@ -31,6 +31,8 @@ import {
   AlertCircle,
   Eye,
   CheckCircle2,
+  Download,
+  ExternalLink,
 } from 'lucide-react';
 
 interface SocialAccount {
@@ -134,6 +136,20 @@ const DEFAULT_PLATFORM_SETTINGS: Record<string, PlatformSettingsState> = {
     hideLikes: false,
     allowDuet: true,
     allowStitch: true,
+    linkUrl: '',
+    youtubeTitle: '',
+    categoryId: '22',
+    audience: 'PUBLIC',
+  },
+  FACEBOOK_PROFILE: {
+    caption: '',
+    hashtags: '',
+    contentType: 'POST',
+    visibility: 'PUBLIC',
+    allowComments: true,
+    hideLikes: false,
+    allowDuet: false,
+    allowStitch: false,
     linkUrl: '',
     youtubeTitle: '',
     categoryId: '22',
@@ -306,6 +322,9 @@ export default function CreatePostPage() {
   const [publishSuccess, setPublishSuccess] = useState<any>(null);
   const [errorMessage, setErrorMessage] = useState('');
   const [errorSource, setErrorSource] = useState('');
+  const [copiedManualCaption, setCopiedManualCaption] = useState(false);
+  const [markingPublished, setMarkingPublished] = useState(false);
+  const [manualConfirmed, setManualConfirmed] = useState(false);
 
   const setDiagnosticError = (msg: string, source: string) => {
     console.error('[CREATE_POST_ERROR_SOURCE]', { source, message: msg });
@@ -1152,6 +1171,30 @@ export default function CreatePostPage() {
     }
   };
 
+  const handleCopyManualCaption = (text: string) => {
+    if (!text) return;
+    navigator.clipboard.writeText(text);
+    setCopiedManualCaption(true);
+    setTimeout(() => setCopiedManualCaption(false), 2500);
+  };
+
+  const handleConfirmManualPublished = async (contentPostId: string) => {
+    if (!contentPostId) return;
+    try {
+      setMarkingPublished(true);
+      const res = await fetch(`/api/posts/${contentPostId}/confirm-manual`, {
+        method: 'POST',
+      });
+      if (res.ok) {
+        setManualConfirmed(true);
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setMarkingPublished(false);
+    }
+  };
+
   const handleSchedulePost = async () => {
     setScheduleError('');
     const scheduleValues = getScheduleInputValues();
@@ -1339,6 +1382,7 @@ export default function CreatePostPage() {
 
           <div className="space-y-3">
             {publishSuccess.platformResults?.map((res: any) => (
+              <React.Fragment key={res.platformPostId}>
               <div
                 key={res.platformPostId}
                 className="p-4 rounded-xl bg-[#100606]/90 border border-[#22222a] flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-sm"
@@ -1350,26 +1394,79 @@ export default function CreatePostPage() {
                 <div className="flex flex-col sm:items-end gap-1">
                   <span
                     className={`inline-flex px-2.5 py-1 rounded-lg text-xs font-black shrink-0 ${
-                      res.status === 'PUBLISHED'
+                      manualConfirmed || res.status === 'PUBLISHED'
                         ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                        : res.status === 'MANUAL_READY'
+                        ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
                         : res.status === 'PROCESSING' || res.status === 'INBOX_DRAFT'
                         ? 'bg-red-500/20 text-red-400 border border-red-500/30'
                         : 'bg-red-500/20 text-red-300 border border-red-500/30'
                     }`}
                   >
-                    {res.status === 'INBOX_DRAFT' ? 'CREATOR INBOX DRAFT' : res.status}
+                    {manualConfirmed ? 'MANUALLY COMPLETED' : res.status === 'MANUAL_READY' ? 'MANUAL READY' : res.status === 'INBOX_DRAFT' ? 'CREATOR INBOX DRAFT' : res.status}
                   </span>
                   {(res.statusMessage || res.errorMessage) && (
                     <span
                       className={`text-xs max-w-xl leading-relaxed ${
-                        res.status === 'FAILED' ? 'text-red-300' : 'text-red-400'
+                        res.status === 'FAILED' ? 'text-red-300' : 'text-neutral-400'
                       }`}
                     >
-                      {res.statusMessage || res.errorMessage}
+                      {manualConfirmed ? 'Confirmed published on Facebook by user' : res.statusMessage || res.errorMessage}
                     </span>
                   )}
                 </div>
               </div>
+
+              {res.platform === 'FACEBOOK_PROFILE' && (
+                <div className="p-3.5 rounded-xl bg-[#0e0e12] border border-[#22222a] flex flex-wrap items-center justify-between gap-3 text-xs">
+                  <div className="flex items-center gap-1.5 text-amber-300 font-bold">
+                    <span>📌</span>
+                    <span>Manual Publishing Actions:</span>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    {publishSuccess.post?.mediaAssetId && (
+                      <a
+                        href={`/api/media/${publishSuccess.post.mediaAssetId}/download`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-3 py-1.5 rounded-lg bg-[#18181f] hover:bg-[#2a1010] text-neutral-200 border border-[#33333e] text-xs font-bold transition-colors flex items-center gap-1.5"
+                      >
+                        <Download className="w-3.5 h-3.5 text-red-400" />
+                        <span>Download Media</span>
+                      </a>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => handleCopyManualCaption(publishSuccess.post?.masterCaption || '')}
+                      className="px-3 py-1.5 rounded-lg bg-red-600/20 hover:bg-red-600/30 text-red-400 border border-red-500/30 text-xs font-bold transition-colors flex items-center gap-1.5"
+                    >
+                      {copiedManualCaption ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                      <span>{copiedManualCaption ? 'Copied!' : 'Copy Caption'}</span>
+                    </button>
+                    <a
+                      href={res.externalPostUrl || 'https://www.facebook.com'}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-3 py-1.5 rounded-lg bg-[#18181f] hover:bg-[#2a1010] text-neutral-200 border border-[#33333e] text-xs font-bold transition-colors flex items-center gap-1.5"
+                    >
+                      <ExternalLink className="w-3.5 h-3.5 text-blue-400" />
+                      <span>Open Facebook Profile</span>
+                    </a>
+                    {!manualConfirmed && res.status !== 'PUBLISHED' && (
+                      <button
+                        type="button"
+                        disabled={markingPublished}
+                        onClick={() => handleConfirmManualPublished(publishSuccess.post?.id)}
+                        className="px-3 py-1.5 rounded-lg bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/30 text-xs font-bold transition-colors flex items-center gap-1.5 disabled:opacity-50"
+                      >
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                        <span>{markingPublished ? 'Confirming...' : 'Mark as Published'}</span>
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
+              </React.Fragment>
             ))}
           </div>
         </div>
@@ -1460,9 +1557,16 @@ export default function CreatePostPage() {
                       />
                       <PlatformIcon platform={acc.platform} size={24} className="w-6 h-6 rounded-lg shrink-0" />
                       <div className="overflow-hidden">
-                        <p className="text-sm font-bold text-white truncate">
-                          {acc.name}
-                        </p>
+                        <div className="flex items-center gap-1.5 truncate">
+                          <p className="text-sm font-bold text-white truncate">
+                            {acc.name}
+                          </p>
+                          {acc.platform === 'FACEBOOK_PROFILE' && (
+                            <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30 shrink-0">
+                              Manual
+                            </span>
+                          )}
+                        </div>
                         <p className="text-xs text-neutral-400 truncate">
                           @{acc.username}
                         </p>
@@ -1470,6 +1574,16 @@ export default function CreatePostPage() {
                     </div>
                   );
                 })}
+              </div>
+            )}
+
+            {selectedAccounts.some((a) => a.platform === 'FACEBOOK_PROFILE') && (
+              <div className="mt-4 p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-xs text-amber-200/90 leading-relaxed flex items-start gap-2.5">
+                <span className="text-amber-400 font-bold shrink-0">📌</span>
+                <div>
+                  <p className="font-bold text-amber-300 mb-0.5">Facebook Personal Profile — Manual Publishing</p>
+                  <span>Meta Graph API does not support automated posting to personal user profiles. Social Media OS prepares your media assets, formats your caption, and notifies you with 1-click publishing shortcuts or reminders.</span>
+                </div>
               </div>
             )}
           </div>

@@ -48,6 +48,7 @@ export const PlatformIcon: React.FC<PlatformIconProps> = ({
       );
 
     case 'FACEBOOK':
+    case 'FACEBOOK_PROFILE':
       return (
         <svg
           className={className}
