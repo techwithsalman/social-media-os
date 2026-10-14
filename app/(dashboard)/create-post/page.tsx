@@ -582,7 +582,11 @@ export default function CreatePostPage() {
         const res = await fetchWithDiagnostics('LOAD_ACCOUNTS', '/api/accounts');
         if (res.ok) {
           const data = await res.json();
-          const fetchedAccounts = (data.accounts || []) as SocialAccount[];
+          const fetchedAccounts = ((data.accounts || []) as SocialAccount[]).filter(
+            (a) =>
+              a.platform !== 'FACEBOOK_PROFILE' &&
+              (SUPPORTED_PLATFORM_IDS as readonly string[]).includes(a.platform)
+          );
           const validAccountIds = new Set(fetchedAccounts.map((account) => account.id));
 
           setAccounts(fetchedAccounts);

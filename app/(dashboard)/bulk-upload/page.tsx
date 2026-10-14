@@ -14,6 +14,7 @@ import {
   Sliders,
 } from 'lucide-react';
 import { zonedDateTimeToUtcIso, WORKSPACE_TIMEZONE } from '@/lib/timezone';
+import { SUPPORTED_PLATFORM_IDS } from '@/lib/platforms';
 
 interface SocialAccount {
   id: string;
@@ -92,7 +93,12 @@ export default function BulkUploadPage() {
         const res = await fetch('/api/accounts');
         if (res.ok) {
           const data = await res.json();
-          const fetchedAccounts = (data.accounts || []).filter((a: any) => a.status === 'CONNECTED');
+          const fetchedAccounts = (data.accounts || []).filter(
+            (a: any) =>
+              a.status === 'CONNECTED' &&
+              a.platform !== 'FACEBOOK_PROFILE' &&
+              (SUPPORTED_PLATFORM_IDS as readonly string[]).includes(a.platform)
+          );
           setAccounts(fetchedAccounts);
           setSelectedAccountIds(fetchedAccounts.map((a: any) => a.id));
         }

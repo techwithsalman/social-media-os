@@ -1,4 +1,5 @@
 import prisma from './prisma';
+import { SUPPORTED_PLATFORM_IDS } from './platforms';
 
 export async function validateWorkspacePostTargets(
   workspaceId: string,
@@ -17,6 +18,7 @@ export async function validateWorkspacePostTargets(
       workspaceId,
       id: { in: accountIds },
       status: 'CONNECTED',
+      platform: { in: SUPPORTED_PLATFORM_IDS as unknown as string[] },
     },
     select: {
       id: true,

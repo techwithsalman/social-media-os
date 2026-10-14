@@ -6,7 +6,7 @@ import prisma from '@/lib/prisma';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PlatformIcon } from '@/components/ui/PlatformIcons';
 import { WORKSPACE_TIMEZONE, formatDateInTimeZone, formatTimeInTimeZone } from '@/lib/timezone';
-import { SUPPORTED_PLATFORM_CONFIGS } from '@/lib/platforms';
+import { SUPPORTED_PLATFORM_CONFIGS, SUPPORTED_PLATFORM_IDS } from '@/lib/platforms';
 import {
   Share2,
   Clock,
@@ -42,7 +42,11 @@ export default async function DashboardPage() {
     recentActivity,
   ] = await Promise.all([
     prisma.socialAccount.count({
-      where: { workspaceId, status: 'CONNECTED' },
+      where: {
+        workspaceId,
+        status: 'CONNECTED',
+        platform: { in: SUPPORTED_PLATFORM_IDS as unknown as string[] },
+      },
     }),
     prisma.contentPost.count({
       where: { workspaceId, status: 'SCHEDULED' },
@@ -57,7 +61,10 @@ export default async function DashboardPage() {
       where: { workspaceId, status: 'DRAFT' },
     }),
     prisma.socialAccount.findMany({
-      where: { workspaceId },
+      where: {
+        workspaceId,
+        platform: { in: SUPPORTED_PLATFORM_IDS as unknown as string[] },
+      },
       orderBy: { createdAt: 'asc' },
     }),
     prisma.contentPost.findMany({

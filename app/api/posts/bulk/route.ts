@@ -3,6 +3,7 @@ import prisma from '@/lib/prisma';
 import { getSession } from '@/lib/auth';
 import { EntitlementError, assertCanCreateBillablePost, recordPostUsage, getWorkspaceUsage } from '@/lib/billing';
 import { checkPlanLimit, PlanLimitError, createPlanLimitResponse } from '@/lib/billing/plan-limits';
+import { SUPPORTED_PLATFORM_IDS } from '@/lib/platforms';
 
 export async function POST(req: Request) {
   try {
@@ -21,7 +22,8 @@ export async function POST(req: Request) {
     const accounts = await prisma.socialAccount.findMany({
       where: {
         id: { in: Array.from(accountIds) },
-        workspaceId: session.workspaceId
+        workspaceId: session.workspaceId,
+        platform: { in: SUPPORTED_PLATFORM_IDS as unknown as string[] },
       }
     });
 

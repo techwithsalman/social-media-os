@@ -1,4 +1,5 @@
 import prisma from './prisma';
+import { SUPPORTED_PLATFORM_IDS } from './platforms';
 
 export const PLAN_CODES = ['FREE', 'STARTER', 'PRO', 'AGENCY'] as const;
 export type PlanCode = (typeof PLAN_CODES)[number];
@@ -299,7 +300,11 @@ export async function getWorkspaceUsage(workspaceId: string, now = new Date()) {
   const usagePeriod = await getOrCreateUsagePeriod(workspaceId, now);
   const [connectedAccounts, teamMembers, storageAggregate] = await Promise.all([
     prisma.socialAccount.count({
-      where: { workspaceId, status: 'CONNECTED' },
+      where: {
+        workspaceId,
+        status: 'CONNECTED',
+        platform: { in: SUPPORTED_PLATFORM_IDS as unknown as string[] },
+      },
     }),
     prisma.workspaceMember.count({
       where: { workspaceId },

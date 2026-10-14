@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getSession } from '@/lib/auth';
 import { platformRegistry } from '@/integrations';
-import { sortBySupportedPlatformOrder } from '@/lib/platforms';
+import { sortBySupportedPlatformOrder, SUPPORTED_PLATFORM_IDS } from '@/lib/platforms';
 import {
   isMetaOAuthConfigured,
   isRealApiMode,
@@ -47,8 +47,13 @@ export async function GET() {
 
     
 
-const accounts = await prisma.socialAccount.findMany({
-      where: { workspaceId: session.workspaceId, isMock: false },
+
+    const accounts = await prisma.socialAccount.findMany({
+      where: {
+        workspaceId: session.workspaceId,
+        isMock: false,
+        platform: { in: SUPPORTED_PLATFORM_IDS as unknown as string[] },
+      },
       include: {
         token: {
           select: {

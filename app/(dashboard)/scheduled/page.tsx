@@ -35,6 +35,7 @@ import {
   getTodayDateKey,
   zonedDateTimeToUtcIso,
 } from '@/lib/timezone';
+import { SUPPORTED_PLATFORM_IDS } from '@/lib/platforms';
 
 interface ScheduledPostItem {
   id: string;
@@ -175,7 +176,13 @@ export default function ScheduledPostsPage() {
     const accs = new Map();
     posts.forEach(post => {
       post.platformPosts.forEach(pp => {
-        if (pp.socialAccount) accs.set(pp.socialAccount.id, pp.socialAccount);
+        if (
+          pp.socialAccount &&
+          pp.socialAccount.platform !== 'FACEBOOK_PROFILE' &&
+          (SUPPORTED_PLATFORM_IDS as readonly string[]).includes(pp.socialAccount.platform)
+        ) {
+          accs.set(pp.socialAccount.id, pp.socialAccount);
+        }
       });
     });
     return Array.from(accs.values());
