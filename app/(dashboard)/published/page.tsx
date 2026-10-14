@@ -17,7 +17,6 @@ import {
   Search,
   Filter,
   FileText,
-  Download,
 } from 'lucide-react';
 
 interface PublishedPostItem {
@@ -128,28 +127,6 @@ export default function PublishedPostsPage() {
   };
 
   const [copiedId, setCopiedId] = useState<string | null>(null);
-  const [confirmingPostId, setConfirmingPostId] = useState<string | null>(null);
-
-  const handleConfirmManualPublish = async (postId: string) => {
-    try {
-      setConfirmingPostId(postId);
-      const res = await fetch(`/api/posts/${postId}/confirm-manual`, {
-        method: 'POST',
-      });
-      if (res.ok) {
-        const data = await res.json();
-        if (data.success && data.post) {
-          setPosts((prev) =>
-            prev.map((p) => (p.id === data.post.id ? data.post : p))
-          );
-        }
-      }
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setConfirmingPostId(null);
-    }
-  };
 
   const handleCopyCaption = (text: string, id: string) => {
     if (!text) return;
@@ -388,91 +365,6 @@ export default function PublishedPostsPage() {
                       </div>
                     )}
 
-                    {p.platform === 'FACEBOOK_PROFILE' && (
-                      <div className="mt-2.5 p-3.5 rounded-xl bg-[#0e0e12] border border-blue-500/20 space-y-3">
-                        <div className="flex items-center justify-between">
-                          <span className="text-[11px] font-bold text-blue-400 uppercase tracking-wider">
-                            Manual Publishing Kit:
-                          </span>
-                          <span className="text-[10px] px-2 py-0.5 rounded bg-blue-500/10 text-blue-300 font-bold border border-blue-500/20">
-                            Personal Profile
-                          </span>
-                        </div>
-
-                        <div className="space-y-1.5">
-                          <div className="flex items-center justify-between gap-2">
-                            <span className="text-[11px] font-medium text-neutral-400">Caption:</span>
-                            <button
-                              onClick={() =>
-                                handleCopyCaption(
-                                  `${p.customCaption || post.masterCaption || ''} ${p.hashtags || ''}`.trim(),
-                                  p.id
-                                )
-                              }
-                              className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 border border-blue-500/30 text-xs font-bold transition-all"
-                            >
-                              {copiedId === p.id ? (
-                                <>
-                                  <Check className="w-3.5 h-3.5 text-emerald-400" />
-                                  <span className="text-emerald-300">Copied!</span>
-                                </>
-                              ) : (
-                                <>
-                                  <Copy className="w-3.5 h-3.5" />
-                                  <span>Copy Caption</span>
-                                </>
-                              )}
-                            </button>
-                          </div>
-                          <p className="text-xs text-neutral-300 bg-[#0e0e12]/80 p-2 rounded-lg font-mono line-clamp-2">
-                            {`${p.customCaption || post.masterCaption || ''} ${p.hashtags || ''}`.trim() || 'No caption set'}
-                          </p>
-                        </div>
-
-                        <div className="flex flex-wrap items-center gap-2 pt-1">
-                          {post.mediaAsset?.id && (
-                            <a
-                              href={`/api/media/${post.mediaAsset.id}/download`}
-                              download
-                              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-white text-xs font-bold border border-neutral-700 transition-colors"
-                            >
-                              <Download className="w-3.5 h-3.5" />
-                              <span>Download Media</span>
-                            </a>
-                          )}
-                          <a
-                            href={
-                              p.socialAccount?.username
-                                ? (p.socialAccount.username.startsWith('http')
-                                    ? p.socialAccount.username
-                                    : `https://facebook.com/${p.socialAccount.username.replace('@', '')}`)
-                                : 'https://facebook.com'
-                            }
-                            target="_blank"
-                            rel="noreferrer"
-                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition-colors"
-                          >
-                            <ExternalLink className="w-3.5 h-3.5" />
-                            <span>Open Facebook</span>
-                          </a>
-
-                          {p.status !== 'PUBLISHED' && (
-                            <button
-                              onClick={() => handleConfirmManualPublish(post.id)}
-                              disabled={confirmingPostId === post.id}
-                              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white text-xs font-bold transition-colors ml-auto"
-                            >
-                              <Check className="w-3.5 h-3.5" />
-                              <span>{confirmingPostId === post.id ? 'Saving...' : 'Mark as Published'}</span>
-                            </button>
-                          )}
-                        </div>
-
-                        <p className="text-[11px] text-neutral-400 leading-relaxed italic">
-                          ℹ️ Meta Graph API does not support automated posting to personal Facebook profiles. Download your media, copy the caption, and publish manually on your profile.
-                        </p>
-                      </div>
-                    )}
 
                     {p.externalPostUrl && (
                       <a

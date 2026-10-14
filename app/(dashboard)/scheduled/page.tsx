@@ -383,7 +383,6 @@ export default function ScheduledPostsPage() {
             <option value="ALL">All Platforms</option>
             <option value="INSTAGRAM">Instagram</option>
             <option value="FACEBOOK">Facebook</option>
-            <option value="FACEBOOK_PROFILE">Facebook Profile (Manual)</option>
             <option value="TIKTOK">TikTok</option>
             <option value="YOUTUBE">YouTube</option>
             <option value="X">X (Twitter)</option>
@@ -400,7 +399,7 @@ export default function ScheduledPostsPage() {
           >
             <option value="ALL">All Accounts</option>
             {uniqueAccounts.map(acc => (
-              <option key={acc.id} value={acc.id}>{acc.username || acc.name}</option>
+              <option key={acc.id} value={acc.id}>{acc.name || acc.username}</option>
             ))}
           </select>
         </div>
@@ -458,11 +457,8 @@ export default function ScheduledPostsPage() {
                       <div key={pp.id} className="flex items-center gap-1.5 bg-[#18181f] border border-[#33333e] px-2 py-1 rounded-lg" title={pp.socialAccount?.name}>
                         <PlatformIcon platform={pp.platform} size={14} className="rounded-sm" />
                         <span className="text-[10px] text-neutral-300 font-bold truncate max-w-[80px]">
-                          {pp.socialAccount?.username || pp.socialAccount?.name || pp.platform}
+                          {pp.socialAccount?.name || pp.socialAccount?.username || pp.platform}
                         </span>
-                        {pp.platform === 'FACEBOOK_PROFILE' && (
-                          <span className="text-[9px] px-1 py-0.2 rounded bg-blue-500/20 text-blue-300 border border-blue-500/30 font-bold">Manual</span>
-                        )}
                       </div>
                     ))}
                   </div>
@@ -501,11 +497,6 @@ export default function ScheduledPostsPage() {
                     </div>
 
                     <div className="ml-auto flex items-center gap-2">
-                      {post.platformPosts.some((pp) => pp.platform === 'FACEBOOK_PROFILE') && (
-                        <span className="px-2 py-0.5 text-[10px] uppercase font-bold tracking-wider rounded-lg bg-blue-500/10 text-blue-400 border border-blue-500/20">
-                          Reminder (Manual)
-                        </span>
-                      )}
                       {renderStatusBadge(post.status)}
                     </div>
                   </div>

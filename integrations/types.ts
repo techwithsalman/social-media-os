@@ -1,7 +1,6 @@
 export type SocialPlatformType =
   | 'INSTAGRAM'
   | 'FACEBOOK'
-  | 'FACEBOOK_PROFILE'
   | 'TIKTOK'
   | 'LINKEDIN'
   | 'YOUTUBE'

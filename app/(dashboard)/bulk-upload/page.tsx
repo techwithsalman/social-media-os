@@ -407,6 +407,7 @@ export default function BulkUploadPage() {
                 return (
                   <label
                     key={acc.id}
+                    title={`${acc.name || acc.username}${acc.username && acc.username !== acc.name ? ` (${acc.username})` : ''}`}
                     className={`flex items-center gap-2.5 p-2.5 rounded-xl border text-xs md:text-sm font-semibold cursor-pointer ${
                       isChecked
                         ? 'bg-red-950/40 border-red-500/50 text-white'
@@ -425,7 +426,23 @@ export default function BulkUploadPage() {
                       className="rounded border-[#33333e] bg-[#0e0e12] text-red-600 w-4 h-4"
                     />
                     <PlatformIcon platform={acc.platform} size={16} className="w-4 h-4 rounded" />
-                    <span className="truncate">{acc.username || acc.name}</span>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1.5">
+                        <span className="truncate font-bold text-white text-xs">
+                          {acc.name || acc.username}
+                        </span>
+                        {acc.platform === 'FACEBOOK' && (
+                          <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-blue-500/20 text-blue-300 border border-blue-500/30 shrink-0">
+                            Page
+                          </span>
+                        )}
+                      </div>
+                      {acc.username && acc.username !== acc.name && (
+                        <span className="text-[10px] text-neutral-400 truncate block font-mono">
+                          {/^\d+$/.test(acc.username) ? `ID: ${acc.username}` : `@${acc.username}`}
+                        </span>
+                      )}
+                    </div>
                   </label>
                 );
               })}
@@ -582,7 +599,7 @@ export default function BulkUploadPage() {
 
                   <div className="flex items-center gap-1.5 mt-2">
                     {accounts.filter(a => item.selectedAccountIds.includes(a.id)).map(a => (
-                       <div key={a.id} className="relative group">
+                       <div key={a.id} className="relative group" title={`${a.name || a.username}${a.platform === 'FACEBOOK' ? ' (Facebook Page)' : ''}`}>
                          <PlatformIcon platform={a.platform} size={16} className="w-4 h-4 rounded" />
                        </div>
                     ))}

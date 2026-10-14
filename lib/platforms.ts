@@ -1,7 +1,6 @@
 export const SUPPORTED_PLATFORM_IDS = [
   'INSTAGRAM',
   'FACEBOOK',
-  'FACEBOOK_PROFILE',
   'TIKTOK',
   'LINKEDIN',
   'YOUTUBE',
@@ -34,13 +33,6 @@ export const SUPPORTED_PLATFORM_CONFIGS: SupportedPlatformConfig[] = [
     desc: 'Schedule and publish videos, page updates, and Facebook Reels.',
     dashboardName: 'Facebook Pages',
     dashboardDesc: 'Pages & Reels',
-  },
-  {
-    id: 'FACEBOOK_PROFILE',
-    name: 'Facebook Profile (Manual)',
-    desc: 'Prepare posts, download media, copy captions, and set scheduled reminders for your personal Facebook profile.',
-    dashboardName: 'Facebook Profile (Manual)',
-    dashboardDesc: 'Manual Reminders & Assets',
   },
   {
     id: 'TIKTOK',
@@ -116,16 +108,6 @@ export const DEMO_SOCIAL_ACCOUNTS: DemoSocialAccount[] = [
       'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
     status: 'CONNECTED',
     scope: 'pages_manage_posts,pages_read_engagement',
-  },
-  {
-    platform: 'FACEBOOK_PROFILE',
-    platformAccountId: 'fb_profile_manual',
-    name: 'Personal Profile (Manual)',
-    username: 'personal.profile',
-    profileImageUrl:
-      'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80',
-    status: 'CONNECTED',
-    scope: 'manual_publishing',
   },
   {
     platform: 'TIKTOK',
@@ -213,10 +195,6 @@ const LEGACY_DEMO_MATCHES: Record<
   FACEBOOK: {
     names: ['Brand One Global', 'Brand One Global Page'],
     usernames: ['brandoneofficial'],
-  },
-  FACEBOOK_PROFILE: {
-    names: ['Personal Profile (Manual)'],
-    usernames: ['personal.profile'],
   },
   TIKTOK: {
     names: ['Alex Rivera Studio'],

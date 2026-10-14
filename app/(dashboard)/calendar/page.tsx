@@ -15,10 +15,6 @@ import {
   Play,
   FileText,
   AlertCircle,
-  Download,
-  Copy,
-  Check,
-  ExternalLink,
 } from 'lucide-react';
 import {
   WORKSPACE_TIMEZONE,
@@ -89,39 +85,6 @@ export default function CalendarPage() {
   const [selectedDateKey, setSelectedDateKey] = useState<string>(getTodayDateKey(WORKSPACE_TIMEZONE));
 
   const [selectedPost, setSelectedPost] = useState<PostItem | null>(null);
-  const [copiedCaption, setCopiedCaption] = useState(false);
-  const [confirmingPostId, setConfirmingPostId] = useState<string | null>(null);
-
-  const handleCopyCaption = (text: string) => {
-    if (!text) return;
-    navigator.clipboard.writeText(text);
-    setCopiedCaption(true);
-    setTimeout(() => setCopiedCaption(false), 2500);
-  };
-
-  const handleConfirmManualPublish = async (postId: string) => {
-    try {
-      setConfirmingPostId(postId);
-      const res = await fetch(`/api/posts/${postId}/confirm-manual`, {
-        method: 'POST',
-      });
-      if (res.ok) {
-        const data = await res.json();
-        if (data.success && data.post) {
-          setPosts((prev) =>
-            prev.map((p) => (p.id === data.post.id ? { ...p, status: 'PUBLISHED' } : p))
-          );
-          setSelectedPost((prev) =>
-            prev && prev.id === data.post.id ? { ...prev, status: 'PUBLISHED' } : prev
-          );
-        }
-      }
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setConfirmingPostId(null);
-    }
-  };
   
   // Filters
   const [statusFilter, setStatusFilter] = useState('ALL');
@@ -302,7 +265,6 @@ export default function CalendarPage() {
             <option value="ALL">All Platforms</option>
             <option value="INSTAGRAM">Instagram</option>
             <option value="FACEBOOK">Facebook</option>
-            <option value="FACEBOOK_PROFILE">Facebook Profile (Manual)</option>
             <option value="TIKTOK">TikTok</option>
             <option value="YOUTUBE">YouTube</option>
             <option value="X">X (Twitter)</option>
@@ -319,7 +281,7 @@ export default function CalendarPage() {
           >
             <option value="ALL">All Accounts</option>
             {uniqueAccounts.map(acc => (
-              <option key={acc.id} value={acc.id}>{acc.username || acc.name}</option>
+              <option key={acc.id} value={acc.id}>{acc.name || acc.username}</option>
             ))}
           </select>
         </div>
@@ -605,7 +567,7 @@ export default function CalendarPage() {
                     >
                       <div className="flex items-center gap-2">
                         <PlatformIcon platform={p.platform} size={16} className="w-4 h-4 rounded" />
-                        <span className="text-white">{p.socialAccount?.username || p.socialAccount?.name || p.platform}</span>
+                        <span className="text-white">{p.socialAccount?.name || p.socialAccount?.username || p.platform}</span>
                       </div>
                       <div className="flex items-center gap-2">
                         {renderStatusBadge(p.status)}
@@ -615,82 +577,6 @@ export default function CalendarPage() {
                 </div>
               </div>
 
-              {selectedPost.platformPosts.some((p) => p.platform === 'FACEBOOK_PROFILE') && (
-                <div className="p-4 rounded-2xl bg-[#0e0e12] border border-blue-500/30 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-blue-400 uppercase tracking-wider flex items-center gap-1.5">
-                      Manual Publishing Kit (Personal Profile)
-                    </span>
-                    <span className="text-[10px] px-2 py-0.5 rounded bg-blue-500/10 text-blue-300 font-bold border border-blue-500/20">
-                      Manual Action Required
-                    </span>
-                  </div>
-
-                  <p className="text-xs text-neutral-300 leading-relaxed">
-                    Personal Facebook profiles do not support automated API publishing. Use the tools below to post manually:
-                  </p>
-
-                  <div className="flex flex-wrap items-center gap-2 pt-1">
-                    <button
-                      onClick={() => handleCopyCaption(selectedPost.masterCaption)}
-                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 border border-blue-500/30 text-xs font-bold transition-all"
-                    >
-                      {copiedCaption ? (
-                        <>
-                          <Check className="w-3.5 h-3.5 text-emerald-400" />
-                          <span className="text-emerald-300">Caption Copied!</span>
-                        </>
-                      ) : (
-                        <>
-                          <Copy className="w-3.5 h-3.5" />
-                          <span>Copy Caption</span>
-                        </>
-                      )}
-                    </button>
-
-                    {selectedPost.mediaAsset?.id && (
-                      <a
-                        href={`/api/media/${selectedPost.mediaAsset.id}/download`}
-                        download
-                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-white text-xs font-bold border border-neutral-700 transition-colors"
-                      >
-                        <Download className="w-3.5 h-3.5" />
-                        <span>Download Media</span>
-                      </a>
-                    )}
-
-                    {(() => {
-                      const fbPost = selectedPost.platformPosts.find((p) => p.platform === 'FACEBOOK_PROFILE');
-                      const fbUsername = fbPost?.socialAccount?.username;
-                      const profileUrl = fbUsername
-                        ? (fbUsername.startsWith('http') ? fbUsername : `https://facebook.com/${fbUsername.replace('@', '')}`)
-                        : 'https://facebook.com';
-                      return (
-                        <a
-                          href={profileUrl}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition-colors"
-                        >
-                          <ExternalLink className="w-3.5 h-3.5" />
-                          <span>Open Facebook Profile</span>
-                        </a>
-                      );
-                    })()}
-
-                    {selectedPost.status !== 'PUBLISHED' && (
-                      <button
-                        onClick={() => handleConfirmManualPublish(selectedPost.id)}
-                        disabled={confirmingPostId === selectedPost.id}
-                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white text-xs font-bold transition-colors ml-auto"
-                      >
-                        <Check className="w-3.5 h-3.5" />
-                        <span>{confirmingPostId === selectedPost.id ? 'Saving...' : 'Mark as Published'}</span>
-                      </button>
-                    )}
-                  </div>
-                </div>
-              )}
 
               {selectedPost.platformPosts.some(p => p.errorMessage) && (
                 <div className="p-4 rounded-2xl bg-red-500/10 border border-red-500/30">
