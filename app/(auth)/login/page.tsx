@@ -14,16 +14,16 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  // Animation states
+  // Entrance and idle animation lifecycle
   const [entranceDone, setEntranceDone] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
     setIsMounted(true);
-    // 2.4s entrance animation timer
+    // 2.5s cinematic entrance animation duration
     const timer = setTimeout(() => {
       setEntranceDone(true);
-    }, 2400);
+    }, 2500);
     return () => clearTimeout(timer);
   }, []);
 
@@ -110,68 +110,121 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="relative min-h-screen w-full overflow-hidden bg-black font-sans flex items-center justify-center lg:justify-end select-none">
-      {/* Sci-Fi Global Animation Styles */}
+    <div className="relative min-h-screen w-full overflow-x-hidden lg:overflow-hidden bg-[#040103] font-sans flex items-center justify-center lg:justify-end select-none">
+      {/* Sci-Fi Global Animation & Keyframe Styles */}
       <style jsx global>{`
-        @keyframes helmetRiseEntrance {
+        /* Cinematic Entrance with subtle 3D tilt and smooth settling */
+        @keyframes helmetCinematicEntrance {
           0% {
-            transform: translateY(115%);
+            transform: perspective(1400px) translateY(125%) rotateY(-8deg) rotateZ(-1deg) scale(0.95);
             opacity: 0;
-            filter: drop-shadow(0 0 10px rgba(239, 68, 68, 0.15));
+            filter: drop-shadow(0 0 10px rgba(239, 68, 68, 0.1));
           }
-          40% {
-            opacity: 0.85;
+          45% {
+            opacity: 0.9;
+            filter: drop-shadow(0 0 50px rgba(239, 68, 68, 0.65));
+          }
+          82% {
+            /* Gentle overshoot and cinematic 3D settle */
+            transform: perspective(1400px) translateY(-12px) rotateY(1.2deg) rotateZ(0.2deg) scale(1.01);
           }
           100% {
-            transform: translateY(0);
+            transform: perspective(1400px) translateY(0) rotateY(0deg) rotateZ(0deg) scale(1);
             opacity: 1;
-            filter: drop-shadow(0 0 35px rgba(239, 68, 68, 0.45));
+            filter: drop-shadow(0 0 40px rgba(239, 68, 68, 0.5));
           }
         }
 
-        @keyframes helmetIdleFloat {
+        /* Minimal high-end idle breathing float */
+        @keyframes helmetIdleBreathing {
           0%, 100% {
-            transform: translateY(0);
+            transform: perspective(1400px) translateY(0) rotateY(0deg);
           }
           50% {
-            transform: translateY(-8px);
+            transform: perspective(1400px) translateY(-8px) rotateY(-0.8deg);
           }
         }
 
-        @keyframes ringPulse {
+        /* Energy Ring Breathing Glow */
+        @keyframes energyRingBreathing {
           0%, 100% {
-            opacity: 0.75;
+            opacity: 0.55;
+            filter: drop-shadow(0 0 25px rgba(239, 68, 68, 0.4)) drop-shadow(0 0 50px rgba(239, 68, 68, 0.2));
             transform: scale(1);
-            filter: drop-shadow(0 0 25px rgba(239, 68, 68, 0.35));
           }
           50% {
             opacity: 0.95;
-            transform: scale(1.02);
-            filter: drop-shadow(0 0 45px rgba(239, 68, 68, 0.65));
+            filter: drop-shadow(0 0 45px rgba(239, 68, 68, 0.75)) drop-shadow(0 0 80px rgba(239, 68, 68, 0.35));
+            transform: scale(1.025);
           }
         }
 
-        @keyframes particleDrift {
+        /* Orbital nodes pulsing */
+        @keyframes nodePulse {
+          0%, 100% {
+            transform: scale(1);
+            box-shadow: 0 0 15px rgba(239, 68, 68, 0.8), 0 0 30px rgba(239, 68, 68, 0.5);
+          }
+          50% {
+            transform: scale(1.3);
+            box-shadow: 0 0 25px rgba(248, 113, 113, 1), 0 0 45px rgba(239, 68, 68, 0.85);
+          }
+        }
+
+        /* Slow atmospheric mist drift */
+        @keyframes mistDriftOne {
+          0% {
+            transform: translateX(-4%) translateY(0);
+            opacity: 0.15;
+          }
+          50% {
+            transform: translateX(4%) translateY(-8px);
+            opacity: 0.26;
+          }
+          100% {
+            transform: translateX(-4%) translateY(0);
+            opacity: 0.15;
+          }
+        }
+
+        @keyframes mistDriftTwo {
+          0% {
+            transform: translateX(5%) scale(1);
+            opacity: 0.12;
+          }
+          50% {
+            transform: translateX(-3%) scale(1.04);
+            opacity: 0.22;
+          }
+          100% {
+            transform: translateX(5%) scale(1);
+            opacity: 0.12;
+          }
+        }
+
+        /* Slow-moving cosmic particles */
+        @keyframes cosmicParticleFloat {
           0% {
             transform: translateY(0) translateX(0);
             opacity: 0;
           }
-          20% {
-            opacity: 0.8;
+          25% {
+            opacity: 0.75;
           }
-          80% {
-            opacity: 0.6;
+          75% {
+            opacity: 0.5;
           }
           100% {
-            transform: translateY(-240px) translateX(25px);
+            transform: translateY(-260px) translateX(30px);
             opacity: 0;
           }
         }
 
-        @keyframes cardFadeSlide {
+        /* Card entrance */
+        @keyframes cardSmoothSlideIn {
           0% {
             opacity: 0;
-            transform: translateX(25px);
+            transform: translateX(30px);
           }
           100% {
             opacity: 1;
@@ -179,31 +232,41 @@ export default function LoginPage() {
           }
         }
 
-        .animate-helmet-rise {
-          animation: helmetRiseEntrance 2.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        .animate-helmet-cinematic {
+          animation: helmetCinematicEntrance 2.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
           will-change: transform, opacity;
         }
 
-        .animate-helmet-idle {
-          animation: helmetIdleFloat 5.5s ease-in-out infinite;
+        .animate-helmet-idle-breathe {
+          animation: helmetIdleBreathing 6s ease-in-out infinite;
           will-change: transform;
         }
 
-        .animate-card-entrance {
-          animation: cardFadeSlide 1.2s cubic-bezier(0.16, 1, 0.3, 1) 0.3s forwards;
+        .animate-card-slide {
+          animation: cardSmoothSlideIn 1.3s cubic-bezier(0.16, 1, 0.3, 1) 0.35s forwards;
           opacity: 0;
           will-change: transform, opacity;
         }
 
-        .animate-ring-pulse {
-          animation: ringPulse 4s ease-in-out infinite;
+        .animate-energy-ring {
+          animation: energyRingBreathing 5s ease-in-out infinite;
+        }
+
+        .animate-mist-1 {
+          animation: mistDriftOne 14s ease-in-out infinite;
+        }
+
+        .animate-mist-2 {
+          animation: mistDriftTwo 18s ease-in-out infinite;
         }
 
         @media (prefers-reduced-motion: reduce) {
-          .animate-helmet-rise,
-          .animate-helmet-idle,
-          .animate-card-entrance,
-          .animate-ring-pulse,
+          .animate-helmet-cinematic,
+          .animate-helmet-idle-breathe,
+          .animate-card-slide,
+          .animate-energy-ring,
+          .animate-mist-1,
+          .animate-mist-2,
           .cosmic-particle {
             animation: none !important;
             transform: none !important;
@@ -212,196 +275,203 @@ export default function LoginPage() {
         }
       `}</style>
 
-      {/* Layer 1: Background Environment (16:9 Sci-Fi Landscape) */}
+      {/* Layer 1: Cinematic Sci-Fi Background (16:9 Landscape) */}
       <div
-        className="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat transition-all duration-700"
+        className="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat pointer-events-none"
         style={{
           backgroundImage: 'url(/scifi-login-bg.jpg)',
         }}
       >
-        {/* Subtle Atmospheric Dark Vignette */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/60 pointer-events-none" />
-        <div className="absolute inset-0 bg-gradient-to-r from-black/40 via-transparent to-black/70 pointer-events-none" />
+        {/* Cinematic Vignette Overlays for High-End Contrast */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-transparent to-black/60" />
+        <div className="absolute inset-0 bg-gradient-to-r from-black/50 via-transparent to-black/75" />
       </div>
 
-      {/* Layer 2: Subtle Cosmic Particles & Embers */}
-      <div className="absolute inset-0 z-[5] pointer-events-none overflow-hidden">
+      {/* Layer 2: Soft Atmospheric Smoke / Mist Layers */}
+      <div className="absolute inset-0 z-[3] pointer-events-none overflow-hidden">
+        <div className="animate-mist-1 absolute -bottom-20 -left-20 w-[80vw] h-[50vh] bg-gradient-to-tr from-red-950/20 via-rose-900/10 to-transparent blur-3xl rounded-full" />
+        <div className="animate-mist-2 absolute bottom-0 right-0 w-[60vw] h-[45vh] bg-gradient-to-tl from-red-950/25 via-red-900/10 to-transparent blur-3xl rounded-full" />
+      </div>
+
+      {/* Layer 3: Animated Red Glow on the Circular Energy Ring */}
+      <div className="hidden lg:block absolute left-[2%] xl:left-[4%] 2xl:left-[6%] top-[5%] xl:top-[4%] w-[580px] h-[580px] xl:w-[660px] xl:h-[660px] 2xl:w-[720px] 2xl:h-[720px] rounded-full pointer-events-none z-[6]">
+        {/* Outer Pulsing Halo */}
+        <div className="w-full h-full rounded-full border border-red-500/35 animate-energy-ring box-border">
+          <div className="w-full h-full rounded-full border border-red-600/20 bg-gradient-to-tr from-red-600/[0.04] via-transparent to-rose-600/[0.03]" />
+        </div>
+
+        {/* Pulsing Orbital Energy Nodes */}
+        <div
+          className="absolute top-[16%] left-[9%] w-3.5 h-3.5 rounded-full bg-red-400"
+          style={{ animation: 'nodePulse 3.5s ease-in-out infinite' }}
+        />
+        <div
+          className="absolute top-[14%] right-[19%] w-3.5 h-3.5 rounded-full bg-red-400"
+          style={{ animation: 'nodePulse 3.8s ease-in-out infinite 0.6s' }}
+        />
+        <div
+          className="absolute bottom-[24%] right-[9%] w-4 h-4 rounded-full bg-rose-400"
+          style={{ animation: 'nodePulse 4.2s ease-in-out infinite 1.2s' }}
+        />
+      </div>
+
+      {/* Layer 4: Slow Floating Cosmic Particles / Embers */}
+      <div className="absolute inset-0 z-[8] pointer-events-none overflow-hidden">
         {isMounted && (
           <>
             <div
               className="cosmic-particle absolute w-1.5 h-1.5 rounded-full bg-red-400 shadow-[0_0_8px_rgba(248,113,113,0.9)]"
               style={{
-                left: '18%',
-                bottom: '25%',
-                animation: 'particleDrift 6s ease-in infinite',
+                left: '16%',
+                bottom: '22%',
+                animation: 'cosmicParticleFloat 9s ease-in infinite',
                 animationDelay: '0s',
               }}
             />
             <div
-              className="cosmic-particle absolute w-2 h-2 rounded-full bg-rose-500 shadow-[0_0_12px_rgba(244,63,94,0.9)]"
+              className="cosmic-particle absolute w-2 h-2 rounded-full bg-rose-500 shadow-[0_0_12px_rgba(244,63,94,0.95)]"
               style={{
-                left: '28%',
-                bottom: '30%',
-                animation: 'particleDrift 7.5s ease-in infinite',
-                animationDelay: '1.2s',
+                left: '26%',
+                bottom: '28%',
+                animation: 'cosmicParticleFloat 11s ease-in infinite',
+                animationDelay: '1.8s',
               }}
             />
             <div
               className="cosmic-particle absolute w-1 h-1 rounded-full bg-red-300 shadow-[0_0_6px_rgba(252,165,165,0.9)]"
               style={{
-                left: '12%',
-                bottom: '20%',
-                animation: 'particleDrift 5s ease-in infinite',
-                animationDelay: '2.5s',
+                left: '10%',
+                bottom: '18%',
+                animation: 'cosmicParticleFloat 8s ease-in infinite',
+                animationDelay: '3.4s',
               }}
             />
             <div
               className="cosmic-particle absolute w-1.5 h-1.5 rounded-full bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.9)]"
               style={{
-                left: '35%',
-                bottom: '22%',
-                animation: 'particleDrift 8s ease-in infinite',
-                animationDelay: '3.8s',
+                left: '34%',
+                bottom: '20%',
+                animation: 'cosmicParticleFloat 12s ease-in infinite',
+                animationDelay: '5s',
               }}
             />
             <div
-              className="cosmic-particle absolute w-1 h-1 rounded-full bg-rose-400 shadow-[0_0_6px_rgba(251,113,133,0.8)]"
+              className="cosmic-particle absolute w-1 h-1 rounded-full bg-rose-400 shadow-[0_0_6px_rgba(251,113,133,0.85)]"
               style={{
-                left: '22%',
-                bottom: '35%',
-                animation: 'particleDrift 6.5s ease-in infinite',
-                animationDelay: '4.5s',
+                left: '20%',
+                bottom: '32%',
+                animation: 'cosmicParticleFloat 9.5s ease-in infinite',
+                animationDelay: '6.2s',
               }}
             />
           </>
         )}
       </div>
 
-      {/* Layer 3: Red Energy Halo Glow Behind Helmet */}
-      <div className="hidden lg:block absolute left-[3%] xl:left-[6%] 2xl:left-[8%] top-[8%] w-[580px] h-[580px] rounded-full pointer-events-none z-[8]">
-        <div className="w-full h-full rounded-full border border-red-500/25 bg-red-600/[0.04] animate-ring-pulse blur-[1px]" />
-      </div>
-
-      {/* Layer 4: Armored Helmet Character (Enters from Bottom) */}
+      {/* Layer 5: Helmet Character (Anchored bottom-left, Dominant Scale) */}
       <div
-        className="absolute bottom-0 left-[-5%] sm:left-[0%] md:left-[2%] lg:left-[3%] xl:left-[6%] 2xl:left-[8%] pointer-events-none select-none z-10 flex items-end"
-        style={{
-          // Reserve layout height to avoid layout shift
-          height: '86vh',
-          maxHeight: '880px',
-        }}
+        className="absolute bottom-0 pointer-events-none select-none z-10 flex items-end
+                   left-1/2 -translate-x-1/2 opacity-25 h-[58vh] max-h-[520px]
+                   md:left-[-6%] md:translate-x-0 md:opacity-45 md:h-[75vh] md:max-h-[750px]
+                   lg:left-[0%] lg:opacity-100 lg:h-[94vh] lg:max-h-[1020px]
+                   xl:left-[3%] xl:h-[96vh] xl:max-h-[1080px]
+                   2xl:left-[5%] 2xl:h-[98vh] 2xl:max-h-[1140px]"
       >
         <img
           src="/scifi-helmet-character.png"
           alt="Futuristic Armored Helmet Character"
-          className={`h-full w-auto object-contain object-bottom transition-all duration-300 ${
-            entranceDone ? 'animate-helmet-idle' : 'animate-helmet-rise'
+          className={`h-full w-auto object-contain object-bottom ${
+            entranceDone ? 'animate-helmet-idle-breathe' : 'animate-helmet-cinematic'
           }`}
           style={{
-            filter: 'drop-shadow(0 0 30px rgba(220, 38, 38, 0.4))',
+            filter: 'drop-shadow(0 0 38px rgba(220, 38, 38, 0.45))',
           }}
         />
       </div>
 
-      {/* Layer 5: Premium Dark Glassmorphism Login Card */}
-      <div className="relative z-20 w-full max-w-[450px] lg:max-w-[440px] xl:max-w-[460px] px-4 sm:px-6 lg:px-0 lg:mr-[6%] xl:mr-[9%] 2xl:mr-[12%] py-8">
-        <div className="animate-card-entrance bg-[#0c0507]/80 backdrop-blur-2xl rounded-3xl p-7 sm:p-9 border border-red-500/35 shadow-[0_0_50px_rgba(239,68,68,0.22)] ring-1 ring-white/5">
+      {/* Layer 6: Exact Reference Glassmorphism Login Card */}
+      <div className="relative z-20 w-full max-w-[480px] sm:max-w-[500px] lg:max-w-[515px] xl:max-w-[525px] px-4 sm:px-6 lg:px-0 lg:mr-[4%] xl:mr-[7%] 2xl:mr-[10%] py-6">
+        <div className="animate-card-slide relative rounded-[24px] pt-6 pb-6 px-7 sm:px-9 bg-[#0c0406]/70 backdrop-blur-2xl border border-red-500/50 shadow-[0_0_40px_rgba(239,68,68,0.32),0_20px_50px_rgba(0,0,0,0.85)] ring-1 ring-white/10 overflow-hidden">
           
-          {/* Logo & Branding Area */}
-          <div className="text-center flex flex-col items-center">
-            <div className="w-20 sm:w-24 h-auto mb-2 relative drop-shadow-[0_0_20px_rgba(239,68,68,0.5)] hover:scale-105 transition-transform duration-500">
+          {/* Subtle Ambient Red Glows */}
+          <div className="absolute top-0 right-0 w-44 h-44 bg-red-500/10 rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute bottom-0 left-0 w-36 h-36 bg-red-900/10 rounded-full blur-2xl pointer-events-none" />
+
+          {/* Logo & Branding Area (Exact Reference Style) */}
+          <div className="relative z-10 text-center flex flex-col items-center">
+            <div className="w-16 sm:w-20 h-auto mb-2 relative drop-shadow-[0_0_20px_rgba(239,68,68,0.6)] hover:scale-105 transition-transform duration-500">
               <img
                 src="/tws-logo-transparent.png"
                 alt="Tech With Salman"
                 className="w-full h-auto object-contain"
               />
             </div>
-            
-            <h1 className="text-base sm:text-lg font-black tracking-wider text-red-600 uppercase drop-shadow-[0_0_12px_rgba(220,38,38,0.5)]">
+
+            <h1 className="text-sm sm:text-[15px] font-black tracking-[0.2em] text-red-500 uppercase drop-shadow-[0_0_12px_rgba(239,68,68,0.5)]">
               TECH WITH SALMAN
             </h1>
-            <h2 className="text-[10px] sm:text-[11px] font-bold tracking-[0.25em] text-red-500 uppercase mt-0.5">
+            <h2 className="text-[10px] sm:text-[10.5px] font-bold tracking-[0.3em] text-red-400 uppercase mt-0.5">
               SOCIAL MEDIA OS
             </h2>
-
-            {/* Hello ! Welcome Back */}
-            <div className="mt-4 sm:mt-5 text-center">
-              <p className="text-white font-bold text-base sm:text-lg tracking-wide">
-                Hello !
-              </p>
-              <h3 className="text-2xl sm:text-3xl font-black text-white tracking-tight mt-0.5">
-                Welcome Back
-              </h3>
-            </div>
           </div>
 
-          {/* Error Message */}
+          {/* Error Banner */}
           {error && (
-            <div className="mt-4 p-3 rounded-xl bg-red-500/20 border border-red-500/50 text-red-100 text-xs font-medium flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-red-400 shrink-0" />
+            <div className="relative z-10 mt-3 p-2.5 rounded-xl bg-red-500/20 border border-red-500/50 text-red-100 text-xs font-medium flex items-center gap-2">
+              <span className="w-1.5 h-1.5 rounded-full bg-red-400 shrink-0 shadow-[0_0_6px_rgba(248,113,113,0.9)]" />
               <span>{error}</span>
             </div>
           )}
 
-          {/* Form */}
-          <form onSubmit={handleSubmit} className="mt-6 space-y-4">
-            {/* Email Address */}
-            <div>
-              <label className="block text-xs font-semibold text-zinc-300 mb-1.5">
-                Email Address
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-zinc-400">
-                  <Mail className="w-4 h-4" />
-                </div>
-                <input
-                  type="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="alex@company.com"
-                  className="block w-full pl-10 pr-3.5 py-3 text-sm bg-black/70 border border-zinc-800 rounded-xl text-white placeholder-zinc-500 focus:outline-none focus:border-red-500/70 focus:ring-1 focus:ring-red-500/50 transition-all shadow-inner shadow-black/60"
-                />
+          {/* Form Controls (Exact Reference: Clean, Compact, No External Labels) */}
+          <form onSubmit={handleSubmit} className="relative z-10 mt-5 space-y-3">
+            {/* Email Address Input */}
+            <div className="group relative rounded-xl bg-black/60 border border-zinc-700/60 hover:border-zinc-500/80 focus-within:border-red-500/80 focus-within:ring-1 focus-within:ring-red-500/40 transition-all duration-200">
+              <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-zinc-400 group-focus-within:text-red-400 transition-colors">
+                <Mail className="w-4 h-4" />
               </div>
+              <input
+                type="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="alex@company.com"
+                className="block w-full pl-10 pr-3.5 py-3 text-sm bg-transparent text-white placeholder-zinc-400 focus:outline-none font-normal"
+              />
             </div>
 
-            {/* Password */}
-            <div>
-              <label className="block text-xs font-semibold text-zinc-300 mb-1.5">
-                Password
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-zinc-400">
-                  <Lock className="w-4 h-4" />
-                </div>
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  className="block w-full pl-10 pr-10 py-3 text-sm bg-black/70 border border-zinc-800 rounded-xl text-white placeholder-zinc-500 focus:outline-none focus:border-red-500/70 focus:ring-1 focus:ring-red-500/50 transition-all shadow-inner shadow-black/60"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-zinc-400 hover:text-zinc-200 transition-colors"
-                >
-                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
+            {/* Password Input */}
+            <div className="group relative rounded-xl bg-black/60 border border-zinc-700/60 hover:border-zinc-500/80 focus-within:border-red-500/80 focus-within:ring-1 focus-within:ring-red-500/40 transition-all duration-200">
+              <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-zinc-400 group-focus-within:text-red-400 transition-colors">
+                <Lock className="w-4 h-4" />
               </div>
+              <input
+                type={showPassword ? 'text' : 'password'}
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
+                className="block w-full pl-10 pr-10 py-3 text-sm bg-transparent text-white placeholder-zinc-400 focus:outline-none font-normal"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-zinc-400 hover:text-white transition-colors"
+              >
+                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
             </div>
 
             {/* Remember Me & Forgot Password */}
-            <div className="flex items-center justify-between text-xs pt-0.5">
-              <label className="flex items-center gap-2 text-zinc-300 cursor-pointer hover:text-white transition-colors">
+            <div className="flex items-center justify-between text-xs pt-1">
+              <label className="flex items-center gap-2 text-zinc-200 cursor-pointer hover:text-white transition-colors select-none">
                 <input
                   type="checkbox"
                   checked={rememberMe}
                   onChange={(e) => setRememberMe(e.target.checked)}
-                  className="rounded border-zinc-700 bg-zinc-900 text-blue-500 focus:ring-blue-500 focus:ring-offset-black w-3.5 h-3.5 cursor-pointer accent-blue-600"
+                  className="rounded-[4px] border-0 bg-red-600 text-red-600 focus:ring-0 focus:ring-offset-0 w-3.5 h-3.5 cursor-pointer accent-red-600"
                 />
-                <span className="font-medium text-zinc-300">Remember me</span>
+                <span className="font-medium text-zinc-200 text-xs">Remember me</span>
               </label>
 
               <a
@@ -410,17 +480,20 @@ export default function LoginPage() {
                   e.preventDefault();
                   alert('Password reset instructions will be sent to your email.');
                 }}
-                className="font-semibold text-red-500 hover:text-red-400 transition-colors"
+                className="font-semibold text-red-500 hover:text-red-400 hover:underline transition-colors text-xs"
               >
                 Forgot password?
               </a>
             </div>
 
-            {/* Sign In Button */}
+            {/* Sign In Button (Reference: Vibrant Red-to-Pink Pill) */}
             <button
               type="submit"
               disabled={loading}
-              className="w-full mt-2 py-3.5 px-4 rounded-xl bg-gradient-to-r from-red-600 via-red-500 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white text-sm font-bold shadow-[0_0_28px_rgba(239,68,68,0.5)] hover:shadow-[0_0_35px_rgba(239,68,68,0.7)] transition-all flex items-center justify-center gap-2 disabled:opacity-50 active:scale-[0.98] cursor-pointer"
+              className="w-full mt-3 py-3 px-4 rounded-xl font-bold text-sm text-white tracking-wide
+                         bg-gradient-to-r from-[#e50914] via-[#ee1d36] to-[#f43f5e] hover:from-[#f0141f] hover:to-[#fb7185]
+                         shadow-[0_0_24px_rgba(239,68,68,0.55)] hover:shadow-[0_0_35px_rgba(239,68,68,0.75)]
+                         transition-all flex items-center justify-center gap-2 disabled:opacity-50 active:scale-[0.985] cursor-pointer"
             >
               {loading ? (
                 <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -434,21 +507,21 @@ export default function LoginPage() {
           </form>
 
           {/* Divider */}
-          <div className="mt-5 flex items-center">
-            <div className="w-full border-t border-zinc-800"></div>
-            <span className="px-3 text-[11px] text-zinc-400 font-semibold uppercase tracking-wider">
+          <div className="relative z-10 mt-4 flex items-center">
+            <div className="w-full border-t border-zinc-800/80"></div>
+            <span className="px-3 text-[10px] text-zinc-400 font-semibold uppercase tracking-widest">
               OR
             </span>
-            <div className="w-full border-t border-zinc-800"></div>
+            <div className="w-full border-t border-zinc-800/80"></div>
           </div>
 
-          {/* Google Sign In */}
-          <div className="mt-5">
+          {/* Google Sign In (Reference: Clean White Button) */}
+          <div className="relative z-10 mt-4">
             <a
               href="/api/auth/google"
-              className="w-full flex items-center justify-center gap-3 py-3 px-4 rounded-xl bg-white hover:bg-zinc-100 text-zinc-900 text-sm font-bold transition-all shadow-md active:scale-[0.98]"
+              className="w-full flex items-center justify-center gap-3 py-2.5 px-4 rounded-xl bg-white hover:bg-zinc-100 text-zinc-900 text-sm font-bold transition-all shadow-md active:scale-[0.985]"
             >
-              <svg className="w-4 h-4" viewBox="0 0 24 24">
+              <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">
                 <path
                   fill="#4285F4"
                   d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
@@ -472,12 +545,12 @@ export default function LoginPage() {
 
           {/* Quick Demo Button (Dev Only) */}
           {process.env.NODE_ENV !== 'production' && (
-            <div className="mt-4 pt-4 border-t border-zinc-800/80">
+            <div className="relative z-10 mt-3 pt-3 border-t border-zinc-800/80">
               <button
                 onClick={handleQuickDemo}
                 disabled={loading}
                 type="button"
-                className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 text-xs font-semibold transition-all"
+                className="w-full flex items-center justify-center gap-2 py-1.5 px-3 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 text-xs font-semibold transition-all"
               >
                 <Sparkles className="w-3.5 h-3.5 text-red-400" />
                 <span>1-Click Instant Demo Login (Dev Only)</span>
@@ -485,19 +558,19 @@ export default function LoginPage() {
             </div>
           )}
 
-          {/* Footer - Sign Up */}
-          <div className="mt-6 text-center text-xs text-zinc-300">
+          {/* Footer - Sign Up (Exact Reference) */}
+          <div className="relative z-10 mt-4 text-center text-xs text-zinc-300">
             Don&apos;t have an account?{' '}
             <Link
               href="/signup"
-              className="font-bold text-red-500 hover:text-red-400 transition-colors ml-1"
+              className="font-bold text-red-500 hover:text-red-400 hover:underline transition-colors ml-1"
             >
               Sign Up
             </Link>
           </div>
 
-          {/* Terms & Privacy */}
-          <div className="mt-4 pt-3 border-t border-zinc-900 text-center text-[10px] text-zinc-500">
+          {/* Legal / Terms */}
+          <div className="relative z-10 mt-3 pt-2.5 border-t border-zinc-900/80 text-center text-[10px] text-zinc-500">
             By continuing, you agree to our{' '}
             <a
               href="https://techwithsalman.online/terms"
