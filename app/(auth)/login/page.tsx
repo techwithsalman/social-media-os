@@ -20,6 +20,15 @@ export default function LoginPage() {
 
   useEffect(() => {
     setIsMounted(true);
+    const params = new URLSearchParams(window.location.search);
+    const urlError = params.get('error');
+    if (urlError === 'google_auth_error') {
+      setError('Google authentication could not be completed. Please try again or check database connectivity.');
+    } else if (urlError === 'google_auth_failed') {
+      setError('Google sign-in was cancelled or denied.');
+    } else if (urlError === 'google_config_missing') {
+      setError('Google OAuth is not configured on the server.');
+    }
     // 2.5s cinematic entrance animation duration
     const timer = setTimeout(() => {
       setEntranceDone(true);
@@ -45,7 +54,14 @@ export default function LoginPage() {
         throw new Error(data.error || 'Login failed');
       }
 
-      router.push('/dashboard');
+      const params = new URLSearchParams(window.location.search);
+      const redirectTo = params.get('redirect');
+      const targetPath =
+        redirectTo && redirectTo.startsWith('/') && !redirectTo.startsWith('//')
+          ? redirectTo
+          : '/dashboard';
+
+      router.push(targetPath);
       router.refresh();
     } catch (err: any) {
       setError(err.message || 'Invalid credentials');

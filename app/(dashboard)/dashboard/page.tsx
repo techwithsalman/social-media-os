@@ -24,7 +24,7 @@ import {
 export default async function DashboardPage() {
   const user = await getCurrentUser();
   if (!user || !user.activeWorkspace) {
-    redirect('/login');
+    redirect('/login?session_invalid=1');
   }
 
   const workspaceId = user.activeWorkspace.id;
@@ -85,7 +85,10 @@ export default async function DashboardPage() {
       orderBy: { createdAt: 'desc' },
       take: 6,
     }),
-  ]);
+  ]).catch((error) => {
+    console.error('[DashboardPage] Failed to query workspace metrics:', error);
+    return [0, 0, 0, 0, 0, [], [], []] as const;
+  });
 
   const allSupportedPlatforms = SUPPORTED_PLATFORM_CONFIGS.map((platform) => ({
     platform: platform.id,

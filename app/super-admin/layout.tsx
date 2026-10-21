@@ -10,7 +10,7 @@ export default async function SuperAdminLayout({
   const user = await getCurrentUser();
 
   if (!user) {
-    redirect('/login?redirect=/super-admin');
+    redirect('/login?session_invalid=1&redirect=/super-admin');
   }
 
   if (user.systemRole !== 'SUPER_ADMIN') {

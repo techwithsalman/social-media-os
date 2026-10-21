@@ -5,9 +5,10 @@ export const dynamic = 'force-dynamic';
 export async function GET(req: NextRequest) {
   const clientId = process.env.GOOGLE_CLIENT_ID;
   
-  const appUrl = process.env.NODE_ENV === "production"
+  const rawAppUrl = process.env.NODE_ENV === "production"
     ? (process.env.APP_URL || process.env.NEXT_PUBLIC_APP_URL || "https://app.techwithsalman.online")
     : "http://localhost:3000";
+  const appUrl = rawAppUrl.replace(/\/+$/, "");
     
   const redirectUri = `${appUrl}/api/auth/google/callback`;
 

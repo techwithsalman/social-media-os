@@ -6,10 +6,36 @@ declare global {
 }
 
 function getResolvedDatabaseUrl(): { dbUrl: string; absolutePath: string } {
-  const envUrl = process.env.DATABASE_URL || '';
+  const envUrl = (process.env.DATABASE_URL || process.env.POSTGRES_DATABASE_URL || '').trim();
   
   if (envUrl.startsWith('postgres://') || envUrl.startsWith('postgresql://')) {
-    return { dbUrl: envUrl, absolutePath: 'PostgreSQL Database' };
+    try {
+      const parsed = new URL(envUrl);
+      // Prisma v5 quaint engine does not support channel_binding=require
+      parsed.searchParams.delete('channel_binding');
+      // Ensure SSL is enforced on cloud PostgreSQL hosts (Aiven, Neon, etc.)
+      if (!parsed.searchParams.has('sslmode') && !['localhost', '127.0.0.1'].includes(parsed.hostname)) {
+        parsed.searchParams.set('sslmode', 'require');
+      }
+      // Ensure pgbouncer=true is enabled when connecting via a Neon -pooler endpoint
+      if (parsed.hostname.includes('-pooler.') && !parsed.searchParams.has('pgbouncer')) {
+        parsed.searchParams.set('pgbouncer', 'true');
+      }
+      // Enforce low connection limits per serverless instance for direct databases (e.g., Aiven Free 20 connection limit)
+      if (!parsed.hostname.includes('-pooler.') && !parsed.searchParams.has('connection_limit')) {
+        parsed.searchParams.set('connection_limit', '2');
+      }
+      // Allow sufficient time for serverless compute cold-starts and pool acquisition
+      if (!parsed.searchParams.has('connect_timeout')) {
+        parsed.searchParams.set('connect_timeout', '15');
+      }
+      if (!parsed.searchParams.has('pool_timeout')) {
+        parsed.searchParams.set('pool_timeout', '15');
+      }
+      return { dbUrl: parsed.toString(), absolutePath: 'PostgreSQL Database' };
+    } catch {
+      return { dbUrl: envUrl, absolutePath: 'PostgreSQL Database' };
+    }
   }
 
   const rawPath = envUrl.startsWith('file:') ? envUrl.replace(/^file:/, '') : envUrl;
@@ -23,11 +49,7 @@ function getResolvedDatabaseUrl(): { dbUrl: string; absolutePath: string } {
   return { dbUrl, absolutePath: normalizedPath };
 }
 
-const { dbUrl, absolutePath: dbPath } = getResolvedDatabaseUrl();
-
-if (process.env.NEXT_RUNTIME !== 'edge') {
-  console.log(`[DATABASE DIAGNOSTIC] Absolute Database Path: ${dbPath}`);
-}
+const { dbUrl } = getResolvedDatabaseUrl();
 
 export const prisma =
   global.prisma ||
@@ -40,25 +62,7 @@ export const prisma =
     log: process.env.NODE_ENV === 'development' ? ['error', 'warn'] : ['error'],
   });
 
-if (process.env.NODE_ENV !== 'production') {
-  global.prisma = prisma;
-}
-
-if (process.env.NEXT_RUNTIME !== 'edge') {
-  prisma.socialAccount
-    .findFirst({
-      where: { platform: 'TIKTOK', status: 'CONNECTED' },
-    })
-    .then((acc) => {
-      console.log(`[DATABASE DIAGNOSTIC] TikTok SocialAccount Found: ${Boolean(acc)}`);
-      if (acc) {
-        console.log(`[DATABASE DIAGNOSTIC] TikTok User: @${acc.username} (${acc.name})`);
-      }
-    })
-    .catch(() => {
-      console.log('[DATABASE DIAGNOSTIC] TikTok SocialAccount Found: false');
-    });
-}
+global.prisma = prisma;
 
 export default prisma;
 

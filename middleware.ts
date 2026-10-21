@@ -88,8 +88,15 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL(target, request.url));
   }
 
-  if (validSession && (pathname === '/login' || pathname === '/signup')) {
-    return NextResponse.redirect(new URL('/dashboard', request.url));
+  if (pathname === '/login' || pathname === '/signup') {
+    if (request.nextUrl.searchParams.get('session_invalid') === '1') {
+      const res = NextResponse.next();
+      res.cookies.delete(AUTH_COOKIE_NAME);
+      return res;
+    }
+    if (validSession && !request.nextUrl.searchParams.has('error')) {
+      return NextResponse.redirect(new URL('/dashboard', request.url));
+    }
   }
 
   return NextResponse.next();

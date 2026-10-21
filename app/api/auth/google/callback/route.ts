@@ -11,9 +11,10 @@ export async function GET(req: NextRequest) {
   const code = searchParams.get('code');
   const error = searchParams.get('error');
 
-  const appUrl = process.env.NODE_ENV === "production"
+  const rawAppUrl = process.env.NODE_ENV === "production"
     ? (process.env.APP_URL || process.env.NEXT_PUBLIC_APP_URL || "https://app.techwithsalman.online")
     : "http://localhost:3000";
+  const appUrl = rawAppUrl.replace(/\/+$/, "");
 
   if (error || !code) {
     return NextResponse.redirect(new URL('/login?error=google_auth_failed', appUrl));
@@ -43,7 +44,7 @@ export async function GET(req: NextRequest) {
     const tokenData = await tokenResponse.json();
 
     if (!tokenResponse.ok) {
-      console.error('[Google OAuth Token Error]', tokenData);
+      console.error('[Google OAuth Token Error]', tokenData.error || tokenResponse.status);
       throw new Error('Failed to fetch tokens');
     }
 
@@ -52,12 +53,12 @@ export async function GET(req: NextRequest) {
     });
 
     const userInfo = await userInfoResponse.json();
-    if (!userInfoResponse.ok) {
-      console.error('[Google OAuth UserInfo Error]', userInfo);
+    if (!userInfoResponse.ok || !userInfo?.email) {
+      console.error('[Google OAuth UserInfo Error]', userInfoResponse.status);
       throw new Error('Failed to fetch user info');
     }
 
-    const email = userInfo.email.toLowerCase().trim();
+    const email = String(userInfo.email).toLowerCase().trim();
 
     let user = await prisma.user.findUnique({
       where: { email },
@@ -66,21 +67,34 @@ export async function GET(req: NextRequest) {
 
     if (!user) {
       // Auto-register via Google
-      await ensureDefaultPlans();
-      const freePlan = await getPlanByCode('FREE');
-
       user = await prisma.user.create({
         data: {
           email,
           passwordHash: '', // no password for Google users
           firstName: userInfo.given_name || 'Google',
           lastName: userInfo.family_name || 'User',
-          avatarUrl: userInfo.picture,
+          avatarUrl: userInfo.picture || null,
+          lastActiveAt: new Date(),
         },
         include: { workspaces: true }
       });
+    } else {
+      await prisma.user.update({
+        where: { id: user.id },
+        data: {
+          lastActiveAt: new Date(),
+          ...(!user.avatarUrl && userInfo.picture ? { avatarUrl: userInfo.picture } : {}),
+        },
+      });
+    }
 
-      const workspaceSlug = `${user.firstName.toLowerCase().replace(/[^a-z0-9]/g, '')}-workspace-${Math.random()
+    // Ensure user has at least one workspace (covers both new users and existing users missing a workspace)
+    if (!user.workspaces || user.workspaces.length === 0) {
+      await ensureDefaultPlans();
+      const freePlan = await getPlanByCode('FREE');
+
+      const slugPrefix = user.firstName.toLowerCase().replace(/[^a-z0-9]/g, '') || 'user';
+      const workspaceSlug = `${slugPrefix}-workspace-${Math.random()
         .toString(36)
         .substring(2, 6)}`;
 
@@ -149,7 +163,9 @@ export async function GET(req: NextRequest) {
 
     return response;
   } catch (error) {
-    console.error('Google Auth Callback Error:', error);
-    return NextResponse.redirect(new URL('/login?error=google_auth_error', appUrl));
+    console.error('Google Auth Callback Error:', error instanceof Error ? error.message : 'Unknown error');
+    const errRes = NextResponse.redirect(new URL('/login?error=google_auth_error', appUrl));
+    errRes.cookies.delete(AUTH_COOKIE_NAME);
+    return errRes;
   }
 }
