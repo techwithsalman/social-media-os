@@ -25,11 +25,32 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized thumbnail key.' }, { status: 403 });
     }
 
+    // Check if a MediaAsset already exists for this exact objectKey (idempotent finalize)
+    let mediaAsset = await prisma.mediaAsset.findFirst({
+      where: {
+        workspaceId: session.workspaceId,
+        url: objectKey,
+      },
+    });
+
+    if (mediaAsset) {
+      const playbackUrl = await resolveMediaAccessUrl(mediaAsset.url, session.workspaceId);
+      return NextResponse.json({
+        success: true,
+        alreadyFinalized: true,
+        media: {
+          ...mediaAsset,
+          url: playbackUrl,
+          thumbnailUrl: mediaAsset.thumbnailUrl ? await resolveMediaAccessUrl(mediaAsset.thumbnailUrl, session.workspaceId) : null,
+        },
+      });
+    }
+
     // Generate the playback/download URL for the newly uploaded R2 object
     const playbackUrl = await resolveMediaAccessUrl(objectKey, session.workspaceId);
 
     // Save MediaAsset to database
-    const mediaAsset = await prisma.mediaAsset.create({
+    mediaAsset = await prisma.mediaAsset.create({
       data: {
         workspaceId: session.workspaceId,
         filename: objectKey,
@@ -48,6 +69,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({
       success: true,
+      alreadyFinalized: false,
       media: {
         ...mediaAsset,
         url: playbackUrl, // Return the immediate presigned playback URL to the frontend UI

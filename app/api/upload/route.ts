@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
-import { uploadMediaAsset } from '@/lib/storage/r2';
+import { uploadMediaAsset, resolveMediaAccessUrl } from '@/lib/storage/r2';
 import prisma from '@/lib/prisma';
 import { EntitlementError, assertCanUploadFile, recordUploadedBytes } from '@/lib/billing';
 
@@ -15,6 +15,70 @@ const ALLOWED_MIME_TYPES = [
 
 const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
 
+/**
+ * GET /api/upload
+ * Returns existing MediaAssets for the active workspace, enabling media library reuse
+ */
+export async function GET(req: NextRequest) {
+  try {
+    const session = await getSession();
+    if (!session || !session.workspaceId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const { searchParams } = new URL(req.url);
+    const type = searchParams.get('type'); // 'video' | 'image'
+    const limit = Math.min(Number(searchParams.get('limit')) || 50, 100);
+
+    const where: any = {
+      workspaceId: session.workspaceId,
+    };
+    if (type === 'video') {
+      where.mimeType = { startsWith: 'video/' };
+    } else if (type === 'image') {
+      where.mimeType = { startsWith: 'image/' };
+    }
+
+    const assets = await prisma.mediaAsset.findMany({
+      where,
+      orderBy: { createdAt: 'desc' },
+      take: limit,
+    });
+
+    const mediaWithUrls = await Promise.all(
+      assets.map(async (asset) => {
+        try {
+          const playbackUrl = await resolveMediaAccessUrl(asset.url, session.workspaceId);
+          return {
+            ...asset,
+            playbackUrl,
+          };
+        } catch {
+          return {
+            ...asset,
+            playbackUrl: asset.url,
+          };
+        }
+      })
+    );
+
+    return NextResponse.json({
+      success: true,
+      mediaAssets: mediaWithUrls,
+    });
+  } catch (error: any) {
+    console.error('Fetch Media Assets Error:', error);
+    return NextResponse.json(
+      { error: error.message || 'Failed to fetch media assets' },
+      { status: 500 }
+    );
+  }
+}
+
+/**
+ * POST /api/upload
+ * Fallback direct multipart upload endpoint for small media files
+ */
 export async function POST(req: NextRequest) {
   try {
     const session = await getSession();
@@ -43,6 +107,29 @@ export async function POST(req: NextRequest) {
         { error: 'File exceeds the maximum upload limit of 50MB.' },
         { status: 400 }
       );
+    }
+
+    // Single-Object deduplication check
+    const existingAsset = await prisma.mediaAsset.findFirst({
+      where: {
+        workspaceId: session.workspaceId,
+        originalName: file.name,
+        mimeType: file.type,
+        size: file.size,
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    if (existingAsset) {
+      const playbackUrl = await resolveMediaAccessUrl(existingAsset.url, session.workspaceId);
+      return NextResponse.json({
+        success: true,
+        alreadyExists: true,
+        media: {
+          ...existingAsset,
+          url: playbackUrl,
+        },
+      });
     }
 
     await assertCanUploadFile(session.workspaceId, file.size);

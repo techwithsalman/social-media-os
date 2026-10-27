@@ -1,5 +1,5 @@
 import prisma from '../prisma';
-import { deleteR2Object, verifyR2ObjectWorkspaceOwnership } from './r2';
+import { deleteR2Object } from './r2';
 
 export interface CleanupResult {
   mediaAssetId: string;
@@ -10,6 +10,7 @@ export interface CleanupResult {
 
 const TERMINAL_PLATFORM_STATUSES = ['PUBLISHED', 'INBOX_DRAFT', 'CANCELLED'];
 const ACTIVE_POST_STATUSES = ['SCHEDULED', 'QUEUED', 'PROCESSING', 'UPLOADING', 'RETRYING', 'DRAFT', 'MANUAL_READY', 'AWAITING_MANUAL_PUBLISH'];
+const ACTIVE_JOB_STATUSES = ['QUEUED', 'PROCESSING', 'UPLOADING', 'RETRYING'];
 
 export const DEFAULT_FAILED_RETENTION_HOURS = 48; // Give creators 48h to retry failed posts before cleanup
 export const DEFAULT_ABANDONED_RETENTION_HOURS = 24; // Clean unattached uploads after 24h
@@ -35,7 +36,8 @@ export function extractObjectKey(mediaUrl: string): string {
 }
 
 /**
- * Evaluate whether a MediaAsset is safe to delete without breaking active, scheduled, or retryable posts
+ * Evaluate whether a MediaAsset is safe to delete without breaking active, scheduled, or retryable posts.
+ * Strictly respects shared media references across multiple posts, platforms, and publishing jobs.
  */
 export async function canDeleteMediaAsset(
   mediaAssetId: string,
@@ -46,7 +48,13 @@ export async function canDeleteMediaAsset(
     include: {
       posts: {
         include: {
-          platformPosts: true,
+          platformPosts: {
+            include: {
+              publishingJobs: {
+                orderBy: { createdAt: 'desc' },
+              },
+            },
+          },
         },
       },
     },
@@ -69,38 +77,53 @@ export async function canDeleteMediaAsset(
     return { canDelete: false, reason: 'Unattached upload within 24h retention grace period.' };
   }
 
+  // Iterate over ALL associated content posts (supporting shared media across multiple posts)
   for (const post of mediaAsset.posts) {
-    // 1. Active Post Guard: Block deletion if post or platform posts are active/scheduled/processing
+    // 1. Active Post Guard: Block deletion if post is active/scheduled/processing
     if (ACTIVE_POST_STATUSES.includes(post.status)) {
-      return { canDelete: false, reason: `Associated ContentPost ${post.id} is in active state: ${post.status}.` };
+      return { canDelete: false, reason: `Shared media asset is still needed by active ContentPost ${post.id} (status: ${post.status}).` };
     }
 
     if (!post.platformPosts || post.platformPosts.length === 0) {
       return { canDelete: false, reason: `Associated ContentPost ${post.id} has no platform posts configured.` };
     }
 
+    // 2. Active Platform Post & Publishing Job Guards across all platform targets
     for (const pPost of post.platformPosts) {
       if (ACTIVE_POST_STATUSES.includes(pPost.status)) {
         return {
           canDelete: false,
-          reason: `Associated PlatformPost ${pPost.id} (${pPost.platform}) is in active state: ${pPost.status}.`,
+          reason: `Shared media asset is actively needed by PlatformPost ${pPost.id} (${pPost.platform}) in status: ${pPost.status}.`,
         };
+      }
+
+      // Check all publishing jobs for this platform post
+      if (pPost.publishingJobs && pPost.publishingJobs.length > 0) {
+        for (const job of pPost.publishingJobs) {
+          if (ACTIVE_JOB_STATUSES.includes(job.status)) {
+            return {
+              canDelete: false,
+              reason: `Active publishing job ${job.id} on platform ${pPost.platform} is currently ${job.status}.`,
+            };
+          }
+        }
       }
 
       // If a platform post failed, check retention window to allow creator retries
       if (pPost.status === 'FAILED') {
-        const postAgeMs = now - new Date(post.updatedAt).getTime();
+        const postAgeMs = now - new Date(pPost.updatedAt || post.updatedAt).getTime();
         if (postAgeMs < failedRetentionMs) {
+          const remainingHours = Math.ceil((failedRetentionMs - postAgeMs) / (3600 * 1000));
           return {
             canDelete: false,
-            reason: `Associated PlatformPost ${pPost.id} failed recently (${pPost.errorMessage || 'FAILED'}). Within ${options?.failedRetentionHours || DEFAULT_FAILED_RETENTION_HOURS}h retry retention window.`,
+            reason: `PlatformPost ${pPost.id} (${pPost.platform}) failed. Within ${remainingHours}h remaining retry retention window.`,
           };
         }
       }
     }
   }
 
-  return { canDelete: true, reason: 'All associated platform target posts have confirmed terminal completion and passed retention.' };
+  return { canDelete: true, reason: 'All associated platform target posts and publishing jobs have confirmed terminal completion and passed retention.' };
 }
 
 /**

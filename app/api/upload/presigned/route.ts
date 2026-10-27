@@ -1,10 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
-import { getPresignedUploadUrl, isR2Configured } from '@/lib/storage/r2';
+import { getPresignedUploadUrl, isR2Configured, resolveMediaAccessUrl } from '@/lib/storage/r2';
 import { EntitlementError, assertCanUploadFile } from '@/lib/billing';
 import { checkPlanLimit, PlanLimitError, createPlanLimitResponse } from '@/lib/billing/plan-limits';
 import prisma from '@/lib/prisma';
-
 
 const ALLOWED_MIME_TYPES = [
   'image/jpeg',
@@ -30,7 +29,7 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { filename, mimeType, size } = body;
+    const { filename, mimeType, size, forceUpload } = body;
 
     if (!filename || !mimeType) {
       return NextResponse.json(
@@ -53,6 +52,46 @@ export async function POST(req: NextRequest) {
         { error: 'File is too large. Maximum size is 50 MB.' },
         { status: 413 }
       );
+    }
+
+    // Single-Object Storage Idempotency & Deduplication Check:
+    // If an identical media asset already exists in this workspace, reuse it instead of re-uploading to R2
+    if (!forceUpload && size) {
+      const existingAsset = await prisma.mediaAsset.findFirst({
+        where: {
+          workspaceId: session.workspaceId,
+          originalName: filename,
+          mimeType: mimeType,
+          size: fileSize,
+        },
+        orderBy: { createdAt: 'desc' },
+      });
+
+      if (existingAsset) {
+        const playbackUrl = await resolveMediaAccessUrl(existingAsset.url, session.workspaceId);
+        return NextResponse.json({
+          success: true,
+          alreadyExists: true,
+          media: {
+            id: existingAsset.id,
+            workspaceId: existingAsset.workspaceId,
+            filename: existingAsset.filename,
+            originalName: existingAsset.originalName,
+            mimeType: existingAsset.mimeType,
+            size: existingAsset.size,
+            url: playbackUrl,
+            thumbnailUrl: existingAsset.thumbnailUrl
+              ? await resolveMediaAccessUrl(existingAsset.thumbnailUrl, session.workspaceId)
+              : null,
+            createdAt: existingAsset.createdAt,
+          },
+          objectKey: existingAsset.url,
+          uploadUrl: null,
+          workspaceId: session.workspaceId,
+          expiresInSeconds: 900,
+          message: 'Single-object media storage: Reusing existing R2 asset without duplicate upload.',
+        });
+      }
     }
 
     await assertCanUploadFile(session.workspaceId, fileSize);
@@ -84,6 +123,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({
       success: true,
+      alreadyExists: false,
       uploadUrl,
       objectKey,
       workspaceId: session.workspaceId,
@@ -100,6 +140,3 @@ export async function POST(req: NextRequest) {
     );
   }
 }
-
-
-
