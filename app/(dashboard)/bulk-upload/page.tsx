@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PlatformIcon } from '@/components/ui/PlatformIcons';
@@ -16,6 +16,10 @@ import {
   Film,
   X,
   Share2,
+  RotateCw,
+  AlertCircle,
+  Clock,
+  AlertTriangle,
 } from 'lucide-react';
 import { zonedDateTimeToUtcIso, WORKSPACE_TIMEZONE } from '@/lib/timezone';
 import { SUPPORTED_PLATFORM_IDS } from '@/lib/platforms';
@@ -41,6 +45,8 @@ interface BulkItem {
   scheduledTime: string;
   selectedAccountIds: string[];
   status: 'PENDING' | 'UPLOADING' | 'UPLOADED' | 'ERROR';
+  progress?: number;
+  errorMessage?: string;
   isSharedReused?: boolean;
 }
 
@@ -56,9 +62,16 @@ interface LibraryMediaAsset {
   createdAt: string;
 }
 
+const MAX_CONCURRENT_UPLOADS = 2; // Optimal concurrency for video bandwidth and socket stability
+
 export default function BulkUploadPage() {
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // File and Concurrency Queue Refs (persists across re-renders without dropping File references)
+  const fileMapRef = useRef<Map<string, File>>(new Map());
+  const uploadQueueRef = useRef<string[]>([]);
+  const activeUploadsRef = useRef<number>(0);
 
   const [accounts, setAccounts] = useState<SocialAccount[]>([]);
   const [selectedAccountIds, setSelectedAccountIds] = useState<string[]>([]);
@@ -71,19 +84,26 @@ export default function BulkUploadPage() {
   const [postsPerDay, setPostsPerDay] = useState(3);
   const defaultTimeSlotsForCount = (count: number) => {
     switch (count) {
-      case 1: return ['09:00'];
-      case 2: return ['09:00', '15:00'];
-      case 3: return ['09:00', '12:00', '15:00'];
-      case 4: return ['09:00', '12:00', '15:00', '18:00'];
-      case 5: return ['09:00', '11:00', '13:00', '15:00', '18:00'];
-      case 6: return ['08:00', '10:00', '12:00', '14:00', '16:00', '18:00'];
-      default: return Array.from({ length: count }, (_, i) => `${String(9 + i).padStart(2, '0')}:00`);
+      case 1:
+        return ['09:00'];
+      case 2:
+        return ['09:00', '15:00'];
+      case 3:
+        return ['09:00', '12:00', '15:00'];
+      case 4:
+        return ['09:00', '12:00', '15:00', '18:00'];
+      case 5:
+        return ['09:00', '11:00', '13:00', '15:00', '18:00'];
+      case 6:
+        return ['08:00', '10:00', '12:00', '14:00', '16:00', '18:00'];
+      default:
+        return Array.from({ length: count }, (_, i) => `${String(9 + i).padStart(2, '0')}:00`);
     }
   };
-  
+
   const handlePostsPerDayChange = (newCount: number) => {
     setPostsPerDay(newCount);
-    setTimeSlots(prev => {
+    setTimeSlots((prev) => {
       const defaults = defaultTimeSlotsForCount(newCount);
       const newSlots = [];
       for (let i = 0; i < newCount; i++) {
@@ -93,8 +113,8 @@ export default function BulkUploadPage() {
     });
     setScheduleGenerated(false);
   };
-  
-  const [startDate, setStartDate] = useState('2026-09-01');
+
+  const [startDate, setStartDate] = useState('');
   const [timeSlots, setTimeSlots] = useState(['09:00', '12:00', '15:00', '18:00', '21:00']);
   const [timezone, setTimezone] = useState(WORKSPACE_TIMEZONE);
 
@@ -132,13 +152,272 @@ export default function BulkUploadPage() {
       }
     }
     loadAccounts();
-    
+
     const today = new Date();
     const yyyy = today.getFullYear();
     const mm = String(today.getMonth() + 1).padStart(2, '0');
     const dd = String(today.getDate()).padStart(2, '0');
     setStartDate(`${yyyy}-${mm}-${dd}`);
   }, []);
+
+  // Upload Single File using Presigned URL -> Direct Cloudflare R2 PUT -> Finalize
+  const runSingleUpload = useCallback(async (itemId: string, file: File) => {
+    setItems((prev) =>
+      prev.map((i) =>
+        i.id === itemId
+          ? { ...i, status: 'UPLOADING', progress: 0, errorMessage: undefined }
+          : i
+      )
+    );
+
+    try {
+      // Step 1: Request Presigned Upload URL & Deduplication Check
+      const presignedRes = await fetch('/api/upload/presigned', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          filename: file.name,
+          mimeType: file.type || 'video/mp4',
+          size: file.size,
+        }),
+      });
+
+      const presignedData = await presignedRes.json();
+      if (!presignedRes.ok) {
+        throw new Error(presignedData.error || `Upload authorization failed (HTTP ${presignedRes.status})`);
+      }
+
+      // Single-Object Storage Deduplication:
+      // If asset already exists in Cloudflare R2, reuse it immediately without uploading again!
+      if (presignedData.alreadyExists && presignedData.media) {
+        setItems((prev) =>
+          prev.map((i) =>
+            i.id === itemId
+              ? {
+                  ...i,
+                  status: 'UPLOADED',
+                  mediaAssetId: presignedData.media.id,
+                  url: presignedData.media.url,
+                  thumbnailUrl: presignedData.media.thumbnailUrl || undefined,
+                  progress: 100,
+                  isSharedReused: true,
+                  errorMessage: undefined,
+                }
+              : i
+          )
+        );
+        return;
+      }
+
+      if (!presignedData.uploadUrl) {
+        throw new Error('Presigned upload URL was not generated by server.');
+      }
+
+      // Step 2: Direct HTTP PUT to Cloudflare R2 with progress tracking
+      await new Promise<void>((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open('PUT', presignedData.uploadUrl);
+        xhr.timeout = 300000; // 5-minute timeout per video
+
+        if (file.type) {
+          xhr.setRequestHeader('Content-Type', file.type);
+        }
+
+        xhr.upload.onprogress = (event) => {
+          if (event.lengthComputable && event.total > 0) {
+            const percent = Math.min(99, Math.round((event.loaded / event.total) * 100));
+            setItems((prev) =>
+              prev.map((i) => (i.id === itemId ? { ...i, progress: percent } : i))
+            );
+          }
+        };
+
+        xhr.onload = () => {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            resolve();
+          } else {
+            reject(
+              new Error(`Cloudflare R2 returned HTTP ${xhr.status} ${xhr.statusText || ''}`.trim())
+            );
+          }
+        };
+
+        xhr.onerror = () => {
+          reject(new Error('Network error uploading to Cloudflare R2. Check your connection.'));
+        };
+
+        xhr.ontimeout = () => {
+          reject(new Error('Upload timed out. Connection was too slow.'));
+        };
+
+        xhr.onabort = () => {
+          reject(new Error('Upload was aborted.'));
+        };
+
+        xhr.send(file);
+      });
+
+      // Step 3: Finalize Media Asset record in PostgreSQL
+      const finalizeRes = await fetch('/api/upload/finalize', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          objectKey: presignedData.objectKey,
+          filename: file.name,
+          mimeType: file.type || 'video/mp4',
+          size: file.size,
+        }),
+      });
+
+      const finalizeData = await finalizeRes.json();
+      if (!finalizeRes.ok) {
+        throw new Error(finalizeData.error || `Media finalization failed (HTTP ${finalizeRes.status})`);
+      }
+
+      setItems((prev) =>
+        prev.map((i) =>
+          i.id === itemId
+            ? {
+                ...i,
+                status: 'UPLOADED',
+                mediaAssetId: finalizeData.media.id,
+                url: finalizeData.media.url,
+                thumbnailUrl: finalizeData.media.thumbnailUrl || undefined,
+                progress: 100,
+                isSharedReused: false,
+                errorMessage: undefined,
+              }
+            : i
+        )
+      );
+    } catch (err: any) {
+      console.error(`[Upload Failed] ${file.name}:`, err);
+      const message = err?.message || 'Upload failed. Click Retry.';
+      setItems((prev) =>
+        prev.map((i) =>
+          i.id === itemId
+            ? {
+                ...i,
+                status: 'ERROR',
+                errorMessage: message,
+              }
+            : i
+        )
+      );
+    }
+  }, []);
+
+  // Controlled Concurrency Queue Worker
+  const processUploadQueue = useCallback(async () => {
+    while (
+      activeUploadsRef.current < MAX_CONCURRENT_UPLOADS &&
+      uploadQueueRef.current.length > 0
+    ) {
+      const nextId = uploadQueueRef.current.shift();
+      if (!nextId) break;
+
+      const file = fileMapRef.current.get(nextId);
+      if (!file) continue;
+
+      activeUploadsRef.current++;
+      runSingleUpload(nextId, file).finally(() => {
+        activeUploadsRef.current--;
+        processUploadQueue();
+      });
+    }
+  }, [runSingleUpload]);
+
+  // Batch Upload from local file picker
+  const handleBatchUpload = (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+
+    const filesArray = Array.from(files);
+    const newItems: BulkItem[] = [];
+    const newIds: string[] = [];
+
+    filesArray.forEach((file, idx) => {
+      const id = `bulk_${Date.now()}_${idx}_${Math.random().toString(36).substring(2, 6)}`;
+      fileMapRef.current.set(id, file);
+      newIds.push(id);
+
+      newItems.push({
+        id,
+        name: file.name,
+        url: '',
+        size: file.size,
+        mimeType: file.type || 'video/mp4',
+        caption: bulkMasterCaption || file.name.replace(/\.[^/.]+$/, ''),
+        scheduledDate: startDate,
+        scheduledTime: '12:00',
+        selectedAccountIds: [...selectedAccountIds],
+        status: 'PENDING',
+        progress: 0,
+      });
+    });
+
+    setItems((prev) => [...prev, ...newItems]);
+    setScheduleGenerated(false);
+
+    // Enqueue items into concurrency queue
+    uploadQueueRef.current.push(...newIds);
+    processUploadQueue();
+  };
+
+  // Retry an individual failed item
+  const handleRetryItem = (itemId: string) => {
+    const file = fileMapRef.current.get(itemId);
+    if (!file) {
+      alert('File reference is no longer in memory. Please re-select the file from your computer.');
+      return;
+    }
+
+    setItems((prev) =>
+      prev.map((i) =>
+        i.id === itemId
+          ? { ...i, status: 'PENDING', progress: 0, errorMessage: undefined }
+          : i
+      )
+    );
+
+    uploadQueueRef.current.push(itemId);
+    processUploadQueue();
+  };
+
+  // Retry all failed items
+  const handleRetryAllFailed = () => {
+    const failedItems = items.filter(
+      (i) => i.status === 'ERROR' && fileMapRef.current.has(i.id)
+    );
+    if (failedItems.length === 0) return;
+
+    const failedIds = failedItems.map((i) => i.id);
+
+    setItems((prev) =>
+      prev.map((i) =>
+        failedIds.includes(i.id)
+          ? { ...i, status: 'PENDING', progress: 0, errorMessage: undefined }
+          : i
+      )
+    );
+
+    uploadQueueRef.current.push(...failedIds);
+    processUploadQueue();
+  };
+
+  // Clear all failed items from queue
+  const handleClearFailed = () => {
+    const failedIds = new Set(items.filter((i) => i.status === 'ERROR').map((i) => i.id));
+    failedIds.forEach((id) => fileMapRef.current.delete(id));
+    uploadQueueRef.current = uploadQueueRef.current.filter((id) => !failedIds.has(id));
+    setItems((prev) => prev.filter((i) => !failedIds.has(i.id)));
+  };
+
+  // Remove single item
+  const handleRemoveItem = (itemId: string) => {
+    fileMapRef.current.delete(itemId);
+    uploadQueueRef.current = uploadQueueRef.current.filter((id) => id !== itemId);
+    setItems((prev) => prev.filter((i) => i.id !== itemId));
+  };
 
   const openLibraryModal = async () => {
     setShowLibraryModal(true);
@@ -158,7 +437,7 @@ export default function BulkUploadPage() {
   };
 
   const handleAddFromLibrary = () => {
-    const selectedAssets = libraryAssets.filter(a => selectedLibraryIds.includes(a.id));
+    const selectedAssets = libraryAssets.filter((a) => selectedLibraryIds.includes(a.id));
     if (selectedAssets.length === 0) return;
 
     const newItems: BulkItem[] = selectedAssets.map((asset, idx) => ({
@@ -174,11 +453,13 @@ export default function BulkUploadPage() {
       scheduledTime: '12:00',
       selectedAccountIds: [...selectedAccountIds],
       status: 'UPLOADED',
+      progress: 100,
       isSharedReused: true,
     }));
 
-    setItems(prev => [...prev, ...newItems]);
+    setItems((prev) => [...prev, ...newItems]);
     setShowLibraryModal(false);
+    setScheduleGenerated(false);
   };
 
   const handleApplyBulkCaption = () => {
@@ -198,7 +479,7 @@ export default function BulkUploadPage() {
       return;
     }
     if (selectedAccountIds.length === 0) {
-      setGenerateError('Select at least one social account.');
+      setGenerateError('Select at least one social account (e.g. YouTube channel Beyond History).');
       return;
     }
     if (!startDate) {
@@ -210,22 +491,39 @@ export default function BulkUploadPage() {
       return;
     }
 
+    const uploadedCount = items.filter((i) => i.status === 'UPLOADED').length;
+    if (uploadedCount === 0) {
+      const isUploading = items.some((i) => i.status === 'UPLOADING' || i.status === 'PENDING');
+      if (isUploading) {
+        setGenerateError('Uploads are currently in progress. Please wait until at least one video finishes uploading.');
+      } else {
+        setGenerateError('No successfully uploaded videos in queue. Please retry failed uploads before generating schedule matrix.');
+      }
+      return;
+    }
+
     const slotsToUse = timeSlots.slice(0, postsPerDay);
     const parts = startDate.split('-');
     const yyyyStart = parseInt(parts[0], 10);
     const mmStart = parseInt(parts[1], 10) - 1;
     const ddStart = parseInt(parts[2], 10);
 
+    let scheduleSlotIndex = 0;
+
     setItems((prev) =>
-      prev.map((item, idx) => {
-        const dayOffset = Math.floor(idx / postsPerDay);
-        const slotIdx = idx % postsPerDay;
+      prev.map((item) => {
+        const dayOffset = Math.floor(scheduleSlotIndex / postsPerDay);
+        const slotIdx = scheduleSlotIndex % postsPerDay;
         const targetDate = new Date(yyyyStart, mmStart, ddStart);
         targetDate.setDate(targetDate.getDate() + dayOffset);
 
         const yyyy = targetDate.getFullYear();
         const mm = String(targetDate.getMonth() + 1).padStart(2, '0');
         const dd = String(targetDate.getDate()).padStart(2, '0');
+
+        if (item.status === 'UPLOADED') {
+          scheduleSlotIndex++;
+        }
 
         return {
           ...item,
@@ -238,108 +536,35 @@ export default function BulkUploadPage() {
     setScheduleGenerated(true);
   };
 
-  const uploadFile = async (file: File, itemId: string) => {
-    try {
-      setItems((prev) => prev.map((i) => i.id === itemId ? { ...i, status: 'UPLOADING' } : i));
-
-      const presignedRes = await fetch('/api/upload/presigned', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ filename: file.name, mimeType: file.type, size: file.size })
-      });
-      const presignedData = await presignedRes.json();
-      if (!presignedRes.ok) throw new Error(presignedData.error);
-
-      // Single-Object Storage Deduplication:
-      // If asset already exists in Cloudflare R2, reuse it immediately without uploading again!
-      if (presignedData.alreadyExists && presignedData.media) {
-        setItems((prev) => prev.map((i) => i.id === itemId ? {
-          ...i,
-          status: 'UPLOADED',
-          mediaAssetId: presignedData.media.id,
-          url: presignedData.media.url,
-          isSharedReused: true,
-        } : i));
-        return;
-      }
-
-      const r2Res = await fetch(presignedData.uploadUrl, {
-        method: 'PUT',
-        body: file,
-        headers: { 'Content-Type': file.type }
-      });
-      if (!r2Res.ok) throw new Error('Failed to upload to R2');
-
-      const finalizeRes = await fetch('/api/upload/finalize', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          objectKey: presignedData.objectKey,
-          filename: file.name,
-          mimeType: file.type,
-          size: file.size
-        })
-      });
-      const finalizeData = await finalizeRes.json();
-      if (!finalizeRes.ok) throw new Error(finalizeData.error);
-
-      setItems((prev) => prev.map((i) => i.id === itemId ? {
-        ...i,
-        status: 'UPLOADED',
-        mediaAssetId: finalizeData.media.id,
-        url: finalizeData.media.url,
-        isSharedReused: false,
-      } : i));
-
-    } catch (err: any) {
-      console.error(err);
-      setItems((prev) => prev.map((i) => i.id === itemId ? { ...i, status: 'ERROR' } : i));
-    }
-  };
-
-  const handleBatchUpload = (files: FileList | null) => {
-    if (!files) return;
-    const newItems: BulkItem[] = [];
-
-    Array.from(files).forEach((file, idx) => {
-      const id = `bulk_${Date.now()}_${idx}`;
-      newItems.push({
-        id,
-        name: file.name,
-        url: '', // will be set after upload
-        size: file.size,
-        mimeType: file.type || 'video/mp4',
-        caption: bulkMasterCaption || `Video content item #${items.length + idx + 1}`,
-        scheduledDate: startDate,
-        scheduledTime: '12:00',
-        selectedAccountIds: [...selectedAccountIds],
-        status: 'PENDING',
-      });
-    });
-
-    setItems((prev) => [...prev, ...newItems]);
-
-    // Start uploads
-    const filesArray = Array.from(files);
-    newItems.forEach((item, idx) => {
-      uploadFile(filesArray[idx], item.id);
-    });
-  };
-
   const handleSaveAllBulk = async () => {
-    if (items.some(i => i.status === 'UPLOADING' || i.status === 'PENDING')) {
-      alert("Please wait for all uploads to complete.");
+    const isUploading = items.some((i) => i.status === 'UPLOADING' || i.status === 'PENDING');
+    if (isUploading) {
+      alert('Please wait for active uploads to finish before scheduling.');
       return;
+    }
+
+    const uploadedItems = items.filter((i) => i.status === 'UPLOADED');
+    if (uploadedItems.length === 0) {
+      alert('No uploaded videos are ready to be scheduled.');
+      return;
+    }
+
+    const failedCount = items.filter((i) => i.status === 'ERROR').length;
+    if (failedCount > 0) {
+      const proceed = confirm(
+        `${failedCount} video(s) failed upload and cannot be scheduled.\n\nDo you want to proceed with scheduling only the ${uploadedItems.length} successfully uploaded video(s)?`
+      );
+      if (!proceed) return;
     }
 
     setSaving(true);
     try {
-      const payloadItems = items.filter(i => i.status === 'UPLOADED').map(item => {
+      const payloadItems = uploadedItems.map((item) => {
         const utcIso = zonedDateTimeToUtcIso(item.scheduledDate, item.scheduledTime, timezone);
-        
+
         const platformSettings = accounts
-          .filter(a => item.selectedAccountIds.includes(a.id))
-          .map(a => ({
+          .filter((a) => item.selectedAccountIds.includes(a.id))
+          .map((a) => ({
             socialAccountId: a.id,
             platform: a.platform,
             customCaption: item.caption,
@@ -352,7 +577,7 @@ export default function BulkUploadPage() {
           masterCaption: item.caption,
           scheduledFor: utcIso,
           timezone,
-          platformSettings
+          platformSettings,
         };
       });
 
@@ -363,7 +588,7 @@ export default function BulkUploadPage() {
       });
 
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error);
+      if (!res.ok) throw new Error(data.error || 'Failed to save bulk posts');
 
       setSuccessBanner(true);
       setTimeout(() => {
@@ -377,6 +602,14 @@ export default function BulkUploadPage() {
     }
   };
 
+  // Queue Statistics
+  const uploadedCount = items.filter((i) => i.status === 'UPLOADED').length;
+  const uploadingCount = items.filter((i) => i.status === 'UPLOADING').length;
+  const pendingCount = items.filter((i) => i.status === 'PENDING').length;
+  const errorCount = items.filter((i) => i.status === 'ERROR').length;
+  const totalCount = items.length;
+  const overallProgress = totalCount > 0 ? Math.round((uploadedCount / totalCount) * 100) : 0;
+
   return (
     <AppLayout title="Bulk Upload & Automatic Schedule Generator">
       <div className="max-w-[1440px] w-full mx-auto">
@@ -387,7 +620,7 @@ export default function BulkUploadPage() {
                 Batch Media Uploader & Schedule Matrix
               </h1>
               <p className="text-sm md:text-base text-neutral-400 mt-1.5">
-                Upload up to 50 videos simultaneously with shared single-object R2 storage and generate multi-day posting schedules automatically.
+                Upload 50–100 videos with controlled concurrency, real-time progress, and single-object Cloudflare R2 deduplication.
               </p>
             </div>
             {/* Shared R2 Architecture Badge */}
@@ -441,11 +674,14 @@ export default function BulkUploadPage() {
               <input
                 type="date"
                 value={startDate}
-                onChange={(e) => { setStartDate(e.target.value); setScheduleGenerated(false); }}
+                onChange={(e) => {
+                  setStartDate(e.target.value);
+                  setScheduleGenerated(false);
+                }}
                 className="w-full p-3 text-sm bg-[#0e0e12] border border-[#22222a] rounded-xl text-white"
               />
             </div>
-            
+
             <div>
               <label className="block text-xs md:text-sm font-bold text-neutral-300 mb-1.5">
                 Posting Times
@@ -476,7 +712,10 @@ export default function BulkUploadPage() {
               </label>
               <select
                 value={timezone}
-                onChange={(e) => { setTimezone(e.target.value); setScheduleGenerated(false); }}
+                onChange={(e) => {
+                  setTimezone(e.target.value);
+                  setScheduleGenerated(false);
+                }}
                 className="w-full p-3 text-sm bg-[#0e0e12] border border-[#22222a] rounded-xl text-white"
               >
                 <option value="Asia/Karachi">Asia/Karachi (PKT +05:00)</option>
@@ -495,56 +734,63 @@ export default function BulkUploadPage() {
                   <span className="text-neutral-500 text-sm">Loading...</span>
                 ) : accounts.length === 0 ? (
                   <span className="text-neutral-500 text-sm">No accounts connected</span>
-                ) : accounts.map((acc) => {
-                  const isChecked = selectedAccountIds.includes(acc.id);
-                  return (
-                    <label
-                      key={acc.id}
-                      title={`${acc.name || acc.username}${acc.username && acc.username !== acc.name ? ` (${acc.username})` : ''}`}
-                      className={`flex items-center gap-2.5 p-2.5 rounded-xl border text-xs md:text-sm font-semibold cursor-pointer ${
-                        isChecked
-                          ? 'bg-red-950/40 border-red-500/50 text-white'
-                          : 'bg-[#0e0e12]/40 border-[#22222a] text-neutral-400'
-                      }`}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={isChecked}
-                        onChange={() => {
-                          setSelectedAccountIds((prev) =>
-                            prev.includes(acc.id) ? prev.filter((p) => p !== acc.id) : [...prev, acc.id]
-                          );
-                          setScheduleGenerated(false);
-                        }}
-                        className="rounded border-[#33333e] bg-[#0e0e12] text-red-600 w-4 h-4"
-                      />
-                      <PlatformIcon platform={acc.platform} size={16} className="w-4 h-4 rounded" />
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-1.5">
-                          <span className="truncate font-bold text-white text-xs">
-                            {acc.name || acc.username}
-                          </span>
-                          {acc.platform === 'FACEBOOK' && (
-                            <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-blue-500/20 text-blue-300 border border-blue-500/30 shrink-0">
-                              Page
+                ) : (
+                  accounts.map((acc) => {
+                    const isChecked = selectedAccountIds.includes(acc.id);
+                    return (
+                      <label
+                        key={acc.id}
+                        title={`${acc.name || acc.username}${
+                          acc.username && acc.username !== acc.name ? ` (${acc.username})` : ''
+                        }`}
+                        className={`flex items-center gap-2.5 p-2.5 rounded-xl border text-xs md:text-sm font-semibold cursor-pointer ${
+                          isChecked
+                            ? 'bg-red-950/40 border-red-500/50 text-white'
+                            : 'bg-[#0e0e12]/40 border-[#22222a] text-neutral-400'
+                        }`}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={isChecked}
+                          onChange={() => {
+                            setSelectedAccountIds((prev) =>
+                              prev.includes(acc.id)
+                                ? prev.filter((p) => p !== acc.id)
+                                : [...prev, acc.id]
+                            );
+                            setScheduleGenerated(false);
+                          }}
+                          className="rounded border-[#33333e] bg-[#0e0e12] text-red-600 w-4 h-4"
+                        />
+                        <PlatformIcon platform={acc.platform} size={16} className="w-4 h-4 rounded" />
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-1.5">
+                            <span className="truncate font-bold text-white text-xs">
+                              {acc.name || acc.username}
+                            </span>
+                            {acc.platform === 'FACEBOOK' && (
+                              <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-blue-500/20 text-blue-300 border border-blue-500/30 shrink-0">
+                                Page
+                              </span>
+                            )}
+                          </div>
+                          {acc.username && acc.username !== acc.name && (
+                            <span className="text-[10px] text-neutral-400 truncate block font-mono">
+                              {/^\d+$/.test(acc.username) ? `ID: ${acc.username}` : `@${acc.username}`}
                             </span>
                           )}
                         </div>
-                        {acc.username && acc.username !== acc.name && (
-                          <span className="text-[10px] text-neutral-400 truncate block font-mono">
-                            {/^\d+$/.test(acc.username) ? `ID: ${acc.username}` : `@${acc.username}`}
-                          </span>
-                        )}
-                      </div>
-                    </label>
-                  );
-                })}
+                      </label>
+                    );
+                  })
+                )}
               </div>
             </div>
-            
+
             {generateError && (
-              <div className="text-sm font-bold text-red-400 bg-red-500/10 border border-red-500/20 p-3 rounded-xl">
-                {generateError}
+              <div className="text-sm font-bold text-red-400 bg-red-500/10 border border-red-500/20 p-3 rounded-xl flex items-start gap-2">
+                <AlertCircle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
+                <span>{generateError}</span>
               </div>
             )}
 
@@ -602,7 +848,10 @@ export default function BulkUploadPage() {
                   type="file"
                   multiple
                   accept="image/*,video/*"
-                  onChange={(e) => handleBatchUpload(e.target.files)}
+                  onChange={(e) => {
+                    handleBatchUpload(e.target.files);
+                    if (fileInputRef.current) fileInputRef.current.value = '';
+                  }}
                   className="hidden"
                 />
                 <div className="w-12 h-12 rounded-2xl bg-red-500/10 text-red-500 flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform">
@@ -612,7 +861,7 @@ export default function BulkUploadPage() {
                   Upload New Files
                 </p>
                 <p className="text-xs text-neutral-400 mt-1">
-                  Upload MP4/MOV videos to R2 once
+                  Upload MP4/MOV videos with controlled concurrency
                 </p>
               </div>
 
@@ -645,29 +894,105 @@ export default function BulkUploadPage() {
                   Queued Content Items ({items.length})
                 </h3>
               </div>
-              {scheduleGenerated && items.length > 0 && (
+              {scheduleGenerated && uploadedCount > 0 && (
                 <div className="text-sm font-semibold text-neutral-400">
-                  {items.length} videos • {postsPerDay} posts/day • {Math.ceil(items.length / postsPerDay)} publishing days<br/>
+                  {uploadedCount} videos ready • {postsPerDay} posts/day • {Math.ceil(uploadedCount / postsPerDay)} publishing days<br />
                   Starts {items[0]?.scheduledDate} • Timezone: {timezone}
                 </div>
               )}
             </div>
 
-            <button
-              onClick={handleSaveAllBulk}
-              disabled={saving || items.length === 0 || !scheduleGenerated || items.some(i => i.status !== 'UPLOADED' && i.status !== 'ERROR')}
-              className="flex items-center gap-2 px-6 py-3 rounded-2xl bg-gradient-to-r from-red-700 to-red-600 hover:from-red-600 hover:to-red-500 text-white text-sm font-black shadow-lg shadow-red-600/30 transition-all disabled:opacity-50"
-            >
-              {saving ? (
-                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-              ) : (
+            <div className="flex flex-wrap items-center gap-3">
+              {errorCount > 0 && (
                 <>
-                  <Calendar className="w-4 h-4" />
-                  <span>Confirm & Schedule All ({items.length})</span>
+                  <button
+                    onClick={handleRetryAllFailed}
+                    className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 text-xs font-bold transition-colors"
+                  >
+                    <RotateCw className="w-3.5 h-3.5" />
+                    <span>Retry Failed ({errorCount})</span>
+                  </button>
+                  <button
+                    onClick={handleClearFailed}
+                    className="flex items-center gap-1.5 px-3 py-2.5 rounded-xl bg-neutral-800/60 hover:bg-neutral-800 text-neutral-400 text-xs font-bold transition-colors"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                    <span>Clear Failed</span>
+                  </button>
                 </>
               )}
-            </button>
+
+              <button
+                onClick={handleSaveAllBulk}
+                disabled={
+                  saving ||
+                  uploadedCount === 0 ||
+                  !scheduleGenerated ||
+                  uploadingCount > 0 ||
+                  pendingCount > 0
+                }
+                className="flex items-center gap-2 px-6 py-3 rounded-2xl bg-gradient-to-r from-red-700 to-red-600 hover:from-red-600 hover:to-red-500 text-white text-sm font-black shadow-lg shadow-red-600/30 transition-all disabled:opacity-50"
+              >
+                {saving ? (
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  <>
+                    <Calendar className="w-4 h-4" />
+                    <span>
+                      {uploadedCount === totalCount && totalCount > 0
+                        ? `Confirm & Schedule All (${totalCount})`
+                        : uploadedCount > 0
+                        ? `Confirm & Schedule (${uploadedCount} of ${totalCount} Ready)`
+                        : 'Confirm & Schedule (0 Ready)'}
+                    </span>
+                  </>
+                )}
+              </button>
+            </div>
           </div>
+
+          {/* Batch Status & Progress Overview */}
+          {totalCount > 0 && (
+            <div className="mb-6 p-4 rounded-2xl bg-[#14141a] border border-[#22222a] space-y-3">
+              <div className="flex flex-wrap items-center justify-between gap-3 text-xs font-bold">
+                <div className="flex items-center gap-4">
+                  <span className="flex items-center gap-1.5 text-emerald-400">
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                    {uploadedCount} Uploaded
+                  </span>
+                  {uploadingCount > 0 && (
+                    <span className="flex items-center gap-1.5 text-sky-400">
+                      <div className="w-3 h-3 border-2 border-sky-400 border-t-transparent rounded-full animate-spin" />
+                      {uploadingCount} Uploading
+                    </span>
+                  )}
+                  {pendingCount > 0 && (
+                    <span className="flex items-center gap-1.5 text-neutral-400">
+                      <Clock className="w-3.5 h-3.5" />
+                      {pendingCount} In Queue
+                    </span>
+                  )}
+                  {errorCount > 0 && (
+                    <span className="flex items-center gap-1.5 text-red-400">
+                      <AlertTriangle className="w-3.5 h-3.5" />
+                      {errorCount} Failed
+                    </span>
+                  )}
+                </div>
+                <div className="text-neutral-400 font-mono">
+                  {uploadedCount}/{totalCount} Completed ({overallProgress}%)
+                </div>
+              </div>
+
+              {/* Progress bar */}
+              <div className="w-full h-2 bg-[#22222a] rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-gradient-to-r from-red-600 to-emerald-500 transition-all duration-300"
+                  style={{ width: `${overallProgress}%` }}
+                />
+              </div>
+            </div>
+          )}
 
           <div className="space-y-4">
             {items.length === 0 ? (
@@ -676,17 +1001,25 @@ export default function BulkUploadPage() {
               </div>
             ) : (
               items.map((item, idx) => {
-                const targetAccounts = accounts.filter(a => item.selectedAccountIds.includes(a.id));
+                const targetAccounts = accounts.filter((a) => item.selectedAccountIds.includes(a.id));
                 return (
                   <div
                     key={item.id}
-                    className="p-5 rounded-2xl bg-[#0e0e12]/60 border border-[#22222a] flex flex-col md:flex-row md:items-center justify-between gap-5"
+                    className={`p-5 rounded-2xl bg-[#0e0e12]/60 border transition-colors flex flex-col md:flex-row md:items-center justify-between gap-5 ${
+                      item.status === 'ERROR'
+                        ? 'border-red-900/40 bg-red-950/10'
+                        : item.status === 'UPLOADING'
+                        ? 'border-sky-900/40'
+                        : 'border-[#22222a]'
+                    }`}
                   >
                     <div className="flex items-center gap-4 overflow-hidden w-full md:w-auto flex-1">
                       <span className="w-7 text-center text-sm font-black text-neutral-500 shrink-0">
                         {String(idx + 1).padStart(2, '0')}
                       </span>
-                      <div className="w-16 h-16 rounded-xl bg-[#18181f] overflow-hidden shrink-0 border border-[#33333e] flex items-center justify-center">
+
+                      {/* Thumbnail & Upload Progress Box */}
+                      <div className="w-16 h-16 rounded-xl bg-[#18181f] overflow-hidden shrink-0 border border-[#33333e] flex flex-col items-center justify-center relative">
                         {item.status === 'UPLOADED' && item.url ? (
                           item.mimeType.startsWith('video') ? (
                             <video src={item.url} className="w-full h-full object-cover" />
@@ -695,16 +1028,33 @@ export default function BulkUploadPage() {
                             <img src={item.url} alt="" className="w-full h-full object-cover" />
                           )
                         ) : item.status === 'UPLOADING' ? (
-                          <div className="w-6 h-6 border-2 border-red-500 border-t-transparent rounded-full animate-spin" />
+                          <div className="flex flex-col items-center justify-center p-1 text-center">
+                            <div className="w-5 h-5 border-2 border-sky-400 border-t-transparent rounded-full animate-spin mb-1" />
+                            <span className="text-[10px] text-sky-400 font-bold font-mono">
+                              {item.progress || 0}%
+                            </span>
+                          </div>
                         ) : item.status === 'ERROR' ? (
-                          <span className="text-xs text-red-400 font-bold">Error</span>
+                          <div className="flex flex-col items-center justify-center text-center p-1 text-red-400">
+                            <AlertCircle className="w-5 h-5 mb-0.5" />
+                            <span className="text-[9px] font-bold">Failed</span>
+                          </div>
                         ) : (
-                          <span className="text-xs text-neutral-500">Wait</span>
+                          <div className="flex flex-col items-center justify-center text-center p-1 text-neutral-500">
+                            <Clock className="w-4 h-4 mb-0.5" />
+                            <span className="text-[9px] font-semibold">Queue</span>
+                          </div>
                         )}
                       </div>
+
                       <div className="overflow-hidden flex-1">
-                        <div className="flex items-center gap-2">
-                          <p className="text-sm md:text-base font-bold text-white truncate">{item.name}</p>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <p className="text-sm md:text-base font-bold text-white truncate max-w-md">
+                            {item.name}
+                          </p>
+                          <span className="text-[11px] text-neutral-500 font-mono">
+                            ({(item.size / (1024 * 1024)).toFixed(1)} MB)
+                          </span>
                           {targetAccounts.length > 1 && (
                             <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-red-950/50 text-red-300 border border-red-500/30 shrink-0">
                               Shared R2 Asset → {targetAccounts.length} Platforms
@@ -716,21 +1066,61 @@ export default function BulkUploadPage() {
                             </span>
                           )}
                         </div>
-                        
-                        <input 
-                          type="text" 
+
+                        {/* Uploading progress bar */}
+                        {item.status === 'UPLOADING' && (
+                          <div className="mt-2 w-full max-w-md">
+                            <div className="flex items-center justify-between text-[10px] text-sky-400 font-semibold mb-1">
+                              <span>Uploading to Cloudflare R2...</span>
+                              <span className="font-mono">{item.progress || 0}%</span>
+                            </div>
+                            <div className="w-full h-1.5 bg-neutral-800 rounded-full overflow-hidden">
+                              <div
+                                className="h-full bg-sky-500 transition-all duration-150"
+                                style={{ width: `${item.progress || 0}%` }}
+                              />
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Error Notice & Inline Retry */}
+                        {item.status === 'ERROR' && (
+                          <div className="mt-2 flex flex-wrap items-center gap-2">
+                            <span className="text-xs font-semibold text-red-400 bg-red-950/60 px-2.5 py-1 rounded-lg border border-red-900/60 break-words">
+                              {item.errorMessage || 'Upload failed.'}
+                            </span>
+                            <button
+                              onClick={() => handleRetryItem(item.id)}
+                              className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-red-600 hover:bg-red-500 text-white text-[11px] font-bold transition-all shadow-sm"
+                            >
+                              <RotateCw className="w-3 h-3" />
+                              <span>Retry Upload</span>
+                            </button>
+                          </div>
+                        )}
+
+                        <input
+                          type="text"
                           value={item.caption}
                           onChange={(e) => {
                             const val = e.target.value;
-                            setItems(prev => prev.map(i => i.id === item.id ? { ...i, caption: val } : i));
+                            setItems((prev) =>
+                              prev.map((i) => (i.id === item.id ? { ...i, caption: val } : i))
+                            );
                           }}
-                          className="w-full text-xs md:text-sm mt-1 p-1 bg-transparent border-b border-[#33333e] text-neutral-300 focus:outline-none focus:border-red-500"
+                          className="w-full text-xs md:text-sm mt-2 p-1 bg-transparent border-b border-[#33333e] text-neutral-300 focus:outline-none focus:border-red-500"
                           placeholder="Caption..."
                         />
 
                         <div className="flex items-center gap-1.5 mt-2">
-                          {targetAccounts.map(a => (
-                            <div key={a.id} className="relative group" title={`${a.name || a.username}${a.platform === 'FACEBOOK' ? ' (Facebook Page)' : ''}`}>
+                          {targetAccounts.map((a) => (
+                            <div
+                              key={a.id}
+                              className="relative group"
+                              title={`${a.name || a.username}${
+                                a.platform === 'FACEBOOK' ? ' (Facebook Page)' : ''
+                              }`}
+                            >
                               <PlatformIcon platform={a.platform} size={16} className="w-4 h-4 rounded" />
                             </div>
                           ))}
@@ -740,28 +1130,46 @@ export default function BulkUploadPage() {
 
                     {/* Schedule time controls & delete */}
                     <div className="flex flex-col items-start md:items-end justify-center gap-2 shrink-0 pt-3 md:pt-0 border-t md:border-t-0 border-[#22222a]">
-                      {scheduleGenerated ? (
+                      {item.status === 'ERROR' ? (
+                        <div className="flex flex-col items-start md:items-end mb-1">
+                          <span className="text-[11px] font-bold text-red-400 bg-red-500/10 px-2 py-1 rounded-lg border border-red-500/20">
+                            Upload Failed (Retry required)
+                          </span>
+                        </div>
+                      ) : scheduleGenerated ? (
                         <div className="flex flex-col items-start md:items-end mb-1">
                           <span className="text-sm font-bold text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-lg border border-emerald-500/20">
                             {item.scheduledDate} at {item.scheduledTime}
                           </span>
-                          <span className="text-[10px] text-neutral-500 mt-1 font-semibold uppercase">{timezone}</span>
+                          <span className="text-[10px] text-neutral-500 mt-1 font-semibold uppercase">
+                            {timezone}
+                          </span>
                         </div>
                       ) : (
-                        <span className="text-[11px] font-bold text-red-400 bg-red-500/10 px-2 py-1 rounded-lg mb-1 border border-red-500/20">
+                        <span className="text-[11px] font-bold text-amber-400 bg-amber-500/10 px-2 py-1 rounded-lg mb-1 border border-amber-500/20">
                           Needs Schedule Matrix
                         </span>
                       )}
+
                       <div className="flex items-center gap-2">
+                        {item.status === 'ERROR' && (
+                          <button
+                            onClick={() => handleRetryItem(item.id)}
+                            title="Retry Upload"
+                            className="p-2 rounded-xl text-red-400 hover:text-white hover:bg-red-500/20 transition-colors"
+                          >
+                            <RotateCw className="w-4 h-4" />
+                          </button>
+                        )}
                         <button
-                          onClick={() => setItems((prev) => prev.filter((i) => i.id !== item.id))}
+                          onClick={() => handleRemoveItem(item.id)}
+                          title="Remove item"
                           className="p-2 rounded-xl text-neutral-400 hover:text-red-400 hover:bg-red-500/10 transition-colors"
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
                       </div>
                     </div>
-
                   </div>
                 );
               })
@@ -807,8 +1215,10 @@ export default function BulkUploadPage() {
                       <div
                         key={asset.id}
                         onClick={() => {
-                          setSelectedLibraryIds(prev =>
-                            prev.includes(asset.id) ? prev.filter(id => id !== asset.id) : [...prev, asset.id]
+                          setSelectedLibraryIds((prev) =>
+                            prev.includes(asset.id)
+                              ? prev.filter((id) => id !== asset.id)
+                              : [...prev, asset.id]
                           );
                         }}
                         className={`cursor-pointer rounded-2xl border p-2.5 transition-all flex flex-col justify-between ${

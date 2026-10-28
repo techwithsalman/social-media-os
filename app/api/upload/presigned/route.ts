@@ -46,10 +46,17 @@ export async function POST(req: NextRequest) {
     }
 
     const fileSize = size || 10 * 1024 * 1024; // Default 10MB check if unprovided
+    const MAX_VIDEO_SIZE = 500 * 1024 * 1024; // 500 MB for videos
+    const MAX_IMAGE_SIZE = 50 * 1024 * 1024;  // 50 MB for images
+    const maxAllowedSize = mimeType.startsWith('video/') ? MAX_VIDEO_SIZE : MAX_IMAGE_SIZE;
 
-    if (fileSize > 50 * 1024 * 1024) {
+    if (fileSize > maxAllowedSize) {
       return NextResponse.json(
-        { error: 'File is too large. Maximum size is 50 MB.' },
+        {
+          error: `File is too large (${(fileSize / (1024 * 1024)).toFixed(1)} MB). Maximum allowed size is ${
+            mimeType.startsWith('video/') ? '500 MB' : '50 MB'
+          }.`,
+        },
         { status: 413 }
       );
     }
