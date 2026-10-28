@@ -30,13 +30,30 @@ export class PublishingEngine {
    */
   static async reconcileProcessingPosts(): Promise<void> {
     try {
-      // Find PlatformPosts stuck in PROCESSING for more than 1 minute
       const oneMinuteAgo = new Date(Date.now() - 60000);
+      const fiveMinutesAgo = new Date(Date.now() - 5 * 60000);
+
       const stuckPlatforms = await prisma.platformPost.findMany({
         where: {
-          status: 'PROCESSING',
-          updatedAt: { lte: oneMinuteAgo },
-          externalPostId: { not: null },
+          OR: [
+            // Posts with externalPostId waiting for status resolution
+            {
+              status: 'PROCESSING',
+              updatedAt: { lte: oneMinuteAgo },
+              externalPostId: { not: null },
+            },
+            // Posts stuck in UPLOADING with no progress for >5 mins
+            {
+              status: 'UPLOADING',
+              updatedAt: { lte: fiveMinutesAgo },
+            },
+            // Posts stuck in PROCESSING without externalPostId for >5 mins
+            {
+              status: 'PROCESSING',
+              updatedAt: { lte: fiveMinutesAgo },
+              externalPostId: null,
+            },
+          ],
         },
         include: {
           socialAccount: { include: { token: true } },
@@ -49,13 +66,34 @@ export class PublishingEngine {
       });
 
       for (const pPost of stuckPlatforms) {
-        if (!pPost.externalPostId || pPost.socialAccount.isMock) continue;
-
-        console.log(`[RECONCILE] Checking existing container: ${pPost.externalPostId}`);
+        if (pPost.socialAccount.isMock) continue;
 
         let newChildStatus = pPost.status;
 
-        if (pPost.platform === 'INSTAGRAM') {
+        // If post has no external ID and has stalled in UPLOADING or PROCESSING for >5 mins, mark FAILED
+        if (!pPost.externalPostId && (pPost.status === 'UPLOADING' || pPost.status === 'PROCESSING')) {
+          console.log(`[RECONCILE] PlatformPost ${pPost.id} (${pPost.platform}) stalled in ${pPost.status} without external ID. Transitioning to FAILED.`);
+          newChildStatus = 'FAILED';
+          const errMsg = `${pPost.platform} upload was interrupted before completion. Ready for retry.`;
+          await prisma.platformPost.update({
+            where: { id: pPost.id },
+            data: {
+              status: 'FAILED',
+              errorMessage: errMsg,
+            },
+          });
+          await prisma.publishingJob.updateMany({
+            where: { platformPostId: pPost.id, status: { in: ['PROCESSING', 'QUEUED'] } },
+            data: {
+              status: 'FAILED',
+              errorMessage: errMsg,
+              completedAt: new Date(),
+            },
+          });
+        } else if (!pPost.externalPostId) {
+          continue;
+        } else if (pPost.platform === 'INSTAGRAM') {
+          console.log(`[RECONCILE] Checking existing container: ${pPost.externalPostId}`);
           try {
             const rawToken = pPost.socialAccount.token?.accessToken || '';
             const accessToken = decryptToken(rawToken);
@@ -98,38 +136,34 @@ export class PublishingEngine {
                   },
                 });
                 console.log(`[RECONCILE] Final status: PUBLISHED`);
-              } else if (pubData.error?.message?.includes('has already been published')) {
-                 newChildStatus = 'PUBLISHED';
-                 await prisma.platformPost.update({
-                   where: { id: pPost.id },
-                   data: { status: 'PUBLISHED', errorMessage: null }
-                 });
-                 console.log(`[RECONCILE] Final status: PUBLISHED`);
-              } else {
+              } else if (pubData.error) {
                 newChildStatus = 'FAILED';
                 await prisma.platformPost.update({
                   where: { id: pPost.id },
-                  data: { status: 'FAILED', errorMessage: pubData.error?.message || 'media_publish failed' },
+                  data: {
+                    status: 'FAILED',
+                    errorMessage: pubData.error.message || 'Instagram publishing failed on finalize',
+                  },
                 });
-                console.log(`[RECONCILE] Final DB status: FAILED`);
+                console.log(`[RECONCILE] Final status: FAILED (${pubData.error.message})`);
               }
-            } else if (statusData.status_code === 'ERROR' || statusData.status_code === 'EXPIRED') {
-              console.log(`[RECONCILE] Action taken: Marked FAILED`);
+            } else if (statusData.status_code === 'ERROR') {
               newChildStatus = 'FAILED';
               await prisma.platformPost.update({
                 where: { id: pPost.id },
-                data: { status: 'FAILED', errorMessage: 'Instagram video processing failed' },
+                data: {
+                  status: 'FAILED',
+                  errorMessage: 'Instagram processing error: Media container could not be published',
+                },
               });
-              console.log(`[RECONCILE] Final DB status: FAILED`);
-            } else {
-              console.log(`[RECONCILE] media_publish executed: false`);
+              console.log(`[RECONCILE] Final status: FAILED`);
             }
-          } catch (err: any) {
-            console.error(`[RECONCILE] Error querying Meta API:`, err);
+          } catch (err) {
+            console.error('[RECONCILE] Error querying Instagram status API:', err);
           }
         } else if (pPost.platform === 'TIKTOK') {
           try {
-            console.log(`[RECONCILE] Checking TikTok Publish ${pPost.externalPostId}...`);
+            console.log(`[RECONCILE] Checking TikTok publish_id: ${pPost.externalPostId}`);
             const rawToken = pPost.socialAccount.token?.accessToken || '';
             const accessToken = decryptToken(rawToken);
 
@@ -145,18 +179,15 @@ export class PublishingEngine {
             const statusData = await statusRes.json().catch(() => ({}));
             if (statusRes.ok && statusData.data) {
               const rawStatus = statusData.data.status || '';
-              const publicPostId = statusData.data.public_post_id || statusData.data.video_id;
-              const username = pPost.socialAccount?.username || '';
+              console.log(`[RECONCILE] TikTok status: ${rawStatus}`);
 
-              if (rawStatus === 'PUBLISH_COMPLETE' || rawStatus === 'SUCCESS' || rawStatus === 'PUBLISHED') {
+              if (rawStatus === 'PUBLISH_COMPLETE' || rawStatus === 'SUCCESS') {
                 newChildStatus = 'PUBLISHED';
+                const publicPostId = statusData.data.public_post_id;
+                const username = pPost.socialAccount?.username || '';
                 const postUrl = publicPostId
                   ? `https://www.tiktok.com/@${username || 'creator'}/video/${publicPostId}`
-                  : pPost.externalPostUrl && !pPost.externalPostUrl.endsWith('/@creator') && pPost.externalPostUrl !== 'https://www.tiktok.com/'
-                  ? pPost.externalPostUrl
-                  : username
-                  ? `https://www.tiktok.com/@${username}`
-                  : `https://www.tiktok.com/`;
+                  : pPost.externalPostUrl;
 
                 await prisma.platformPost.update({
                   where: { id: pPost.id },
@@ -238,9 +269,8 @@ export class PublishingEngine {
           }
         }
 
-        // If the child status changed, we must re-evaluate the parent ContentPost status
+        // If the child status changed, re-evaluate the parent ContentPost status
         if (newChildStatus !== pPost.status) {
-          // Re-fetch platform posts to get latest statuses
           const updatedPlatformPosts = await prisma.platformPost.findMany({
             where: { contentPostId: pPost.contentPostId },
           });
@@ -248,12 +278,14 @@ export class PublishingEngine {
           let publishedCount = 0;
           let inboxDraftCount = 0;
           let processingCount = 0;
+          let uploadingCount = 0;
           let failCount = 0;
 
           for (const p of updatedPlatformPosts) {
             if (p.status === 'PUBLISHED') publishedCount++;
             else if (p.status === 'INBOX_DRAFT') inboxDraftCount++;
             else if (p.status === 'PROCESSING') processingCount++;
+            else if (p.status === 'UPLOADING') uploadingCount++;
             else if (p.status === 'FAILED') failCount++;
           }
 
@@ -269,8 +301,10 @@ export class PublishingEngine {
             finalStatus = publishedCount > 0 ? 'PUBLISHED' : 'INBOX_DRAFT';
           } else if (failCount === updatedPlatformPosts.length && failCount > 0) {
             finalStatus = 'FAILED';
-          } else if (processingCount > 0 && failCount === 0) {
-            finalStatus = 'PROCESSING';
+          } else if (publishedCount > 0 && failCount > 0) {
+            finalStatus = 'PARTIALLY_FAILED';
+          } else if (processingCount > 0 || uploadingCount > 0) {
+            finalStatus = failCount > 0 ? 'PARTIALLY_FAILED' : 'PROCESSING';
           } else if (failCount > 0) {
             finalStatus = 'PARTIALLY_FAILED';
           }
@@ -291,7 +325,6 @@ export class PublishingEngine {
       console.error('[RECONCILE] Error during reconciliation:', error);
     }
   }
-
 
   static async publishContentPost(contentPostId: string): Promise<PublishExecutionResult> {
     const post = await prisma.contentPost.findUnique({
@@ -356,7 +389,7 @@ export class PublishingEngine {
 
         let finalAccessToken = decryptedToken;
 
-        // Auto-refresh TikTok token if near or past expiration before publishing
+        // Auto-refresh TikTok / YouTube token if near or past expiration before publishing
         if ((platformType === 'TIKTOK' || platformType === 'YOUTUBE') && pPost.socialAccount.token) {
           const tokenRecord = pPost.socialAccount.token;
           const isNearOrPastExpiry =
@@ -416,7 +449,7 @@ export class PublishingEngine {
           // ignore
         }
         
-        // Inject exact media size from database to assist resilient uploading
+        // Inject exact media size and filename from database to assist resilient uploading
         if (post.mediaAsset) {
           metadataObj.mediaSize = post.mediaAsset.size;
           metadataObj.mediaMimeType = post.mediaAsset.mimeType;
@@ -469,6 +502,16 @@ export class PublishingEngine {
             processingCount++;
           }
 
+          let updatedMetaStr = pPost.metadata;
+          if (result.updatedMetadata) {
+            try {
+              const currentMeta = pPost.metadata ? JSON.parse(pPost.metadata) : {};
+              updatedMetaStr = JSON.stringify({ ...currentMeta, ...result.updatedMetadata });
+            } catch {
+              // ignore
+            }
+          }
+
           console.log(`[QUEUE] Updating platform status... (${postStatus})`);
           await prisma.platformPost.update({
             where: { id: pPost.id },
@@ -477,6 +520,7 @@ export class PublishingEngine {
               externalPostId: result.externalPostId,
               externalPostUrl: result.externalPostUrl,
               errorMessage: result.statusMessage || null,
+              metadata: updatedMetaStr,
             },
           });
 
@@ -589,6 +633,8 @@ export class PublishingEngine {
       finalStatus = successCount > 0 ? 'PUBLISHED' : 'MANUAL_READY';
     } else if (failCount === totalCount && failCount > 0) {
       finalStatus = 'FAILED';
+    } else if (successCount > 0 && failCount > 0) {
+      finalStatus = 'PARTIALLY_FAILED';
     } else if (processingCount > 0 && failCount === 0) {
       finalStatus = 'PROCESSING';
     } else if (failCount > 0) {

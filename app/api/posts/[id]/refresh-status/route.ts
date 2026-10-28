@@ -72,93 +72,94 @@ export async function POST(
 
     const tiktokResponses: Record<string, any> = {};
 
-      for (const pPost of contentPost.platformPosts) {
-        if (pPost.platform === 'INSTAGRAM' && pPost.status === 'PROCESSING' && pPost.externalPostId && !pPost.socialAccount.isMock) {
-          try {
-            console.log(`[Refresh Status] Checking IG Container ${pPost.externalPostId}...`);
-            const rawToken = pPost.socialAccount.token?.accessToken || '';
-            const accessToken = decryptToken(rawToken);
+    for (const pPost of contentPost.platformPosts) {
+      if (pPost.platform === 'INSTAGRAM' && pPost.status === 'PROCESSING' && pPost.externalPostId && !pPost.socialAccount.isMock) {
+        try {
+          console.log(`[Refresh Status] Checking IG Container ${pPost.externalPostId}...`);
+          const rawToken = pPost.socialAccount.token?.accessToken || '';
+          const accessToken = decryptToken(rawToken);
+          
+          // Check container status
+          const statusUrl = `https://graph.instagram.com/v23.0/${pPost.externalPostId}?fields=status_code,status&access_token=${accessToken}`;
+          const statusRes = await fetch(statusUrl);
+          const statusData = await statusRes.json().catch(() => ({}));
+          
+          if (statusData.status_code === 'PUBLISHED') {
+            console.log(`[Refresh Status] Container already PUBLISHED!`);
+            await prisma.platformPost.update({
+              where: { id: pPost.id },
+              data: {
+                status: 'PUBLISHED',
+                errorMessage: null
+              }
+            });
+          } else if (statusData.status_code === 'FINISHED') {
+            console.log(`[Refresh Status] Container finished! Calling media_publish...`);
+            const publishUrl = `https://graph.instagram.com/v23.0/${pPost.socialAccount.platformAccountId}/media_publish`;
+            const pubRes = await fetch(publishUrl, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+              body: new URLSearchParams({ creation_id: pPost.externalPostId, access_token: accessToken }),
+            });
+            const pubData = await pubRes.json().catch(() => ({}));
             
-            // Check container status
-            const statusUrl = `https://graph.instagram.com/v23.0/${pPost.externalPostId}?fields=status_code,status&access_token=${accessToken}`;
-            const statusRes = await fetch(statusUrl);
-            const statusData = await statusRes.json().catch(() => ({}));
-            
-            if (statusData.status_code === 'PUBLISHED') {
-              console.log(`[Refresh Status] Container already PUBLISHED!`);
+            if (pubRes.ok && pubData.id) {
+              let permalink = '';
+              try {
+                const metaRes = await fetch(`https://graph.instagram.com/v21.0/${pubData.id}?fields=permalink&access_token=${accessToken}`);
+                const metaData = await metaRes.json();
+                if (metaData && metaData.permalink) {
+                  permalink = metaData.permalink;
+                }
+              } catch (err) {
+                console.error('[Refresh Status] Failed to fetch permalink:', err);
+              }
+              
               await prisma.platformPost.update({
                 where: { id: pPost.id },
                 data: {
                   status: 'PUBLISHED',
+                  externalPostId: pubData.id,
+                  externalPostUrl: permalink || undefined,
                   errorMessage: null
-                }
+                },
               });
-            } else if (statusData.status_code === 'FINISHED') {
-              console.log(`[Refresh Status] Container finished! Calling media_publish...`);
-              const publishUrl = `https://graph.instagram.com/v23.0/${pPost.socialAccount.platformAccountId}/media_publish`;
-              const pubRes = await fetch(publishUrl, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                body: new URLSearchParams({ creation_id: pPost.externalPostId, access_token: accessToken }),
-              });
-              const pubData = await pubRes.json().catch(() => ({}));
-              
-              if (pubRes.ok && pubData.id) {
-                let permalink = '';
-                try {
-                  const metaRes = await fetch(`https://graph.instagram.com/v21.0/${pubData.id}?fields=permalink&access_token=${accessToken}`);
-                  const metaData = await metaRes.json();
-                  if (metaData && metaData.permalink) {
-                    permalink = metaData.permalink;
-                  }
-                } catch (err) {
-                  console.error('[Refresh Status] Failed to fetch permalink:', err);
-                }
-                
+            } else {
+              const isAlreadyPublished = pubData.error?.message?.toLowerCase().includes('already been published') || pubData.error?.code === 9000 || pubData.error?.error_user_title?.includes('Already Published');
+              if (isAlreadyPublished) {
+                console.log(`[Refresh Status] IG container was already published (caught from error).`);
                 await prisma.platformPost.update({
                   where: { id: pPost.id },
                   data: {
                     status: 'PUBLISHED',
-                    externalPostId: pubData.id,
-                    externalPostUrl: permalink || undefined,
                     errorMessage: null
                   },
                 });
               } else {
-                const isAlreadyPublished = pubData.error?.message?.toLowerCase().includes('already been published') || pubData.error?.code === 9000 || pubData.error?.error_user_title?.includes('Already Published');
-                if (isAlreadyPublished) {
-                  console.log(`[Refresh Status] IG container was already published (caught from error).`);
-                  await prisma.platformPost.update({
-                    where: { id: pPost.id },
-                    data: {
-                      status: 'PUBLISHED',
-                      errorMessage: null
-                    },
-                  });
-                } else {
-                  await prisma.platformPost.update({
-                    where: { id: pPost.id },
-                    data: { status: 'FAILED', errorMessage: pubData.error?.message || 'media_publish failed' }
-                  });
-                }
+                await prisma.platformPost.update({
+                  where: { id: pPost.id },
+                  data: { status: 'FAILED', errorMessage: pubData.error?.message || 'media_publish failed' }
+                });
               }
-            } else if (statusData.status_code === 'ERROR' || statusData.status_code === 'EXPIRED') {
-              await prisma.platformPost.update({
-                where: { id: pPost.id },
-                data: { status: 'FAILED', errorMessage: 'Instagram video processing failed' }
-              });
             }
-          } catch(err) {
-            console.error(err);
+          } else if (statusData.status_code === 'ERROR' || statusData.status_code === 'EXPIRED') {
+            await prisma.platformPost.update({
+              where: { id: pPost.id },
+              data: { status: 'FAILED', errorMessage: 'Instagram video processing failed' }
+            });
           }
+        } catch(err) {
+          console.error(err);
         }
+      }
 
-      if (pPost.platform === 'YOUTUBE' && pPost.status === 'PROCESSING' && pPost.externalPostId && !pPost.socialAccount.isMock) {
+      if (pPost.platform === 'YOUTUBE' && !pPost.socialAccount.isMock) {
+        const rawToken = pPost.socialAccount.token?.accessToken || '';
+        const accessToken = decryptToken(rawToken);
+
+        if (pPost.externalPostId && (pPost.status === 'PROCESSING' || pPost.status === 'UPLOADING')) {
           try {
             console.log(`[Refresh Status] Checking YouTube Video ${pPost.externalPostId}...`);
-            const rawToken = pPost.socialAccount.token?.accessToken || '';
-            const accessToken = decryptToken(rawToken);
-            
             const ytUrl = `https://youtube.googleapis.com/youtube/v3/videos?part=status,player&id=${pPost.externalPostId}`;
             const ytRes = await fetch(ytUrl, { headers: { Authorization: `Bearer ${accessToken}` } });
             const ytData = await ytRes.json().catch(() => ({}));
@@ -175,27 +176,50 @@ export async function POST(
                   data: {
                     status: 'PUBLISHED',
                     errorMessage: null,
-                    externalPostUrl: `https://www.youtube.com/watch?v=${pPost.externalPostId}`
-                  }
+                    externalPostUrl: `https://www.youtube.com/watch?v=${pPost.externalPostId}`,
+                  },
                 });
               } else if (uploadStatus === 'rejected' || uploadStatus === 'failed') {
                 await prisma.platformPost.update({
                   where: { id: pPost.id },
                   data: {
                     status: 'FAILED',
-                    errorMessage: `YouTube processing failed: ${video.status?.failureReason || uploadStatus}`
-                  }
+                    errorMessage: `YouTube processing failed: ${video.status?.failureReason || uploadStatus}`,
+                  },
                 });
               }
             } else if (!ytRes.ok) {
-               console.error('[Refresh Status] YouTube API error:', ytData);
+              console.error('[Refresh Status] YouTube API error:', ytData);
             }
           } catch(err) {
             console.error(err);
           }
+        } else if (!pPost.externalPostId && (pPost.status === 'UPLOADING' || pPost.status === 'PROCESSING')) {
+          // No externalPostId and stuck without completion
+          const ageMs = Date.now() - new Date(pPost.updatedAt).getTime();
+          if (ageMs > 5 * 60 * 1000) {
+            console.log(`[Refresh Status] YouTube post ${pPost.id} has no externalPostId and was stalled. Marking FAILED.`);
+            const errMsg = 'YouTube upload was interrupted before completion. Ready for retry.';
+            await prisma.platformPost.update({
+              where: { id: pPost.id },
+              data: {
+                status: 'FAILED',
+                errorMessage: errMsg,
+              },
+            });
+            await prisma.publishingJob.updateMany({
+              where: { platformPostId: pPost.id, status: { in: ['PROCESSING', 'QUEUED'] } },
+              data: {
+                status: 'FAILED',
+                errorMessage: errMsg,
+                completedAt: new Date(),
+              },
+            });
+          }
         }
+      }
 
-        if (pPost.platform === 'TIKTOK' && pPost.externalPostId && !pPost.socialAccount.isMock) {
+      if (pPost.platform === 'TIKTOK' && pPost.externalPostId && !pPost.socialAccount.isMock) {
         const rawToken = pPost.socialAccount.token?.accessToken || '';
         const rawRefreshToken = pPost.socialAccount.token?.refreshToken || '';
         let decryptedToken = decryptToken(rawToken);
@@ -301,22 +325,14 @@ export async function POST(
                   ? pPost.externalPostUrl
                   : username
                   ? `https://www.tiktok.com/@${username}`
-                  : `https://www.tiktok.com/`;
+                  : 'https://www.tiktok.com/';
 
                 await prisma.platformPost.update({
                   where: { id: pPost.id },
                   data: {
                     status: 'PUBLISHED',
-                    errorMessage: null,
                     externalPostUrl: postUrl,
-                  },
-                });
-              } else if (rawStatus === 'FAILED') {
-                await prisma.platformPost.update({
-                  where: { id: pPost.id },
-                  data: {
-                    status: 'FAILED',
-                    errorMessage: failReason || 'TikTok publishing failed during processing.',
+                    errorMessage: null,
                   },
                 });
               } else if (rawStatus === 'SEND_TO_USER_INBOX') {
@@ -327,14 +343,9 @@ export async function POST(
                     errorMessage: 'Sent to TikTok Creator Inbox (Draft upload)',
                   },
                 });
-              } else {
-                // If the post was already completed as INBOX_DRAFT, NEVER change it back to PROCESSING!
-                const isAlreadyInboxDraft = pPost.status === 'INBOX_DRAFT';
-                const nextStatus = isAlreadyInboxDraft ? 'INBOX_DRAFT' : 'PROCESSING';
-                const statusMessage = isAlreadyInboxDraft
-                  ? (pPost.errorMessage || 'Sent to TikTok Creator Inbox (Draft upload)')
-                  : `TikTok Status: ${rawStatus}`;
-
+              } else if (rawStatus === 'FAILED') {
+                const nextStatus = pPost.status === 'INBOX_DRAFT' ? 'INBOX_DRAFT' : 'FAILED';
+                const statusMessage = failReason || 'TikTok publishing failed';
                 await prisma.platformPost.update({
                   where: { id: pPost.id },
                   data: {
@@ -368,12 +379,14 @@ export async function POST(
     let publishedCount = 0;
     let inboxDraftCount = 0;
     let processingCount = 0;
+    let uploadingCount = 0;
     let failCount = 0;
 
     for (const p of updatedPlatformPosts) {
       if (p.status === 'PUBLISHED') publishedCount++;
       else if (p.status === 'INBOX_DRAFT') inboxDraftCount++;
       else if (p.status === 'PROCESSING') processingCount++;
+      else if (p.status === 'UPLOADING') uploadingCount++;
       else if (p.status === 'FAILED') failCount++;
     }
 
@@ -386,8 +399,11 @@ export async function POST(
       finalStatus = publishedCount > 0 ? 'PUBLISHED' : 'INBOX_DRAFT';
     } else if (failCount === updatedPlatformPosts.length && failCount > 0) {
       finalStatus = 'FAILED';
-    } else if (processingCount > 0 && failCount === 0) {
-      finalStatus = 'PROCESSING';
+    } else if (publishedCount > 0 && failCount > 0) {
+      // Mixed platform results: Some published, some failed!
+      finalStatus = 'PARTIALLY_FAILED';
+    } else if (processingCount > 0 || uploadingCount > 0) {
+      finalStatus = failCount > 0 ? 'PARTIALLY_FAILED' : 'PROCESSING';
     } else if (failCount > 0) {
       finalStatus = 'PARTIALLY_FAILED';
     }
@@ -418,4 +434,3 @@ export async function POST(
     return NextResponse.json({ error: error.message || 'Failed to refresh post status' }, { status: 500 });
   }
 }
-

@@ -258,7 +258,7 @@ export default function PublishedPostsPage() {
                   <button
                     onClick={() => handleRefreshPostStatus(post.id)}
                     disabled={refreshingPostId === post.id}
-                    title="Refresh Live Status from TikTok API"
+                    title="Refresh Live Status"
                     className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 text-xs font-bold transition-colors disabled:opacity-50"
                   >
                     <RotateCw className={`w-3.5 h-3.5 ${refreshingPostId === post.id ? 'animate-spin' : ''}`} />
@@ -297,8 +297,10 @@ export default function PublishedPostsPage() {
                             ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
                             : p.status === 'MANUAL_READY' || p.status === 'AWAITING_MANUAL_PUBLISH'
                             ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30'
+                            : p.status === 'UPLOADING'
+                            ? 'bg-sky-500/20 text-sky-300 border border-sky-500/30'
                             : p.status === 'PROCESSING' || p.status === 'INBOX_DRAFT'
-                            ? 'bg-red-500/20 text-red-400 border border-red-500/30'
+                            ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
                             : 'bg-red-500/20 text-red-300 border border-red-500/30'
                         }`}
                       >
@@ -319,8 +321,12 @@ export default function PublishedPostsPage() {
                         {p.errorMessage || 'Sent to TikTok Creator Inbox (Draft)'}
                       </p>
                     ) : p.status === 'PROCESSING' ? (
-                      <p className="text-xs text-red-300 leading-relaxed bg-red-950/40 p-2.5 rounded-lg border border-red-900/50 break-words font-medium">
+                      <p className="text-xs text-amber-300 leading-relaxed bg-amber-950/40 p-2.5 rounded-lg border border-amber-900/50 break-words font-medium">
                         {p.errorMessage || 'Currently processing on platform...'}
+                      </p>
+                    ) : p.status === 'UPLOADING' ? (
+                      <p className="text-xs text-sky-300 leading-relaxed bg-sky-950/40 p-2.5 rounded-lg border border-sky-900/50 break-words font-medium">
+                        {p.errorMessage || 'Uploading media to platform...'}
                       </p>
                     ) : (
                       <p className="text-xs text-red-300 leading-relaxed bg-red-950/40 p-2.5 rounded-lg border border-[#22222a] break-words font-mono">
@@ -365,7 +371,6 @@ export default function PublishedPostsPage() {
                       </div>
                     )}
 
-
                     {p.externalPostUrl && (
                       <a
                         href={p.externalPostUrl}
@@ -384,8 +389,7 @@ export default function PublishedPostsPage() {
           ))}
         </div>
       )}
-          </div>
+      </div>
     </AppLayout>
   );
 }
-
