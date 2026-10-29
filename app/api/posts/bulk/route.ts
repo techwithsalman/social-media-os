@@ -1,7 +1,12 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getSession } from '@/lib/auth';
-import { EntitlementError, assertCanCreateBillablePost, recordPostUsage, getWorkspaceUsage } from '@/lib/billing';
+import {
+  EntitlementError,
+  assertCanCreateBillablePost,
+  recordBatchPostUsage,
+  getWorkspaceUsage,
+} from '@/lib/billing';
 import { checkPlanLimit, PlanLimitError, createPlanLimitResponse } from '@/lib/billing/plan-limits';
 import { SUPPORTED_PLATFORM_IDS } from '@/lib/platforms';
 
@@ -81,9 +86,24 @@ export async function POST(req: Request) {
     
     console.log('[BULK_POSTS] REQUEST_RECEIVED', { itemCount: items.length });
 
-    // Safe, bounded batch scheduling with idempotency guard
-    // Processes items in small chunks to avoid long-running Prisma transactions and serverless timeouts
-    const CHUNK_SIZE = 5;
+    // 1. Upfront High-Performance Idempotency Fetch:
+    // Fetches all existing scheduled posts for this batch in ONE query instead of 58 sequential roundtrips
+    const mediaIdsInBatch = items.map((i: any) => i.mediaAssetId).filter(Boolean);
+    const existingScheduledPosts = await prisma.contentPost.findMany({
+      where: {
+        workspaceId: session.workspaceId,
+        mediaAssetId: { in: mediaIdsInBatch },
+        status: 'SCHEDULED',
+      },
+      include: {
+        platformPosts: {
+          include: { publishingJobs: true },
+        },
+      },
+    });
+
+    const existingMap = new Map(existingScheduledPosts.map((p) => [p.mediaAssetId, p]));
+
     const schedulingResults: Array<{
       item: any;
       success: boolean;
@@ -92,8 +112,41 @@ export async function POST(req: Request) {
       isReused?: boolean;
     }> = [];
 
-    for (let i = 0; i < items.length; i += CHUNK_SIZE) {
-      const chunk = items.slice(i, i + CHUNK_SIZE);
+    const itemsToCreate: any[] = [];
+
+    // Filter items: instant reuse vs new creation
+    for (const item of items) {
+      const existing = item.mediaAssetId ? existingMap.get(item.mediaAssetId) : null;
+      if (existing && existing.platformPosts.length > 0) {
+        // Backfill any missing publishingJobs if needed
+        for (const pp of existing.platformPosts) {
+          if (pp.publishingJobs.length === 0) {
+            await prisma.publishingJob.create({
+              data: {
+                platformPostId: pp.id,
+                status: 'QUEUED',
+                scheduledAt: existing.scheduledFor || new Date(item.scheduledFor),
+                attempts: 0,
+                maxAttempts: 3,
+              },
+            });
+          }
+        }
+        schedulingResults.push({
+          item,
+          success: true,
+          post: existing,
+          isReused: true,
+        });
+      } else {
+        itemsToCreate.push(item);
+      }
+    }
+
+    // Process new items in bounded parallel chunks (CHUNK_SIZE = 10) to stay well within 1 second execution
+    const CHUNK_SIZE = 10;
+    for (let i = 0; i < itemsToCreate.length; i += CHUNK_SIZE) {
+      const chunk = itemsToCreate.slice(i, i + CHUNK_SIZE);
       const chunkPromises = chunk.map(async (item: any) => {
         const {
           mediaAssetId,
@@ -103,13 +156,12 @@ export async function POST(req: Request) {
           platformSettings,
         } = item;
 
-        // 1. Idempotency Guard:
-        // If a post with this exact mediaAssetId and SCHEDULED status already exists in this workspace, reuse it!
+        // Concurrent request idempotency race check
         if (mediaAssetId) {
-          const existing = await prisma.contentPost.findFirst({
+          const raceCheck = await prisma.contentPost.findFirst({
             where: {
               workspaceId: session.workspaceId,
-              mediaAssetId: mediaAssetId,
+              mediaAssetId,
               status: 'SCHEDULED',
             },
             include: {
@@ -118,28 +170,11 @@ export async function POST(req: Request) {
               },
             },
           });
-
-          if (existing && existing.platformPosts.length > 0) {
-            // Verify and backfill any missing publishingJobs
-            for (const pp of existing.platformPosts) {
-              if (pp.publishingJobs.length === 0) {
-                await prisma.publishingJob.create({
-                  data: {
-                    platformPostId: pp.id,
-                    status: 'QUEUED',
-                    scheduledAt: existing.scheduledFor || new Date(scheduledFor),
-                    attempts: 0,
-                    maxAttempts: 3,
-                  },
-                });
-              }
-            }
-
-            return { post: existing, isReused: true };
+          if (raceCheck && raceCheck.platformPosts.length > 0) {
+            return { post: raceCheck, isReused: true };
           }
         }
 
-        // 2. Atomic per-post creation with PlatformPosts and PublishingJobs
         const contentPost = await prisma.contentPost.create({
           data: {
             workspaceId: session.workspaceId,
@@ -207,12 +242,12 @@ export async function POST(req: Request) {
     const failedResults = schedulingResults.filter((r) => !r.success);
     const newlyCreated = successfulResults.filter((r) => !r.isReused);
 
-    // Record billing usage ONLY for newly created posts (do not double-charge on retry)
-    for (let i = 0; i < newlyCreated.length; i++) {
+    // Record billing usage in a SINGLE atomic database update (replaces 116 sequential queries)
+    if (newlyCreated.length > 0) {
       try {
-        await recordPostUsage(session.workspaceId, 'scheduled');
+        await recordBatchPostUsage(session.workspaceId, newlyCreated.length, 'scheduled');
       } catch (err) {
-        console.error('[BULK_POSTS] Failed to record usage for post:', err);
+        console.error('[BULK_POSTS] Failed to record batch usage:', err);
       }
     }
 

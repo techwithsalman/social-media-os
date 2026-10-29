@@ -458,14 +458,18 @@ export async function assertCanUploadFile(workspaceId: string, fileSizeBytes: nu
 }
 
 export async function recordPostUsage(workspaceId: string, kind: 'published' | 'scheduled') {
-  const usagePeriod = await getOrCreateUsagePeriod(workspaceId);
+  return recordBatchPostUsage(workspaceId, 1, kind);
+}
 
+export async function recordBatchPostUsage(workspaceId: string, count: number, kind: 'published' | 'scheduled') {
+  if (count <= 0) return null;
+  const usagePeriod = await getOrCreateUsagePeriod(workspaceId);
   return prisma.usagePeriod.update({
     where: { id: usagePeriod.id },
     data:
       kind === 'published'
-        ? { publishedPosts: { increment: 1 } }
-        : { scheduledPosts: { increment: 1 } },
+        ? { publishedPosts: { increment: count } }
+        : { scheduledPosts: { increment: count } },
   });
 }
 

@@ -119,6 +119,7 @@ export default function BulkUploadPage() {
   const [timezone, setTimezone] = useState(WORKSPACE_TIMEZONE);
 
   const [saving, setSaving] = useState(false);
+  const [savingStatus, setSavingStatus] = useState<string>("");
   const [successBanner, setSuccessBanner] = useState(false);
   const [scheduleGenerated, setScheduleGenerated] = useState(false);
   const [generateError, setGenerateError] = useState('');
@@ -558,6 +559,7 @@ export default function BulkUploadPage() {
     }
 
     setSaving(true);
+    setSavingStatus('Preparing schedule batch...');
     try {
       const payloadItems = uploadedItems.map((item) => {
         const utcIso = zonedDateTimeToUtcIso(item.scheduledDate, item.scheduledTime, timezone);
@@ -581,29 +583,63 @@ export default function BulkUploadPage() {
         };
       });
 
-      const res = await fetch('/api/posts/bulk', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ items: payloadItems }),
-      });
+      // Client-side sub-batching: send in bounded batches of 25 items to prevent serverless timeouts
+      const CLIENT_BATCH_SIZE = 25;
+      let totalScheduledCount = 0;
+      let totalFailedCount = 0;
+      const allFailedItems: any[] = [];
 
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Failed to save bulk posts');
+      for (let i = 0; i < payloadItems.length; i += CLIENT_BATCH_SIZE) {
+        const batch = payloadItems.slice(i, i + CLIENT_BATCH_SIZE);
+        const batchNum = Math.floor(i / CLIENT_BATCH_SIZE) + 1;
+        const totalBatches = Math.ceil(payloadItems.length / CLIENT_BATCH_SIZE);
+        setSavingStatus(`Scheduling batch ${batchNum} of ${totalBatches}...`);
 
-      if (data.scheduledCount === payloadItems.length) {
+        const res = await fetch('/api/posts/bulk', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ items: batch }),
+        });
+
+        // Safe response parsing: handle HTML error responses (504, 502, 500) gracefully
+        const contentType = res.headers.get('content-type') || '';
+        let data: any = null;
+        if (contentType.includes('application/json')) {
+          data = await res.json();
+        } else {
+          const text = await res.text();
+          const cleanSnippet = text.replace(/<[^>]*>?/gm, ' ').replace(/\s+/g, ' ').trim().slice(0, 150);
+          throw new Error(
+            `Server returned HTTP ${res.status} (${res.statusText || 'Error'}): ${cleanSnippet || 'Non-JSON response'}`
+          );
+        }
+
+        if (!res.ok) {
+          throw new Error(data?.error || `Failed to schedule batch ${batchNum}`);
+        }
+
+        totalScheduledCount += data.scheduledCount || 0;
+        totalFailedCount += data.failedCount || 0;
+        if (data.failedItems && Array.isArray(data.failedItems)) {
+          allFailedItems.push(...data.failedItems);
+        }
+      }
+
+      if (totalScheduledCount === payloadItems.length) {
         // 100% verified complete success
+        setSavingStatus('All posts scheduled successfully!');
         setSuccessBanner(true);
         setTimeout(() => {
           router.push('/calendar');
         }, 1500);
-      } else if (data.scheduledCount > 0 && data.failedCount > 0) {
+      } else if (totalScheduledCount > 0 && totalFailedCount > 0) {
         // Partial success: keep failed items in queue so user can retry, clear successful ones
-        const failedAssetIds = new Set((data.failedItems || []).map((f: any) => f.mediaAssetId));
+        const failedAssetIds = new Set(allFailedItems.map((f: any) => f.mediaAssetId));
         setItems((prev) =>
           prev
             .filter((item) => failedAssetIds.has(item.mediaAssetId))
             .map((item) => {
-              const errObj = (data.failedItems || []).find((f: any) => f.mediaAssetId === item.mediaAssetId);
+              const errObj = allFailedItems.find((f: any) => f.mediaAssetId === item.mediaAssetId);
               return {
                 ...item,
                 status: 'ERROR',
@@ -612,20 +648,21 @@ export default function BulkUploadPage() {
             })
         );
         alert(
-          `Partial Completion: ${data.scheduledCount} of ${payloadItems.length} posts were scheduled successfully to your Content Calendar.\n\n${data.failedCount} items encountered errors and remain in the queue for retry.`
+          `Partial Completion: ${totalScheduledCount} of ${payloadItems.length} posts were scheduled successfully to your Content Calendar.\n\n${totalFailedCount} items encountered errors and remain in the queue for retry.`
         );
       } else {
-        throw new Error(data.failedItems?.[0]?.error || 'Failed to schedule posts');
+        throw new Error(allFailedItems[0]?.error || 'Failed to schedule posts');
       }
     } catch (e: any) {
       console.error(e);
       alert(e.message || 'Failed to save bulk posts');
     } finally {
       setSaving(false);
+      setSavingStatus('');
     }
   };
 
-  // Queue Statistics
+    // Queue Statistics
   const uploadedCount = items.filter((i) => i.status === 'UPLOADED').length;
   const uploadingCount = items.filter((i) => i.status === 'UPLOADING').length;
   const pendingCount = items.filter((i) => i.status === 'PENDING').length;
@@ -957,7 +994,10 @@ export default function BulkUploadPage() {
                 className="flex items-center gap-2 px-6 py-3 rounded-2xl bg-gradient-to-r from-red-700 to-red-600 hover:from-red-600 hover:to-red-500 text-white text-sm font-black shadow-lg shadow-red-600/30 transition-all disabled:opacity-50"
               >
                 {saving ? (
-                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    <span>{savingStatus || 'Scheduling...'}</span>
+                  </>
                 ) : (
                   <>
                     <Calendar className="w-4 h-4" />
