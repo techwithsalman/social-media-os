@@ -80,10 +80,21 @@ export async function POST(req: Request) {
 
     
     console.log('[BULK_POSTS] REQUEST_RECEIVED', { itemCount: items.length });
-    const createdPosts = await prisma.$transaction(async (tx) => {
-  
-      const posts = [];
-      for (const item of items) {
+
+    // Safe, bounded batch scheduling with idempotency guard
+    // Processes items in small chunks to avoid long-running Prisma transactions and serverless timeouts
+    const CHUNK_SIZE = 5;
+    const schedulingResults: Array<{
+      item: any;
+      success: boolean;
+      post?: any;
+      error?: string;
+      isReused?: boolean;
+    }> = [];
+
+    for (let i = 0; i < items.length; i += CHUNK_SIZE) {
+      const chunk = items.slice(i, i + CHUNK_SIZE);
+      const chunkPromises = chunk.map(async (item: any) => {
         const {
           mediaAssetId,
           masterCaption,
@@ -92,40 +103,132 @@ export async function POST(req: Request) {
           platformSettings,
         } = item;
 
-        const contentPost = await tx.contentPost.create({
+        // 1. Idempotency Guard:
+        // If a post with this exact mediaAssetId and SCHEDULED status already exists in this workspace, reuse it!
+        if (mediaAssetId) {
+          const existing = await prisma.contentPost.findFirst({
+            where: {
+              workspaceId: session.workspaceId,
+              mediaAssetId: mediaAssetId,
+              status: 'SCHEDULED',
+            },
+            include: {
+              platformPosts: {
+                include: { publishingJobs: true },
+              },
+            },
+          });
+
+          if (existing && existing.platformPosts.length > 0) {
+            // Verify and backfill any missing publishingJobs
+            for (const pp of existing.platformPosts) {
+              if (pp.publishingJobs.length === 0) {
+                await prisma.publishingJob.create({
+                  data: {
+                    platformPostId: pp.id,
+                    status: 'QUEUED',
+                    scheduledAt: existing.scheduledFor || new Date(scheduledFor),
+                    attempts: 0,
+                    maxAttempts: 3,
+                  },
+                });
+              }
+            }
+
+            return { post: existing, isReused: true };
+          }
+        }
+
+        // 2. Atomic per-post creation with PlatformPosts and PublishingJobs
+        const contentPost = await prisma.contentPost.create({
           data: {
             workspaceId: session.workspaceId,
             userId: session.userId,
+            title: (masterCaption || '').slice(0, 100) || 'Scheduled Post',
             masterCaption: masterCaption || '',
             status: 'SCHEDULED',
             scheduledFor: new Date(scheduledFor),
-            timezone: timezone || 'UTC',
+            timezone: timezone || 'Asia/Karachi',
             mediaAssetId: mediaAssetId || null,
             platformPosts: {
-              create: platformSettings.map((plat: any) => ({
+              create: (platformSettings || []).map((plat: any) => ({
                 socialAccountId: plat.socialAccountId,
                 platform: plat.platform,
-                customCaption: plat.customCaption,
+                customCaption: plat.customCaption || masterCaption || '',
                 hashtags: plat.hashtags || '',
-                contentType: plat.contentType || 'POST',
+                contentType: plat.contentType || (item.mimeType?.startsWith('video') ? 'VIDEO' : 'POST'),
                 visibility: plat.visibility || 'PUBLIC',
                 metadata: JSON.stringify(plat.metadata || {}),
                 status: 'SCHEDULED',
+                publishingJobs: {
+                  create: {
+                    status: 'QUEUED',
+                    scheduledAt: new Date(scheduledFor),
+                    attempts: 0,
+                    maxAttempts: 3,
+                  },
+                },
               })),
             },
           },
+          include: {
+            platformPosts: {
+              include: { publishingJobs: true },
+            },
+          },
         });
-        posts.push(contentPost);
-      }
-      return posts;
-    });
 
-    // Record usage for the number of scheduled posts
-    for (let i = 0; i < createdPosts.length; i++) {
-      await recordPostUsage(session.workspaceId, 'scheduled');
+        return { post: contentPost, isReused: false };
+      });
+
+      const chunkResults = await Promise.allSettled(chunkPromises);
+
+      for (let j = 0; j < chunk.length; j++) {
+        const res = chunkResults[j];
+        if (res.status === 'fulfilled') {
+          schedulingResults.push({
+            item: chunk[j],
+            success: true,
+            post: res.value.post,
+            isReused: res.value.isReused,
+          });
+        } else {
+          console.error('[BULK_POSTS] Item scheduling error:', res.reason);
+          schedulingResults.push({
+            item: chunk[j],
+            success: false,
+            error: res.reason?.message || 'Database insert failed',
+          });
+        }
+      }
     }
 
-    return NextResponse.json({ success: true, count: createdPosts.length });
+    const successfulResults = schedulingResults.filter((r) => r.success);
+    const failedResults = schedulingResults.filter((r) => !r.success);
+    const newlyCreated = successfulResults.filter((r) => !r.isReused);
+
+    // Record billing usage ONLY for newly created posts (do not double-charge on retry)
+    for (let i = 0; i < newlyCreated.length; i++) {
+      try {
+        await recordPostUsage(session.workspaceId, 'scheduled');
+      } catch (err) {
+        console.error('[BULK_POSTS] Failed to record usage for post:', err);
+      }
+    }
+
+    return NextResponse.json({
+      success: failedResults.length === 0,
+      total: items.length,
+      scheduledCount: successfulResults.length,
+      newlyCreatedCount: newlyCreated.length,
+      reusedCount: successfulResults.length - newlyCreated.length,
+      failedCount: failedResults.length,
+      failedItems: failedResults.map((r) => ({
+        mediaAssetId: r.item.mediaAssetId,
+        error: r.error,
+      })),
+      posts: successfulResults.map((r) => r.post?.id),
+    });
   } catch (error: any) {
     console.error('[BULK_POSTS] CREATE_FAILED', error instanceof Error ? error.stack : error);
     return NextResponse.json(

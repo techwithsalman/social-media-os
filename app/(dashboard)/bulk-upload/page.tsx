@@ -424,7 +424,7 @@ export default function BulkUploadPage() {
     setSelectedLibraryIds([]);
     try {
       setLoadingLibrary(true);
-      const res = await fetch('/api/upload?type=video&limit=40');
+      const res = await fetch('/api/upload?type=video&limit=100');
       if (res.ok) {
         const data = await res.json();
         setLibraryAssets(data.mediaAssets || []);
@@ -590,10 +590,33 @@ export default function BulkUploadPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to save bulk posts');
 
-      setSuccessBanner(true);
-      setTimeout(() => {
-        router.push('/calendar');
-      }, 1500);
+      if (data.scheduledCount === payloadItems.length) {
+        // 100% verified complete success
+        setSuccessBanner(true);
+        setTimeout(() => {
+          router.push('/calendar');
+        }, 1500);
+      } else if (data.scheduledCount > 0 && data.failedCount > 0) {
+        // Partial success: keep failed items in queue so user can retry, clear successful ones
+        const failedAssetIds = new Set((data.failedItems || []).map((f: any) => f.mediaAssetId));
+        setItems((prev) =>
+          prev
+            .filter((item) => failedAssetIds.has(item.mediaAssetId))
+            .map((item) => {
+              const errObj = (data.failedItems || []).find((f: any) => f.mediaAssetId === item.mediaAssetId);
+              return {
+                ...item,
+                status: 'ERROR',
+                errorMessage: errObj?.error || 'Scheduling failed on server',
+              };
+            })
+        );
+        alert(
+          `Partial Completion: ${data.scheduledCount} of ${payloadItems.length} posts were scheduled successfully to your Content Calendar.\n\n${data.failedCount} items encountered errors and remain in the queue for retry.`
+        );
+      } else {
+        throw new Error(data.failedItems?.[0]?.error || 'Failed to schedule posts');
+      }
     } catch (e: any) {
       console.error(e);
       alert(e.message || 'Failed to save bulk posts');
@@ -1245,10 +1268,29 @@ export default function BulkUploadPage() {
                 </div>
               )}
 
-              <div className="flex items-center justify-between pt-4 border-t border-[#22222a]">
-                <span className="text-xs font-semibold text-neutral-400">
-                  {selectedLibraryIds.length} asset{selectedLibraryIds.length === 1 ? '' : 's'} selected
-                </span>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-4 border-t border-[#22222a]">
+                <div className="flex items-center gap-3">
+                  <span className="text-xs font-semibold text-neutral-400">
+                    {selectedLibraryIds.length} asset{selectedLibraryIds.length === 1 ? '' : 's'} selected
+                  </span>
+                  {libraryAssets.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (selectedLibraryIds.length === libraryAssets.length) {
+                          setSelectedLibraryIds([]);
+                        } else {
+                          setSelectedLibraryIds(libraryAssets.map((a) => a.id));
+                        }
+                      }}
+                      className="px-2.5 py-1 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-neutral-300 text-xs font-semibold transition-colors"
+                    >
+                      {selectedLibraryIds.length === libraryAssets.length
+                        ? 'Deselect All'
+                        : `Select All (${libraryAssets.length})`}
+                    </button>
+                  )}
+                </div>
                 <div className="flex items-center gap-3">
                   <button
                     onClick={() => setShowLibraryModal(false)}

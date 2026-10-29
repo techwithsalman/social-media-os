@@ -363,14 +363,29 @@ export class PublishingEngine {
     let failCount = 0;
 
     for (const pPost of post.platformPosts) {
-      // Create a PublishingJob record
-      const job = await prisma.publishingJob.create({
-        data: {
-          platformPostId: pPost.id,
-          status: 'PROCESSING',
-          startedAt: new Date(),
-        },
+      // Find existing PublishingJob or create a new one (prevents duplicate jobs on scheduled posts)
+      let job = await prisma.publishingJob.findFirst({
+        where: { platformPostId: pPost.id },
+        orderBy: { createdAt: 'desc' },
       });
+
+      if (job && (job.status === 'QUEUED' || job.status === 'SCHEDULED')) {
+        job = await prisma.publishingJob.update({
+          where: { id: job.id },
+          data: {
+            status: 'PROCESSING',
+            startedAt: new Date(),
+          },
+        });
+      } else {
+        job = await prisma.publishingJob.create({
+          data: {
+            platformPostId: pPost.id,
+            status: 'PROCESSING',
+            startedAt: new Date(),
+          },
+        });
+      }
 
       // Update PlatformPost status to PROCESSING
       await prisma.platformPost.update({
