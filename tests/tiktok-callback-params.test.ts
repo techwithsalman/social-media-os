@@ -1,6 +1,27 @@
 import assert from 'assert';
 import { NextRequest } from 'next/server';
-import { GET as callbackGET } from '../src/app/tiktok/callback/route';
+
+// Mock next/headers cookies to allow route invocation outside full Next.js server runtime
+const nextHeaders = require('next/headers');
+nextHeaders.cookies = () => ({
+  get: (name: string) => ({ value: 'mock_session_token' }),
+});
+
+const auth = require('../lib/auth');
+auth.getSession = async () => ({
+  userId: 'mock_user_1',
+  workspaceId: 'mock_workspace_1',
+  email: 'test@example.com',
+  name: 'Test User',
+});
+
+// Also alias @/lib/auth if needed
+try {
+  const authAlias = require('@/lib/auth');
+  authAlias.getSession = auth.getSession;
+} catch {}
+
+const { GET: callbackGET } = require('../app/tiktok/callback/route');
 
 async function runCallbackTests() {
   console.log('=== TESTING TIKTOK CALLBACK ROUTE PARAMETER HANDLING ===\n');

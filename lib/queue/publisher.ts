@@ -10,6 +10,7 @@ import {
   isMetaPlatform,
   markMetaAccountNeedsReconnection,
 } from '../meta-token-service';
+import { getOrRefreshValidTikTokToken } from '../tiktok-oauth';
 
 export interface PublishExecutionResult {
   contentPostId: string;
@@ -404,8 +405,17 @@ export class PublishingEngine {
 
         let finalAccessToken = decryptedToken;
 
-        // Auto-refresh TikTok / YouTube token if near or past expiration before publishing
-        if ((platformType === 'TIKTOK' || platformType === 'YOUTUBE') && pPost.socialAccount.token) {
+        // Auto-refresh TikTok token using atomic rotation with safe concurrency locking
+        if (platformType === 'TIKTOK') {
+          try {
+            finalAccessToken = await getOrRefreshValidTikTokToken(pPost.socialAccountId);
+          } catch (ttRefreshErr: any) {
+            console.error(`[Queue Publisher] TikTok token refresh failed for @${pPost.socialAccount.username}:`, ttRefreshErr);
+            throw new Error(
+              `TikTok session for @${pPost.socialAccount.username} has expired or requires reauthorization (${ttRefreshErr?.message || 'Token expired'}). Please reconnect account in Social Accounts.`
+            );
+          }
+        } else if (platformType === 'YOUTUBE' && pPost.socialAccount.token) {
           const tokenRecord = pPost.socialAccount.token;
           const isNearOrPastExpiry =
             tokenRecord.expiresAt &&
@@ -436,12 +446,12 @@ export class PublishingEngine {
                 });
 
                 console.log(
-                  `[Queue Publisher] Successfully refreshed expired ${platformType} token for @${pPost.socialAccount.username}`
+                  `[Queue Publisher] Successfully refreshed expired YouTube token for @${pPost.socialAccount.username}`
                 );
               }
             } catch (refreshErr: any) {
               console.error(
-                `[Queue Publisher] ${platformType} token refresh failed for @${pPost.socialAccount.username}:`,
+                `[Queue Publisher] YouTube token refresh failed for @${pPost.socialAccount.username}:`,
                 refreshErr
               );
 
@@ -451,7 +461,7 @@ export class PublishingEngine {
               });
 
               throw new Error(
-                `${platformType} session for @${pPost.socialAccount.username} has expired and could not be refreshed. Please reconnect account in Social Accounts.`
+                `YouTube session for @${pPost.socialAccount.username} has expired and could not be refreshed. Please reconnect account in Social Accounts.`
               );
             }
           }

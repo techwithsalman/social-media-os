@@ -222,7 +222,19 @@ export async function POST(req: NextRequest) {
       if (!mediaAssetId) {
         return NextResponse.json({ error: 'Please upload a video before publishing to YouTube.' }, { status: 400 });
       }
-      // We could also check the mimeType here by querying Prisma if we want to be thorough, but client side usually checks this.
+    }
+
+    const hasTikTok = uniquePlatformSettings.some((p: any) => p.platform === 'TIKTOK');
+    if (hasTikTok) {
+      if (!mediaAssetId) {
+        return NextResponse.json({ error: 'Media is required for TikTok Direct Post. Please attach a video.' }, { status: 400 });
+      }
+      const asset = await prisma.mediaAsset.findFirst({
+        where: { id: mediaAssetId, workspaceId: session.workspaceId },
+      });
+      if (asset && !asset.mimeType.startsWith('video/')) {
+        return NextResponse.json({ error: 'TikTok Direct Post requires a video file (.mp4, .mov, .webm). Image files are not supported.' }, { status: 400 });
+      }
     }
 
     if (!masterCaption && uniquePlatformSettings.length === 0) {
@@ -233,13 +245,34 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Please select at least one social account.' }, { status: 400 });
     }
 
-    // Validate TikTok requirements: Direct Post requires an explicit valid privacy setting
+    // Validate TikTok requirements: Direct Post requires an explicit valid privacy setting & Point 3 disclosure checks
     for (const setting of uniquePlatformSettings) {
       if (setting.platform === 'TIKTOK' && setting.contentType !== 'INBOX_DRAFT') {
         const validTikTokPrivacy = ['PUBLIC_TO_EVERYONE', 'MUTUAL_FOLLOW_FRIENDS', 'FOLLOWER_OF_CREATOR', 'SELF_ONLY'];
         if (!setting.visibility || !validTikTokPrivacy.includes(setting.visibility)) {
           return NextResponse.json(
             { error: 'Please select a valid privacy level for TikTok (Public to Everyone, Friends Only, Followers Only, or Only Me).' },
+            { status: 400 }
+          );
+        }
+
+        const meta = setting.metadata || {};
+        const commercialDisclosure = meta.commercialContentDisclosure === true;
+        const brandOrganic = meta.brandOrganicToggle === true;
+        const brandContent = meta.brandContentToggle === true;
+
+        // Point 3: Commercial Content Disclosure checks
+        if (commercialDisclosure && !brandOrganic && !brandContent) {
+          return NextResponse.json(
+            { error: 'You need to indicate if your content promotes yourself, a third party, or both.' },
+            { status: 400 }
+          );
+        }
+
+        // Point 3: Branded content cannot be set to private
+        if (brandContent && setting.visibility === 'SELF_ONLY') {
+          return NextResponse.json(
+            { error: 'Branded content visibility cannot be set to private.' },
             { status: 400 }
           );
         }

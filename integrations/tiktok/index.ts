@@ -93,7 +93,7 @@ export class TikTokAdapter implements ISocialPlatformAdapter {
 
   async refreshToken(refreshToken: string): Promise<TokenRefreshResult> {
     if (refreshToken.startsWith('mock_') || process.env.MOCK_API_MODE === 'true') {
-      return { accessToken: 'mock_refreshed_tt_token', expiresIn: 86400 };
+      return { accessToken: 'mock_refreshed_tt_token', refreshToken: 'mock_rotated_refresh_token', expiresIn: 7200 };
     }
     const result = await refreshTikTokToken(refreshToken);
     return {
@@ -166,6 +166,61 @@ export class TikTokAdapter implements ISocialPlatformAdapter {
   }
 
   async publishPost(payload: PublishPayload): Promise<PublishResult> {
+    const isInboxDraft =
+      payload.contentType === 'INBOX_DRAFT' ||
+      payload.metadata?.postMode === 'INBOX' ||
+      payload.metadata?.publishMode === 'INBOX';
+
+    const commercialDisclosure = payload.metadata?.commercialContentDisclosure === true;
+    const brandOrganicToggle = payload.metadata?.brandOrganicToggle === true;
+    const brandContentToggle = payload.metadata?.brandContentToggle === true;
+
+    // TikTok Direct Post requires video media
+    if (!payload.mediaUrl) {
+      return {
+        success: false,
+        errorCode: 'TIKTOK_MEDIA_REQUIRED',
+        errorMessage: 'TikTok Error: Direct Post requires a video file. No media was provided.',
+      };
+    }
+
+    if (payload.mediaType && payload.mediaType.toUpperCase() !== 'VIDEO' && !payload.mediaType.toLowerCase().startsWith('video/')) {
+      return {
+        success: false,
+        errorCode: 'TIKTOK_MEDIA_TYPE_INVALID',
+        errorMessage: 'TikTok Error: TikTok Direct Post requires a video file (.mp4, .mov, .webm). Image files are not supported.',
+      };
+    }
+
+    // Enforce Point 3 validation constraints on Direct Post
+    if (!isInboxDraft) {
+      if (!payload.visibility || payload.visibility.trim() === '' || payload.visibility === 'PUBLIC') {
+        return {
+          success: false,
+          errorCode: 'TIKTOK_PRIVACY_REQUIRED',
+          errorMessage: 'TikTok Error: Privacy level must be explicitly selected before publishing directly to TikTok.',
+        };
+      }
+
+      // Point 3: If Commercial Content Disclosure is enabled, at least one brand option must be chosen
+      if (commercialDisclosure && !brandOrganicToggle && !brandContentToggle) {
+        return {
+          success: false,
+          errorCode: 'TIKTOK_DISCLOSURE_REQUIRED',
+          errorMessage: 'TikTok Error: You need to indicate if your content promotes yourself, a third party, or both.',
+        };
+      }
+
+      // Point 3: Branded content cannot be set to private ("Only Me" / SELF_ONLY)
+      if (brandContentToggle && payload.visibility === 'SELF_ONLY') {
+        return {
+          success: false,
+          errorCode: 'TIKTOK_INVALID_BRANDED_PRIVACY',
+          errorMessage: 'TikTok Error: Branded content visibility cannot be set to private.',
+        };
+      }
+    }
+
     if (payload.isMock || payload.accessToken.startsWith('mock_') || process.env.MOCK_API_MODE === 'true') {
       const mockId = `tt_v_${Date.now()}`;
       return {
@@ -295,16 +350,26 @@ export class TikTokAdapter implements ISocialPlatformAdapter {
         ? true
         : !(payload.metadata?.allowStitch === true);
 
+      const postInfo: Record<string, any> = {
+        title: `${payload.caption} ${payload.hashtags || ''}`.trim(),
+        privacy_level: payload.visibility,
+        disable_comment: disableComment,
+        disable_duet: disableDuet,
+        disable_stitch: disableStitch,
+      };
+
+      if (commercialDisclosure) {
+        postInfo.brand_organic_toggle = brandOrganicToggle;
+        postInfo.brand_content_toggle = brandContentToggle;
+      } else {
+        postInfo.brand_organic_toggle = false;
+        postInfo.brand_content_toggle = false;
+      }
+
       let requestBody: any = isInboxDraft
         ? { source_info: sourceInfo }
         : {
-            post_info: {
-              title: `${payload.caption} ${payload.hashtags || ''}`.trim(),
-              privacy_level: payload.visibility,
-              disable_comment: disableComment,
-              disable_duet: disableDuet,
-              disable_stitch: disableStitch,
-            },
+            post_info: postInfo,
             source_info: sourceInfo,
           };
 

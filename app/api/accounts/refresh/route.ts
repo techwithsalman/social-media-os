@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getSession } from '@/lib/auth';
 import { decryptToken, encryptToken } from '@/lib/crypto';
-import { fetchTikTokUserInfo, refreshTikTokToken } from '@/lib/tiktok-oauth';
+import { fetchTikTokUserInfo, refreshTikTokTokenWithLock, TikTokOAuthError } from '@/lib/tiktok-oauth';
 
 export async function POST(req: NextRequest) {
   try {
@@ -52,95 +52,33 @@ export async function POST(req: NextRequest) {
         );
       }
 
-      let accessToken = decryptToken(account.token.accessToken);
-      let refreshToken = account.token.refreshToken ? decryptToken(account.token.refreshToken) : null;
-      let isTokenExpired = account.token.expiresAt ? new Date(account.token.expiresAt) <= new Date() : false;
-
-      let userInfo = null;
-      let tokenRefreshed = false;
-
-      if (isTokenExpired && refreshToken) {
-        console.log('[TikTok Refresh Route] Token expired based on timestamp. Attempting refresh token flow...');
-        try {
-          const refreshed = await refreshTikTokToken(refreshToken);
-          accessToken = refreshed.accessToken;
-          if (refreshed.refreshToken) {
-            refreshToken = refreshed.refreshToken;
-          }
-          const expiresAt = new Date(Date.now() + refreshed.expiresIn * 1000);
-
-          await prisma.oAuthToken.update({
-            where: { id: account.token.id },
-            data: {
-              accessToken: encryptToken(accessToken),
-              refreshToken: refreshToken ? encryptToken(refreshToken) : account.token.refreshToken,
-              expiresAt,
-            },
-          });
-          tokenRefreshed = true;
-          console.log('[TikTok Refresh Route] Token refresh succeeded');
-        } catch (refreshErr: any) {
-          console.error('[TikTok Refresh Route] Token refresh failed:', refreshErr?.message || refreshErr);
-          await prisma.socialAccount.update({
-            where: { id: account.id },
-            data: { status: 'EXPIRED' },
-          });
-          return NextResponse.json({
-            success: false,
-            reauthRequired: true,
-            error: refreshErr?.message || 'Refresh token expired. Reauthorization required.',
-          });
-        }
+      let accessToken = '';
+      try {
+        accessToken = await refreshTikTokTokenWithLock(account.id);
+      } catch (refreshErr: any) {
+        console.error('[TikTok Refresh Route] Token refresh failed:', refreshErr?.message || refreshErr);
+        await prisma.socialAccount.update({
+          where: { id: account.id },
+          data: { status: 'EXPIRED' },
+        });
+        return NextResponse.json({
+          success: false,
+          reauthRequired: true,
+          error: refreshErr?.message || 'Refresh token expired. Reauthorization required.',
+        });
       }
 
+      let userInfo = null;
       try {
-        userInfo = await fetchTikTokUserInfo(accessToken);
+        userInfo = await fetchTikTokUserInfo(accessToken, account.platformAccountId);
       } catch (err: any) {
         console.warn('[TikTok Refresh Route] fetchTikTokUserInfo failed:', err?.message || err);
-
-        if (!tokenRefreshed && refreshToken) {
-          console.log('[TikTok Refresh Route] Attempting refresh token flow after API error...');
-          try {
-            const refreshed = await refreshTikTokToken(refreshToken);
-            accessToken = refreshed.accessToken;
-            if (refreshed.refreshToken) {
-              refreshToken = refreshed.refreshToken;
-            }
-            const expiresAt = new Date(Date.now() + refreshed.expiresIn * 1000);
-
-            await prisma.oAuthToken.update({
-              where: { id: account.token.id },
-              data: {
-                accessToken: encryptToken(accessToken),
-                refreshToken: refreshToken ? encryptToken(refreshToken) : account.token.refreshToken,
-                expiresAt,
-              },
-            });
-
-            userInfo = await fetchTikTokUserInfo(accessToken);
-          } catch (retryErr: any) {
-            console.error('[TikTok Refresh Route] Retry after refresh failed:', retryErr?.message || retryErr);
-            await prisma.socialAccount.update({
-              where: { id: account.id },
-              data: { status: 'EXPIRED' },
-            });
-            return NextResponse.json({
-              success: false,
-              reauthRequired: true,
-              error: 'Token invalid and refresh failed. Reauthorization required.',
-            });
-          }
-        } else {
-          await prisma.socialAccount.update({
-            where: { id: account.id },
-            data: { status: 'EXPIRED' },
-          });
-          return NextResponse.json({
-            success: false,
-            reauthRequired: true,
-            error: 'Token invalid/expired. Reauthorization required.',
-          });
-        }
+        userInfo = {
+          openId: account.platformAccountId,
+          displayName: account.name,
+          username: account.username,
+          avatarUrl: account.profileImageUrl,
+        };
       }
 
       const updateData: any = {

@@ -1,5 +1,5 @@
 import assert from 'assert';
-import prisma from '../src/lib/prisma';
+import prisma from '../lib/prisma';
 import {
   createTikTokAuthorizationUrl,
   exchangeTikTokCodeForTokens,
@@ -7,7 +7,7 @@ import {
   getTikTokClientKey,
   isRealTikTokConfigured,
   TikTokOAuthError,
-} from '../src/lib/tiktok-oauth';
+} from '../lib/tiktok-oauth';
 
 async function runRegressionTests() {
   console.log('=== STARTING TIKTOK OAUTH REGRESSION TEST SUITE ===\n');

@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getSession } from '@/lib/auth';
-import { decryptToken, encryptToken } from '@/lib/crypto';
-import { refreshTikTokToken } from '@/lib/tiktok-oauth';
+import { getOrRefreshValidTikTokToken, refreshTikTokTokenWithLock, TikTokOAuthError } from '@/lib/tiktok-oauth';
 
 export async function POST(req: NextRequest) {
   try {
@@ -51,15 +50,17 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    const rawAccessToken = account.token?.accessToken || '';
-    const rawRefreshToken = account.token?.refreshToken || '';
-    let accessToken = decryptToken(rawAccessToken);
-    const refreshToken = decryptToken(rawRefreshToken);
-
-    if (!accessToken) {
+    let accessToken = '';
+    try {
+      accessToken = await getOrRefreshValidTikTokToken(account.id);
+    } catch (tokenErr: any) {
+      const isReauth = tokenErr instanceof TikTokOAuthError && tokenErr.code === 'REAUTHORIZATION_REQUIRED';
       return NextResponse.json(
-        { error: 'No access token available for this TikTok account. Please reconnect in Social Accounts.' },
-        { status: 400 }
+        {
+          error: tokenErr.message || 'No valid access token available for TikTok account. Please reconnect.',
+          code: isReauth ? 'REAUTHORIZATION_REQUIRED' : 'TOKEN_ERROR',
+        },
+        { status: 401 }
       );
     }
 
@@ -83,40 +84,21 @@ export async function POST(req: NextRequest) {
       data.error?.code === 'access_token_invalid' ||
       data.error?.code === 'token_expired';
 
-    // If expired and we have a refresh token, auto-refresh and retry once
-    if (isTokenExpired && refreshToken) {
+    // If API returned 401 despite pre-check, force atomic refresh with concurrency lock and retry once
+    if (isTokenExpired) {
       try {
-        console.log(`[TikTok Creator Info] Refreshing token for @${account.username}...`);
-        const refreshRes = await refreshTikTokToken(refreshToken);
-        if (refreshRes && refreshRes.accessToken) {
-          accessToken = refreshRes.accessToken;
-          const newEncryptedAccess = encryptToken(refreshRes.accessToken);
-          const newEncryptedRefresh = refreshRes.refreshToken
-            ? encryptToken(refreshRes.refreshToken)
-            : rawRefreshToken;
-          const newExpiresAt = new Date(Date.now() + (refreshRes.expiresIn || 86400) * 1000);
-
-          if (account.token?.id) {
-            await prisma.oAuthToken.update({
-              where: { id: account.token.id },
-              data: {
-                accessToken: newEncryptedAccess,
-                refreshToken: newEncryptedRefresh,
-                expiresAt: newExpiresAt,
-              },
-            });
-          }
-
-          const retry = await callCreatorInfoApi(accessToken);
-          res = retry.res;
-          data = retry.data;
-        }
+        console.log(`[TikTok Creator Info] 401 received. Attempting concurrency-locked refresh for @${account.username}...`);
+        accessToken = await refreshTikTokTokenWithLock(account.id);
+        const retry = await callCreatorInfoApi(accessToken);
+        res = retry.res;
+        data = retry.data;
       } catch (refreshErr: any) {
-        console.error('[TikTok Creator Info] Token refresh failed:', refreshErr);
+        console.error('[TikTok Creator Info] Atomic token refresh failed:', refreshErr);
+        const isReauth = refreshErr instanceof TikTokOAuthError && refreshErr.code === 'REAUTHORIZATION_REQUIRED';
         return NextResponse.json(
           {
-            error: 'TikTok authorization has expired and could not be refreshed. Please reconnect your TikTok account.',
-            code: 'TOKEN_EXPIRED',
+            error: refreshErr.message || 'TikTok authorization has expired. Please reconnect your TikTok account.',
+            code: isReauth ? 'REAUTHORIZATION_REQUIRED' : 'TOKEN_EXPIRED',
           },
           { status: 401 }
         );

@@ -1,12 +1,12 @@
 import assert from 'assert';
-import prisma from '../src/lib/prisma';
+import prisma from '../lib/prisma';
 import {
   getTikTokRedirectUri,
   getTikTokEnvironmentInfo,
   createTikTokAuthorizationUrl,
   isTikTokSandbox,
   maskCredential,
-} from '../src/lib/tiktok-oauth';
+} from '../lib/tiktok-oauth';
 
 async function runProductionOAuthTests() {
   console.log('=== RUNNING TIKTOK PRODUCTION & SANDBOX OAUTH SPECIFICATION TESTS ===\n');
@@ -19,8 +19,16 @@ async function runProductionOAuthTests() {
 
   // 2. Test Sandbox vs Production detection
   console.log('\n[Test 1] Testing Sandbox vs Production Client Key Detection...');
-  assert.strictEqual(isTikTokSandbox(), true, 'Current .env key starts with sb and should be identified as Sandbox');
-  console.log('✅ Test 1 Passed: Client key prefix correctly identifies Sandbox.\n');
+  const originalKey = process.env.TIKTOK_CLIENT_KEY;
+  try {
+    process.env.TIKTOK_CLIENT_KEY = 'sb_sandbox_test_key';
+    assert.strictEqual(isTikTokSandbox(), true, 'Key starting with sb must be identified as Sandbox');
+    process.env.TIKTOK_CLIENT_KEY = 'aw_production_test_key';
+    assert.strictEqual(isTikTokSandbox(), false, 'Key not starting with sb must be identified as Production');
+    console.log('✅ Test 1 Passed: Client key prefix correctly identifies Sandbox vs Production.\n');
+  } finally {
+    process.env.TIKTOK_CLIENT_KEY = originalKey;
+  }
 
   // 3. Test exact Redirect URI generation
   console.log('[Test 2] Testing Production Redirect URI Resolution for techwithsalman.online...');

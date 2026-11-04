@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PlatformIcon } from '@/components/ui/PlatformIcons';
@@ -31,6 +31,11 @@ import {
   AlertCircle,
   Eye,
   CheckCircle2,
+  Info,
+  AlertTriangle,
+  Tag,
+  Shield,
+  ExternalLink,
 } from 'lucide-react';
 
 interface SocialAccount {
@@ -55,11 +60,14 @@ interface PlatformSettingsState {
   linkUrl: string;
   boardName?: string;
   youtubeTitle: string;
-    categoryId: string;
-    audience: string;
-    youtubeTitleManualOverride?: boolean;
-    youtubeDescManualOverride?: boolean;
-  }
+  categoryId: string;
+  audience: string;
+  youtubeTitleManualOverride?: boolean;
+  youtubeDescManualOverride?: boolean;
+  commercialContentDisclosure?: boolean;
+  brandOrganicToggle?: boolean;
+  brandContentToggle?: boolean;
+}
 
 interface MediaFileState {
   id: string;
@@ -148,6 +156,9 @@ const DEFAULT_PLATFORM_SETTINGS: Record<string, PlatformSettingsState> = {
     hideLikes: false,
     allowDuet: false,
     allowStitch: false,
+    commercialContentDisclosure: false,
+    brandOrganicToggle: false,
+    brandContentToggle: false,
     linkUrl: '',
     youtubeTitle: '',
     categoryId: '22',
@@ -246,6 +257,164 @@ const mergePlatformSettings = (settings?: Record<string, Partial<PlatformSetting
 
   return defaults;
 };
+
+interface TikTokPolicyDeclarationInfo {
+  type: 'NORMAL' | 'YOUR_BRAND' | 'BRANDED_CONTENT' | 'BOTH';
+  title: string;
+  badge: string;
+  termsUrl?: string;
+  communityUrl?: string;
+  bcPolicyUrl?: string;
+  musicUsageUrl?: string;
+}
+
+function getTikTokPolicyDeclaration(settings?: PlatformSettingsState): TikTokPolicyDeclarationInfo {
+  const disclosureOn = settings?.commercialContentDisclosure === true;
+  const brandOrganic = settings?.brandOrganicToggle === true;
+  const brandContent = settings?.brandContentToggle === true;
+
+  if (!disclosureOn) {
+    return {
+      type: 'NORMAL',
+      title: 'TikTok Terms of Service & Community Guidelines',
+      badge: 'Point 4 Declaration',
+      termsUrl: 'https://www.tiktok.com/legal/page/global/terms-of-service/en',
+      communityUrl: 'https://www.tiktok.com/community-guidelines/en',
+    };
+  }
+
+  if (brandOrganic && !brandContent) {
+    return {
+      type: 'YOUR_BRAND',
+      title: 'TikTok Music Usage Confirmation',
+      badge: 'Point 4 Declaration',
+      musicUsageUrl: 'https://www.tiktok.com/legal/page/global/music-usage-confirmation/en',
+    };
+  }
+
+  if (brandContent && !brandOrganic) {
+    return {
+      type: 'BRANDED_CONTENT',
+      title: 'TikTok Branded Content Policy & Music Usage Confirmation',
+      badge: 'Point 4 Declaration',
+      bcPolicyUrl: 'https://www.tiktok.com/legal/page/global/bc-policy/en',
+      musicUsageUrl: 'https://www.tiktok.com/legal/page/global/music-usage-confirmation/en',
+    };
+  }
+
+  // Both commercial options selected
+  return {
+    type: 'BOTH',
+    title: 'TikTok Branded Content Policy & Music Usage Confirmation',
+    badge: 'Point 4 Declaration',
+    bcPolicyUrl: 'https://www.tiktok.com/legal/page/global/bc-policy/en',
+    musicUsageUrl: 'https://www.tiktok.com/legal/page/global/music-usage-confirmation/en',
+  };
+}
+
+function TikTokPolicyDeclarationNotice({
+  settings,
+  compact = false,
+}: {
+  settings?: PlatformSettingsState;
+  compact?: boolean;
+}) {
+  const dec = getTikTokPolicyDeclaration(settings);
+
+  return (
+    <div
+      data-tiktok-compliance-declaration="true"
+      data-declaration-type={dec.type}
+      className={`rounded-2xl border transition-all ${
+        compact
+          ? 'p-3.5 bg-[#12121c] border-[#29293c] text-xs'
+          : 'p-4 bg-[#12121c] border-[#29293c] space-y-2'
+      }`}
+    >
+      <div className="flex items-center justify-between gap-2 mb-1.5">
+        <div className="flex items-center gap-2">
+          <Shield className="w-4 h-4 text-neutral-400 shrink-0" />
+          <span className="text-xs font-bold text-neutral-200 uppercase tracking-wider">
+            TikTok Compliance Declaration
+          </span>
+        </div>
+        <span className="text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-md bg-neutral-800 text-neutral-300 border border-neutral-700">
+          Point 4 Required
+        </span>
+      </div>
+
+      <div className="text-xs text-neutral-300 leading-relaxed">
+        {dec.type === 'NORMAL' && (
+          <p>
+            By posting, you agree to TikTok&apos;s{' '}
+            <a
+              href={dec.termsUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-red-400 hover:text-red-300 underline font-semibold inline-flex items-center gap-0.5"
+            >
+              Terms of Service
+              <ExternalLink className="w-3 h-3 ml-0.5 inline shrink-0" />
+            </a>{' '}
+            and confirm that your content complies with TikTok&apos;s{' '}
+            <a
+              href={dec.communityUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-red-400 hover:text-red-300 underline font-semibold inline-flex items-center gap-0.5"
+            >
+              Community Guidelines
+              <ExternalLink className="w-3 h-3 ml-0.5 inline shrink-0" />
+            </a>
+            .
+          </p>
+        )}
+
+        {dec.type === 'YOUR_BRAND' && (
+          <p>
+            By posting, you agree to TikTok&apos;s{' '}
+            <a
+              href={dec.musicUsageUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-red-400 hover:text-red-300 underline font-semibold inline-flex items-center gap-0.5"
+            >
+              Music Usage Confirmation
+              <ExternalLink className="w-3 h-3 ml-0.5 inline shrink-0" />
+            </a>
+            .
+          </p>
+        )}
+
+        {(dec.type === 'BRANDED_CONTENT' || dec.type === 'BOTH') && (
+          <p>
+            By posting, you agree to TikTok&apos;s{' '}
+            <a
+              href={dec.bcPolicyUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-red-400 hover:text-red-300 underline font-semibold inline-flex items-center gap-0.5"
+            >
+              Branded Content Policy
+              <ExternalLink className="w-3 h-3 ml-0.5 inline shrink-0" />
+            </a>{' '}
+            and{' '}
+            <a
+              href={dec.musicUsageUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-red-400 hover:text-red-300 underline font-semibold inline-flex items-center gap-0.5"
+            >
+              Music Usage Confirmation
+              <ExternalLink className="w-3 h-3 ml-0.5 inline shrink-0" />
+            </a>
+            .
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}
 
 export default function CreatePostPage() {
   const router = useRouter();
@@ -1002,9 +1171,24 @@ export default function CreatePostPage() {
     return null;
   };
 
+  const validateTikTokMedia = () => {
+    const hasTikTok = accounts.filter((a) => selectedAccountIds.includes(a.id)).some((acc) => acc.platform === 'TIKTOK');
+    if (!hasTikTok) return null;
+    if (!mediaFile) {
+      return 'Media is required for TikTok Direct Post. Please attach a video.';
+    }
+    if (!mediaFile.mimeType.startsWith('video/')) {
+      return 'TikTok Direct Post requires a video file (.mp4, .mov, .webm). Image files are not supported.';
+    }
+    return null;
+  };
+
   const validateTikTokRequirements = () => {
     const hasTikTok = accounts.filter((a) => selectedAccountIds.includes(a.id)).some((acc) => acc.platform === 'TIKTOK');
     if (!hasTikTok) return null;
+
+    const mediaError = validateTikTokMedia();
+    if (mediaError) return mediaError;
 
     const tikTokSettings = platformSettings.TIKTOK || DEFAULT_PLATFORM_SETTINGS.TIKTOK;
     const isDirectPost = tikTokSettings.contentType !== 'INBOX_DRAFT';
@@ -1026,10 +1210,34 @@ export default function CreatePostPage() {
       ) {
         return `Selected privacy level is not supported for this TikTok account. Permitted options: ${tiktokCreatorInfo.privacyLevelOptions.join(', ')}`;
       }
+
+      // Point 3: Commercial Content Disclosure checks
+      if (tikTokSettings.commercialContentDisclosure) {
+        if (!tikTokSettings.brandOrganicToggle && !tikTokSettings.brandContentToggle) {
+          return 'You need to indicate if your content promotes yourself, a third party, or both.';
+        }
+      }
+
+      // Point 3: Branded content cannot be set to private ("Only Me" / SELF_ONLY)
+      if (tikTokSettings.brandContentToggle && tikTokSettings.visibility === 'SELF_ONLY') {
+        return 'Branded content visibility cannot be set to private.';
+      }
     }
 
     return null;
   };
+
+  const tikTokBlockReason = useMemo(() => {
+    return validateTikTokRequirements();
+  }, [
+    accounts,
+    selectedAccountIds,
+    platformSettings.TIKTOK,
+    mediaFile,
+    tiktokCreatorInfoLoading,
+    tiktokCreatorInfoError,
+    tiktokCreatorInfo,
+  ]);
 
   const handleReviewSchedule = () => {
     setErrorMessage('');
@@ -1376,6 +1584,30 @@ export default function CreatePostPage() {
                   )}
                 </div>
               </div>
+
+              {res.platform === 'TIKTOK' && res.status === 'PUBLISHED' && (
+                <div
+                  data-tiktok-processing-notice="true"
+                  className="p-3 rounded-xl bg-blue-950/40 border border-blue-500/30 text-blue-300 text-xs flex items-center gap-2.5"
+                >
+                  <Info className="w-4 h-4 text-blue-400 shrink-0" />
+                  <span>
+                    TikTok is processing and transcoding your video. Video moderation and processing typically take 2 to 5 minutes before the post becomes visible on your profile.
+                  </span>
+                </div>
+              )}
+
+              {res.platform === 'TIKTOK' && (res.status === 'INBOX_DRAFT' || res.status === 'PROCESSING') && (
+                <div
+                  data-tiktok-inbox-notice="true"
+                  className="p-3 rounded-xl bg-amber-950/40 border border-amber-500/30 text-amber-300 text-xs flex items-center gap-2.5"
+                >
+                  <Info className="w-4 h-4 text-amber-400 shrink-0" />
+                  <span>
+                    Video uploaded to your TikTok Creator Inbox as a draft. Open the TikTok mobile app to add sounds, effects, and finish publishing.
+                  </span>
+                </div>
+              )}
 
               </React.Fragment>
             ))}
@@ -1841,6 +2073,7 @@ export default function CreatePostPage() {
               )}
 
               {/* TIKTOK */}
+              {/* TIKTOK */}
               {(activeTab === 'ALL' || activeTab === 'TIKTOK') && (
                 <div className="p-6 rounded-2xl bg-[#0e0e12]/70 border border-[#22222a] space-y-4">
                   <div className="flex items-center justify-between">
@@ -1852,6 +2085,42 @@ export default function CreatePostPage() {
                       {platformSettings.TIKTOK?.caption?.length || 0} / 4,000 chars
                     </span>
                   </div>
+
+                  {/* Creator Identity Display (Point 1 UX Compliance) */}
+                  {selectedTikTokAccount && (
+                    <div className="flex items-center justify-between p-3.5 rounded-xl bg-[#14141c] border border-[#262633]">
+                      <div className="flex items-center gap-3">
+                        {selectedTikTokAccount.profileImageUrl || tiktokCreatorInfo?.creatorAvatarUrl ? (
+                          <img
+                            src={tiktokCreatorInfo?.creatorAvatarUrl || selectedTikTokAccount.profileImageUrl}
+                            alt={selectedTikTokAccount.name}
+                            className="w-10 h-10 rounded-full object-cover border border-red-500/30"
+                          />
+                        ) : (
+                          <div className="w-10 h-10 rounded-full bg-red-950/50 border border-red-500/40 flex items-center justify-center font-bold text-red-400">
+                            TT
+                          </div>
+                        )}
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-bold text-white">
+                              {tiktokCreatorInfo?.creatorNickname || selectedTikTokAccount.name || 'TikTok Creator'}
+                            </span>
+                            <span className="text-[10px] font-bold text-emerald-400 bg-emerald-950/60 border border-emerald-500/30 px-2 py-0.5 rounded-full flex items-center gap-1">
+                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                              Direct Post
+                            </span>
+                          </div>
+                          <span className="text-xs text-neutral-400">
+                            @{tiktokCreatorInfo?.creatorUsername || selectedTikTokAccount.username || 'creator'}
+                          </span>
+                        </div>
+                      </div>
+                      <span className="text-xs text-neutral-400 font-medium hidden sm:inline-block">
+                        Target Account
+                      </span>
+                    </div>
+                  )}
 
                   <div>
                     <label className="block text-xs md:text-sm font-bold text-neutral-300 mb-1.5">
@@ -1942,22 +2211,32 @@ export default function CreatePostPage() {
                             </option>
                             {(tiktokCreatorInfo?.privacyLevelOptions || []).map((opt) => {
                               let label = opt;
+                              const isRestrictedForBranded = opt === 'SELF_ONLY' && platformSettings.TIKTOK?.brandContentToggle;
                               if (opt === 'PUBLIC_TO_EVERYONE') label = 'Public to Everyone';
                               else if (opt === 'MUTUAL_FOLLOW_FRIENDS') label = 'Friends Only (Mutual Followers)';
                               else if (opt === 'FOLLOWER_OF_CREATOR') label = 'Followers Only';
-                              else if (opt === 'SELF_ONLY') label = 'Only Me (Private)';
+                              else if (opt === 'SELF_ONLY') {
+                                label = isRestrictedForBranded
+                                  ? 'Only Me (Private) — Restricted for Branded Content'
+                                  : 'Only Me (Private)';
+                              }
                               return (
-                                <option key={opt} value={opt}>
+                                <option key={opt} value={opt} disabled={Boolean(isRestrictedForBranded)}>
                                   {label}
                                 </option>
                               );
                             })}
                           </select>
-                          {!platformSettings.TIKTOK?.visibility && (
+                          {platformSettings.TIKTOK?.brandContentToggle && platformSettings.TIKTOK?.visibility === 'SELF_ONLY' ? (
+                            <p className="text-[11px] text-red-400 font-semibold mt-1 flex items-center gap-1">
+                              <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
+                              Branded content visibility cannot be set to private.
+                            </p>
+                          ) : !platformSettings.TIKTOK?.visibility ? (
                             <p className="text-[11px] text-amber-400/90 mt-1 font-medium">
                               Explicit selection required before publishing.
                             </p>
-                          )}
+                          ) : null}
                         </div>
                       )}
                     </div>
@@ -2039,6 +2318,145 @@ export default function CreatePostPage() {
                       </div>
                     </div>
                   </div>
+
+                  {/* POINT 3: COMMERCIAL CONTENT DISCLOSURE */}
+                  {platformSettings.TIKTOK?.contentType !== 'INBOX_DRAFT' && (
+                    <div className="pt-3 border-t border-[#22222a]/70">
+                      <div className="p-4 sm:p-5 rounded-2xl bg-[#121218] border border-[#262633] space-y-4">
+                        <div className="flex items-start sm:items-center justify-between gap-4">
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-2">
+                              <Tag className="w-4 h-4 text-red-500 shrink-0" />
+                              <label htmlFor="tiktok-commercial-toggle" className="text-sm font-bold text-white cursor-pointer">
+                                Commercial Content Disclosure
+                              </label>
+                              <span className="text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-md bg-red-950/80 text-red-400 border border-red-500/30">
+                                Required
+                              </span>
+                            </div>
+                            <p className="text-xs text-neutral-400 leading-relaxed">
+                              Disclose whether this video promotes yourself, a brand, product, or service.
+                            </p>
+                          </div>
+
+                          {/* Master Toggle Switch (Defaults to OFF) */}
+                          <label className="relative inline-flex items-center cursor-pointer shrink-0 mt-1 sm:mt-0">
+                            <input
+                              id="tiktok-commercial-toggle"
+                              type="checkbox"
+                              checked={Boolean(platformSettings.TIKTOK?.commercialContentDisclosure)}
+                              onChange={(e) => {
+                                const checked = e.target.checked;
+                                updatePlatformSetting('TIKTOK', 'commercialContentDisclosure', checked);
+                                if (!checked) {
+                                  updatePlatformSetting('TIKTOK', 'brandOrganicToggle', false);
+                                  updatePlatformSetting('TIKTOK', 'brandContentToggle', false);
+                                }
+                              }}
+                              className="sr-only peer"
+                            />
+                            <div className="w-11 h-6 bg-[#22222a] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
+                          </label>
+                        </div>
+
+                        {/* Sub-options panel (visible only when switch is ON) */}
+                        {platformSettings.TIKTOK?.commercialContentDisclosure && (
+                          <div className="pt-3 border-t border-[#22222a] space-y-3.5">
+                            <p className="text-xs text-neutral-300 font-medium">
+                              Select who this content promotes. You may select one or both options:
+                            </p>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                              {/* Option 1: Your Brand */}
+                              <label
+                                className={`flex items-start gap-3 p-3.5 rounded-xl border transition-all cursor-pointer ${
+                                  platformSettings.TIKTOK?.brandOrganicToggle
+                                    ? 'bg-red-950/20 border-red-500/50 shadow-sm shadow-red-900/10'
+                                    : 'bg-[#16161f] border-[#262633] hover:border-[#383848]'
+                                }`}
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={Boolean(platformSettings.TIKTOK?.brandOrganicToggle)}
+                                  onChange={(e) => updatePlatformSetting('TIKTOK', 'brandOrganicToggle', e.target.checked)}
+                                  className="mt-0.5 rounded border-[#33333e] bg-[#0e0e12] text-red-600 w-4 h-4 focus:ring-red-500 shrink-0"
+                                />
+                                <div className="space-y-1">
+                                  <div className="flex items-center gap-2 flex-wrap">
+                                    <span className="text-xs font-bold text-white">Your brand</span>
+                                    <span className="text-[10px] font-semibold text-neutral-300 bg-[#252532] px-1.5 py-0.5 rounded border border-neutral-700">
+                                      Promotional content
+                                    </span>
+                                  </div>
+                                  <p className="text-[11px] text-neutral-400 leading-normal">
+                                    You are promoting yourself or your own business. Classified as Brand Organic.
+                                  </p>
+                                </div>
+                              </label>
+
+                              {/* Option 2: Branded Content */}
+                              <label
+                                className={`flex items-start gap-3 p-3.5 rounded-xl border transition-all cursor-pointer ${
+                                  platformSettings.TIKTOK?.brandContentToggle
+                                    ? 'bg-amber-950/20 border-amber-500/50 shadow-sm shadow-amber-900/10'
+                                    : 'bg-[#16161f] border-[#262633] hover:border-[#383848]'
+                                }`}
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={Boolean(platformSettings.TIKTOK?.brandContentToggle)}
+                                  onChange={(e) => {
+                                    const checked = e.target.checked;
+                                    updatePlatformSetting('TIKTOK', 'brandContentToggle', checked);
+                                    if (checked && platformSettings.TIKTOK?.visibility === 'SELF_ONLY') {
+                                      updatePlatformSetting('TIKTOK', 'visibility', '');
+                                    }
+                                  }}
+                                  className="mt-0.5 rounded border-[#33333e] bg-[#0e0e12] text-red-600 w-4 h-4 focus:ring-red-500 shrink-0"
+                                />
+                                <div className="space-y-1">
+                                  <div className="flex items-center gap-2 flex-wrap">
+                                    <span className="text-xs font-bold text-white">Branded content</span>
+                                    <span className="text-[10px] font-semibold text-amber-300 bg-amber-950/60 px-1.5 py-0.5 rounded border border-amber-500/30">
+                                      Paid partnership
+                                    </span>
+                                  </div>
+                                  <p className="text-[11px] text-neutral-400 leading-normal">
+                                    You are promoting another brand or third party in exchange for something of value.
+                                  </p>
+                                </div>
+                              </label>
+                            </div>
+
+                            {/* Point 3 Requirement Prompt: When disclosure is ON but no sub-option is selected */}
+                            {!platformSettings.TIKTOK?.brandOrganicToggle && !platformSettings.TIKTOK?.brandContentToggle && (
+                              <div className="p-3 rounded-xl bg-amber-950/40 border border-amber-500/40 text-amber-300 text-xs font-semibold flex items-center gap-2.5">
+                                <AlertCircle className="w-4 h-4 text-amber-400 shrink-0" />
+                                <span>You need to indicate if your content promotes yourself, a third party, or both.</span>
+                              </div>
+                            )}
+
+                            {/* Privacy Policy Restriction Callout when Branded content is active */}
+                            {platformSettings.TIKTOK?.brandContentToggle && (
+                              <div className="p-3 rounded-xl bg-blue-950/30 border border-blue-500/30 text-blue-300 text-xs flex items-center gap-2.5">
+                                <Info className="w-4 h-4 text-blue-400 shrink-0" />
+                                <span>
+                                  Branded content visibility cannot be set to private. Post visibility is restricted to Public or Friends.
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* POINT 4: COMPLIANCE DECLARATION */}
+                  {platformSettings.TIKTOK?.contentType !== 'INBOX_DRAFT' && (
+                    <div className="pt-2 border-t border-[#22222a]/70">
+                      <TikTokPolicyDeclarationNotice settings={platformSettings.TIKTOK} />
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -2347,7 +2765,14 @@ export default function CreatePostPage() {
           <div className="pb-32" />
 
           {/* PUBLISHING ACTIONS BAR */}
-          <div className="sticky bottom-4 md:bottom-6 z-20 p-4 md:p-6 rounded-3xl bg-[#0e0e12]/95 backdrop-blur-xl border border-[#22222a] shadow-2xl flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4">
+          <div className="sticky bottom-4 md:bottom-6 z-20 space-y-2.5">
+            {selectedAccounts.some((a) => a.platform === 'TIKTOK') &&
+              platformSettings.TIKTOK?.contentType !== 'INBOX_DRAFT' && (
+                <div className="p-3.5 rounded-2xl bg-[#0e0e12]/95 backdrop-blur-xl border border-[#262635] shadow-xl">
+                  <TikTokPolicyDeclarationNotice settings={platformSettings.TIKTOK} compact={true} />
+                </div>
+              )}
+            <div className="p-4 md:p-6 rounded-3xl bg-[#0e0e12]/95 backdrop-blur-xl border border-[#22222a] shadow-2xl flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 md:gap-4">
             <div className="flex items-center gap-3">
               <button
                 type="button"
@@ -2358,17 +2783,32 @@ export default function CreatePostPage() {
                 <Save className="w-4 h-4 text-neutral-400" />
                 <span>Save Draft</span>
               </button>
+
+              {tikTokBlockReason && (
+                <div className="hidden lg:flex items-center gap-2 px-3.5 py-2 rounded-xl bg-amber-950/40 border border-amber-500/40 text-amber-300 text-xs font-semibold">
+                  <AlertCircle className="w-4 h-4 text-amber-400 shrink-0" />
+                  <span>{tikTokBlockReason}</span>
+                </div>
+              )}
             </div>
 
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-3.5 w-full sm:w-auto">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-3.5 w-full md:w-auto">
+              {tikTokBlockReason && (
+                <div className="flex lg:hidden items-center gap-2 px-3 py-1.5 rounded-xl bg-amber-950/40 border border-amber-500/40 text-amber-300 text-xs font-semibold">
+                  <AlertCircle className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                  <span>{tikTokBlockReason}</span>
+                </div>
+              )}
+
               <button
                 type="button"
                 onClick={() => {
                   setScheduleStep('FORM');
                   setShowScheduleModal(true);
                 }}
-                disabled={publishing || selectedAccounts.length === 0}
-                className="flex items-center justify-center gap-2 px-5 py-3 text-sm font-bold rounded-2xl bg-red-950/70 hover:bg-red-900/70 text-red-400 border border-red-500/40 transition-colors disabled:opacity-50 w-full sm:w-auto"
+                disabled={publishing || selectedAccounts.length === 0 || Boolean(tikTokBlockReason)}
+                className="flex items-center justify-center gap-2 px-5 py-3 text-sm font-bold rounded-2xl bg-red-950/70 hover:bg-red-900/70 text-red-400 border border-red-500/40 transition-colors disabled:opacity-50 disabled:cursor-not-allowed w-full sm:w-auto"
+                title={tikTokBlockReason || undefined}
               >
                 <Clock className="w-4 h-4 text-red-500" />
                 <span>Schedule Post</span>
@@ -2377,8 +2817,9 @@ export default function CreatePostPage() {
               <button
                 type="button"
                 onClick={() => setShowPublishConfirmModal(true)}
-                disabled={publishing || selectedAccounts.length === 0}
-                className="flex items-center gap-2.5 px-6 py-3 text-sm font-black rounded-2xl bg-gradient-to-r from-red-700 to-red-600 hover:from-red-600 hover:to-red-500 text-white shadow-xl shadow-red-600/30 transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50"
+                disabled={publishing || selectedAccounts.length === 0 || Boolean(tikTokBlockReason)}
+                className="flex items-center justify-center gap-2.5 px-6 py-3 text-sm font-black rounded-2xl bg-gradient-to-r from-red-700 to-red-600 hover:from-red-600 hover:to-red-500 text-white shadow-xl shadow-red-600/30 transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+                title={tikTokBlockReason || undefined}
               >
                 {publishing ? (
                   <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -2392,6 +2833,7 @@ export default function CreatePostPage() {
             </div>
           </div>
         </div>
+      </div>
 
         {/* Right Live Preview Panel */}
         <div className="space-y-6">
@@ -2474,6 +2916,24 @@ export default function CreatePostPage() {
                   )}
                 </div>
 
+                {/* TikTok Commercial Disclosure Badges in Preview */}
+                {previewPlatform === 'TIKTOK' && platformSettings.TIKTOK?.commercialContentDisclosure && (
+                  <div className="flex items-center gap-2 mb-3 flex-wrap">
+                    {platformSettings.TIKTOK?.brandOrganicToggle && (
+                      <span className="text-[10px] font-bold text-neutral-300 bg-neutral-800 px-2 py-0.5 rounded border border-neutral-700 flex items-center gap-1">
+                        <Tag className="w-3 h-3 text-neutral-400" />
+                        <span>Promotional content</span>
+                      </span>
+                    )}
+                    {platformSettings.TIKTOK?.brandContentToggle && (
+                      <span className="text-[10px] font-bold text-amber-300 bg-amber-950/60 px-2 py-0.5 rounded border border-amber-500/40 flex items-center gap-1">
+                        <Tag className="w-3 h-3 text-amber-400" />
+                        <span>Paid partnership</span>
+                      </span>
+                    )}
+                  </div>
+                )}
+
                 {/* Media Preview Box */}
                 <div className="rounded-2xl overflow-hidden bg-[#0e0e12] border border-[#22222a] aspect-video flex items-center justify-center relative shadow-sm">
                   {mediaFile ? (
@@ -2554,7 +3014,7 @@ export default function CreatePostPage() {
               Your post will immediately be broadcast across:
             </p>
 
-            <div className="space-y-2.5 mb-8">
+            <div className="space-y-2.5 mb-6">
               {selectedAccounts.map((acc) => (
                 <div
                   key={acc.id}
@@ -2569,6 +3029,63 @@ export default function CreatePostPage() {
               ))}
             </div>
 
+            {selectedAccounts.some((a) => a.platform === 'TIKTOK') && (
+              <div className="space-y-3 mb-6">
+                <div className="p-3.5 rounded-xl bg-[#14141e] border border-[#262635] text-xs space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-white flex items-center gap-2">
+                      <PlatformIcon platform="TIKTOK" size={16} className="w-4 h-4 rounded" />
+                      TikTok Post Mode
+                    </span>
+                    <span className="text-[10px] font-bold text-neutral-300 bg-neutral-800 px-2 py-0.5 rounded border border-neutral-700">
+                      {platformSettings.TIKTOK?.contentType === 'INBOX_DRAFT' ? 'Creator Inbox Draft' : 'Direct Post to Profile'}
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 text-neutral-300 pt-1">
+                    <div>
+                      <span className="text-neutral-500">Privacy: </span>
+                      <span className="font-semibold text-white">
+                        {platformSettings.TIKTOK?.visibility === 'PUBLIC_TO_EVERYONE'
+                          ? 'Public to Everyone'
+                          : platformSettings.TIKTOK?.visibility === 'MUTUAL_FOLLOW_FRIENDS'
+                          ? 'Mutual Friends'
+                          : platformSettings.TIKTOK?.visibility === 'FOLLOWER_OF_CREATOR'
+                          ? 'Followers'
+                          : platformSettings.TIKTOK?.visibility === 'SELF_ONLY'
+                          ? 'Only Me (Private)'
+                          : 'Not selected'}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-neutral-500">Commercial: </span>
+                      <span className="font-semibold text-white">
+                        {!platformSettings.TIKTOK?.commercialContentDisclosure
+                          ? 'Normal Content'
+                          : platformSettings.TIKTOK?.brandOrganicToggle && platformSettings.TIKTOK?.brandContentToggle
+                          ? 'Your Brand & Branded'
+                          : platformSettings.TIKTOK?.brandOrganicToggle
+                          ? 'Your Brand'
+                          : platformSettings.TIKTOK?.brandContentToggle
+                          ? 'Branded Content'
+                          : 'Incomplete'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {platformSettings.TIKTOK?.contentType !== 'INBOX_DRAFT' && (
+                  <TikTokPolicyDeclarationNotice settings={platformSettings.TIKTOK} compact={true} />
+                )}
+              </div>
+            )}
+
+            {tikTokBlockReason && (
+              <div className="mb-4 p-3 rounded-xl bg-amber-950/40 border border-amber-500/40 text-amber-300 text-xs font-semibold flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 text-amber-400 shrink-0" />
+                <span>{tikTokBlockReason}</span>
+              </div>
+            )}
+
             <div className="flex items-center justify-end gap-3.5">
               <button
                 onClick={() => setShowPublishConfirmModal(false)}
@@ -2578,7 +3095,8 @@ export default function CreatePostPage() {
               </button>
               <button
                 onClick={handlePublishNow}
-                className="flex items-center gap-2 px-6 py-2.5 text-sm font-black text-white bg-gradient-to-r from-red-700 to-red-600 hover:from-red-600 hover:to-red-500 rounded-xl shadow-lg shadow-red-600/30 transition-all"
+                disabled={publishing || Boolean(tikTokBlockReason)}
+                className="flex items-center gap-2 px-6 py-2.5 text-sm font-black text-white bg-gradient-to-r from-red-700 to-red-600 hover:from-red-600 hover:to-red-500 rounded-xl shadow-lg shadow-red-600/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Send className="w-4 h-4" />
                 <span>Publish Now</span>
@@ -2728,6 +3246,13 @@ export default function CreatePostPage() {
                       ))}
                     </div>
                   </div>
+
+                  {selectedAccounts.some((a) => a.platform === 'TIKTOK') &&
+                    platformSettings.TIKTOK?.contentType !== 'INBOX_DRAFT' && (
+                      <div className="pt-2">
+                        <TikTokPolicyDeclarationNotice settings={platformSettings.TIKTOK} compact={true} />
+                      </div>
+                    )}
                 </div>
 
                 <div className="flex items-center justify-end gap-3.5">

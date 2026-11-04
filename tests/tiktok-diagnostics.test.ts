@@ -1,5 +1,5 @@
 import assert from 'assert';
-import { TikTokAdapter } from '../src/integrations/tiktok';
+import { TikTokAdapter } from '../integrations/tiktok';
 
 async function runTests() {
   console.log('Running TikTok Diagnostics & File Upload Tests...');
@@ -12,7 +12,7 @@ async function runTests() {
     mediaUrl: 'https://test-bucket.r2.cloudflarestorage.com/workspaces/ws1/videos/test.mp4',
     mediaType: 'VIDEO',
     contentType: 'POST',
-    visibility: 'PUBLIC',
+    visibility: 'PUBLIC_TO_EVERYONE',
     accessToken: 'mock_access_token_123',
     platformAccountId: 'mock_platform_acc_123',
     isMock: true,
@@ -30,7 +30,7 @@ async function runTests() {
     mediaUrl: 'https://pub-test12345.r2.dev/workspaces/ws1/videos/sample.mp4',
     mediaType: 'VIDEO',
     contentType: 'POST',
-    visibility: 'PUBLIC',
+    visibility: 'PUBLIC_TO_EVERYONE',
     accessToken: 'act.test_invalid_access_token_secret_123',
     platformAccountId: 'real_acc_id_999',
     isMock: false,

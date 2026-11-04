@@ -38,6 +38,7 @@ export async function POST(req: Request) {
 
     // Validate that all media assets belong to the workspace
     const mediaIds = Array.from(new Set(items.map((i: any) => i.mediaAssetId).filter(Boolean)));
+    const mediaMap = new Map();
     if (mediaIds.length > 0) {
       const media = await prisma.mediaAsset.findMany({
         where: {
@@ -48,9 +49,24 @@ export async function POST(req: Request) {
       if (media.length !== mediaIds.length) {
         return NextResponse.json({ error: 'One or more media assets are invalid or do not belong to this workspace.' }, { status: 400 });
       }
+      media.forEach((m) => mediaMap.set(m.id, m));
     }
 
-    // Validate TikTok requirements across items: Direct Post requires an explicit valid privacy setting
+    // Validate media requirements for TikTok across items
+    for (const item of items) {
+      const hasTikTok = (item.platformSettings || []).some((plat: any) => plat.platform === 'TIKTOK');
+      if (hasTikTok) {
+        if (!item.mediaAssetId) {
+          return NextResponse.json({ error: 'Media is required for TikTok Direct Post. Please attach a video.' }, { status: 400 });
+        }
+        const asset = mediaMap.get(item.mediaAssetId);
+        if (asset && !asset.mimeType.startsWith('video/')) {
+          return NextResponse.json({ error: 'TikTok Direct Post requires a video file (.mp4, .mov, .webm). Image files are not supported.' }, { status: 400 });
+        }
+      }
+    }
+
+    // Validate TikTok requirements across items: Direct Post requires an explicit valid privacy setting & Point 3 disclosure checks
     for (const item of items) {
       for (const plat of item.platformSettings || []) {
         if (plat.platform === 'TIKTOK' && plat.contentType !== 'INBOX_DRAFT') {
@@ -58,6 +74,27 @@ export async function POST(req: Request) {
           if (!plat.visibility || !validTikTokPrivacy.includes(plat.visibility)) {
             return NextResponse.json(
               { error: 'Please select a valid privacy level for TikTok on all items before scheduling.' },
+              { status: 400 }
+            );
+          }
+
+          const meta = plat.metadata || {};
+          const commercialDisclosure = meta.commercialContentDisclosure === true;
+          const brandOrganic = meta.brandOrganicToggle === true;
+          const brandContent = meta.brandContentToggle === true;
+
+          // Point 3: Commercial Content Disclosure checks
+          if (commercialDisclosure && !brandOrganic && !brandContent) {
+            return NextResponse.json(
+              { error: 'You need to indicate if your content promotes yourself, a third party, or both.' },
+              { status: 400 }
+            );
+          }
+
+          // Point 3: Branded content cannot be set to private
+          if (brandContent && plat.visibility === 'SELF_ONLY') {
+            return NextResponse.json(
+              { error: 'Branded content visibility cannot be set to private.' },
               { status: 400 }
             );
           }
