@@ -2073,8 +2073,7 @@ export default function CreatePostPage() {
               )}
 
               {/* TIKTOK */}
-              {/* TIKTOK */}
-              {(activeTab === 'ALL' || activeTab === 'TIKTOK') && (
+              {((activeTab === 'ALL' && selectedAccounts.some((a) => a.platform === 'TIKTOK')) || activeTab === 'TIKTOK') && (
                 <div className="p-6 rounded-2xl bg-[#0e0e12]/70 border border-[#22222a] space-y-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2.5">
@@ -2766,12 +2765,6 @@ export default function CreatePostPage() {
 
           {/* PUBLISHING ACTIONS BAR */}
           <div className="sticky bottom-4 md:bottom-6 z-20 space-y-2.5">
-            {selectedAccounts.some((a) => a.platform === 'TIKTOK') &&
-              platformSettings.TIKTOK?.contentType !== 'INBOX_DRAFT' && (
-                <div className="p-3.5 rounded-2xl bg-[#0e0e12]/95 backdrop-blur-xl border border-[#262635] shadow-xl">
-                  <TikTokPolicyDeclarationNotice settings={platformSettings.TIKTOK} compact={true} />
-                </div>
-              )}
             <div className="p-4 md:p-6 rounded-3xl bg-[#0e0e12]/95 backdrop-blur-xl border border-[#22222a] shadow-2xl flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 md:gap-4">
             <div className="flex items-center gap-3">
               <button
