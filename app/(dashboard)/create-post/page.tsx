@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PlatformIcon } from '@/components/ui/PlatformIcons';
@@ -437,6 +437,25 @@ export default function CreatePostPage() {
   // Media state
   const [mediaFile, setMediaFile] = useState<MediaFileState | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const uploadAbortControllerRef = useRef<AbortController | null>(null);
+  const xhrUploadRef = useRef<XMLHttpRequest | null>(null);
+  const lastUploadedFileRef = useRef<File | null>(null);
+
+  const cancelUpload = useCallback(() => {
+    if (uploadAbortControllerRef.current) {
+      uploadAbortControllerRef.current.abort();
+      uploadAbortControllerRef.current = null;
+    }
+    if (xhrUploadRef.current) {
+      try {
+        xhrUploadRef.current.abort();
+      } catch {}
+      xhrUploadRef.current = null;
+    }
+    setUploading(false);
+    setUploadProgress(0);
+  }, []);
 
   // UI tabs & views
   const [activeTab, setActiveTab] = useState<string>('ALL');
@@ -1043,71 +1062,144 @@ export default function CreatePostPage() {
       return;
     }
 
+    // Cancel any prior in-flight upload
+    cancelUpload();
+
+    lastUploadedFileRef.current = file;
+    const controller = new AbortController();
+    uploadAbortControllerRef.current = controller;
+
     setUploading(true);
+    setUploadProgress(0);
     setErrorMessage('');
+    setErrorSource('');
+
+    let currentPhase: 'MEDIA_PRESIGN' | 'MEDIA_DIRECT_UPLOAD' | 'MEDIA_FINALIZE' = 'MEDIA_PRESIGN';
 
     try {
-      let data;
-
-      // 1. Get presigned URL
+      // 1. Get presigned URL & Deduplication Check
+      currentPhase = 'MEDIA_PRESIGN';
       const presignedRes = await fetchWithDiagnostics('MEDIA_PRESIGN', '/api/upload/presigned', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ filename: file.name, mimeType: file.type, size: file.size })
+        body: JSON.stringify({ filename: file.name, mimeType: file.type || 'video/mp4', size: file.size }),
+        signal: controller.signal,
       });
 
       const presignedData = await presignedRes.json().catch(() => null);
 
-      if (!presignedRes.ok || !presignedData?.uploadUrl) {
+      if (!presignedRes.ok) {
         throw new Error(presignedData?.error || 'Could not initialize media upload.');
       }
 
-      // 2. Upload directly to R2
-      const r2Res = await fetchWithDiagnostics('MEDIA_DIRECT_UPLOAD', presignedData.uploadUrl, {
-        method: 'PUT',
-        body: file,
-        headers: { 'Content-Type': file.type }
-      });
-
-      if (!r2Res.ok) {
-        throw new Error('Upload failed. Please try again.');
+      // Single-Object Storage Deduplication:
+      // If asset already exists in Cloudflare R2, reuse it immediately without redundant re-upload!
+      if (presignedData?.alreadyExists && presignedData.media) {
+        console.log('[Create Post] Reusing existing media asset without re-upload:', presignedData.media.id);
+        setMediaFile({
+          id: presignedData.media.id,
+          url: presignedData.media.url,
+          thumbnailUrl: presignedData.media.thumbnailUrl || undefined,
+          mimeType: presignedData.media.mimeType,
+          name: presignedData.media.originalName || presignedData.media.filename || file.name,
+          size: presignedData.media.size || file.size,
+        });
+        setUploadProgress(100);
+        setUploading(false);
+        return;
       }
 
+      if (!presignedData?.uploadUrl) {
+        throw new Error(presignedData?.error || 'Could not initialize media upload.');
+      }
+
+      // 2. Upload directly to R2 with XMLHttpRequest for progress tracking
+      currentPhase = 'MEDIA_DIRECT_UPLOAD';
+      await new Promise<void>((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhrUploadRef.current = xhr;
+
+        xhr.upload.onprogress = (event) => {
+          if (event.lengthComputable) {
+            const percent = Math.round((event.loaded / event.total) * 100);
+            setUploadProgress(Math.min(percent, 95));
+          }
+        };
+
+        xhr.onload = () => {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            resolve();
+          } else {
+            reject(new Error(`Direct storage upload failed (HTTP ${xhr.status}). Please try again.`));
+          }
+        };
+
+        xhr.onerror = () => {
+          reject(new Error('Network error during direct storage upload. Please check your connection.'));
+        };
+
+        xhr.onabort = () => {
+          reject(new DOMException('Upload cancelled by user', 'AbortError'));
+        };
+
+        controller.signal.addEventListener('abort', () => {
+          try {
+            xhr.abort();
+          } catch {}
+        });
+
+        xhr.open('PUT', presignedData.uploadUrl);
+        xhr.setRequestHeader('Content-Type', file.type || 'application/octet-stream');
+        xhr.send(file);
+      });
+
       // 3. Finalize upload and save MediaAsset
+      currentPhase = 'MEDIA_FINALIZE';
       const finalizeRes = await fetchWithDiagnostics('MEDIA_FINALIZE', '/api/upload/finalize', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           objectKey: presignedData.objectKey,
           filename: file.name,
-          mimeType: file.type,
-          size: file.size
-        })
+          mimeType: file.type || 'video/mp4',
+          size: file.size,
+        }),
+        signal: controller.signal,
       });
 
-      data = await finalizeRes.json().catch(() => null);
+      const data = await finalizeRes.json().catch(() => null);
 
       if (!finalizeRes.ok || !data) {
-        throw new Error(data?.error || 'Failed to finalize upload');
+        throw new Error(data?.error || 'Failed to finalize media upload');
       }
 
       setMediaFile({
         id: data.media.id,
         url: data.media.url,
+        thumbnailUrl: data.media.thumbnailUrl || undefined,
         mimeType: data.media.mimeType,
-        name: data.media.fileName,
-        size: data.media.size,
+        name: data.media.originalName || data.media.filename || data.media.fileName || file.name,
+        size: data.media.size || file.size,
       });
+      setUploadProgress(100);
     } catch (err: any) {
-      console.error('Upload error:', err);
+      if (err.name === 'AbortError' || controller.signal.aborted) {
+        console.log('[Create Post] Media upload was cancelled cleanly.');
+        setErrorMessage('');
+        setErrorSource('');
+        return;
+      }
+
+      console.error('Upload error in phase ' + currentPhase + ':', err);
       let errMsg = err.message || 'Failed to upload media';
       if (errMsg === 'Failed to fetch') {
-        errMsg = 'Media upload failed. Please try again.';
-        console.error('[CORS/Network Error] Direct media upload blocked by storage CORS policy.');
+        errMsg = 'Media upload network error. Please check your connection and try again.';
       }
-      setDiagnosticError(errMsg, 'MEDIA_DIRECT_UPLOAD');
+      setDiagnosticError(errMsg, currentPhase);
     } finally {
       setUploading(false);
+      xhrUploadRef.current = null;
+      uploadAbortControllerRef.current = null;
     }
   };
 
@@ -1734,16 +1826,23 @@ export default function CreatePostPage() {
                 onDragOver={(e) => e.preventDefault()}
                 onDrop={(e) => {
                   e.preventDefault();
-                  if (e.dataTransfer.files?.[0]) {
+                  if (!uploading && e.dataTransfer.files?.[0]) {
                     handleFileUpload(e.dataTransfer.files[0]);
                   }
                 }}
-                onClick={() => fileInputRef.current?.click()}
-                className="cursor-pointer border-2 border-dashed border-[#33333e] hover:border-red-500/80 rounded-3xl p-10 text-center bg-[#0e0e12]/40 hover:bg-[#0e0e12]/70 transition-all group"
+                onClick={() => {
+                  if (!uploading) fileInputRef.current?.click();
+                }}
+                className={`border-2 border-dashed rounded-3xl p-10 text-center transition-all ${
+                  uploading
+                    ? 'cursor-wait border-red-500/50 bg-[#0e0e12]/60'
+                    : 'cursor-pointer border-[#33333e] hover:border-red-500/80 bg-[#0e0e12]/40 hover:bg-[#0e0e12]/70 group'
+                }`}
               >
                 <input
                   ref={fileInputRef}
                   type="file"
+                  disabled={uploading}
                   accept="image/jpeg,image/png,image/webp,video/mp4,video/quicktime"
                   onChange={(e) => {
                     if (e.target.files?.[0]) handleFileUpload(e.target.files[0]);
@@ -1752,11 +1851,27 @@ export default function CreatePostPage() {
                 />
 
                 {uploading ? (
-                  <div className="flex flex-col items-center">
+                  <div className="flex flex-col items-center max-w-sm mx-auto">
                     <div className="w-10 h-10 border-3 border-red-500 border-t-transparent rounded-full animate-spin mb-3.5" />
                     <p className="text-sm font-bold text-neutral-200">
-                      Uploading & Optimizing Media...
+                      Uploading & Optimizing Media ({uploadProgress}%)
                     </p>
+                    <div className="w-full bg-neutral-800 rounded-full h-2 mt-3 overflow-hidden">
+                      <div
+                        className="bg-red-500 h-2 rounded-full transition-all duration-200"
+                        style={{ width: `${uploadProgress}%` }}
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        cancelUpload();
+                      }}
+                      className="mt-4 px-4 py-1.5 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-xs font-semibold text-neutral-300 hover:text-white transition-colors border border-neutral-700"
+                    >
+                      Cancel Upload
+                    </button>
                   </div>
                 ) : (
                   <div className="flex flex-col items-center">
@@ -1828,7 +1943,7 @@ export default function CreatePostPage() {
                     className="hidden"
                   />
                   <button
-                    onClick={() => setMediaFile(null)}
+                    onClick={() => { cancelUpload(); setMediaFile(null); }}
                     className="p-2.5 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 text-sm font-semibold border border-red-500/20 transition-colors"
                     title="Remove media"
                   >
