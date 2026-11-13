@@ -276,8 +276,9 @@ function getTikTokPolicyDeclaration(settings?: PlatformSettingsState): TikTokPol
   if (!disclosureOn) {
     return {
       type: 'NORMAL',
-      title: 'TikTok Terms of Service & Community Guidelines',
+      title: 'TikTok Music Usage Confirmation & Policies',
       badge: 'Point 4 Declaration',
+      musicUsageUrl: 'https://www.tiktok.com/legal/page/global/music-usage-confirmation/en',
       termsUrl: 'https://www.tiktok.com/legal/page/global/terms-of-service/en',
       communityUrl: 'https://www.tiktok.com/community-guidelines/en',
     };
@@ -347,6 +348,16 @@ function TikTokPolicyDeclarationNotice({
         {dec.type === 'NORMAL' && (
           <p>
             By posting, you agree to TikTok&apos;s{' '}
+            <a
+              href={dec.musicUsageUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-red-400 hover:text-red-300 underline font-semibold inline-flex items-center gap-0.5"
+            >
+              Music Usage Confirmation
+              <ExternalLink className="w-3 h-3 ml-0.5 inline shrink-0" />
+            </a>
+            ,{' '}
             <a
               href={dec.termsUrl}
               target="_blank"
@@ -2612,6 +2623,22 @@ export default function CreatePostPage() {
                               <div className="p-3 rounded-xl bg-amber-950/40 border border-amber-500/40 text-amber-300 text-xs font-semibold flex items-center gap-2.5">
                                 <AlertCircle className="w-4 h-4 text-amber-400 shrink-0" />
                                 <span>You need to indicate if your content promotes yourself, a third party, or both.</span>
+                              </div>
+                            )}
+
+                            {/* Point 3 Requirement Prompt: When Your Brand is selected */}
+                            {platformSettings.TIKTOK?.brandOrganicToggle && !platformSettings.TIKTOK?.brandContentToggle && (
+                              <div className="p-3 rounded-xl bg-red-950/30 border border-red-500/30 text-red-300 text-xs font-semibold flex items-center gap-2.5">
+                                <Info className="w-4 h-4 text-red-400 shrink-0" />
+                                <span>Your photo/video will be labeled as &apos;Promotional content&apos;</span>
+                              </div>
+                            )}
+
+                            {/* Point 3 Requirement Prompt: When Branded Content or Both are selected */}
+                            {platformSettings.TIKTOK?.brandContentToggle && (
+                              <div className="p-3 rounded-xl bg-amber-950/30 border border-amber-500/30 text-amber-300 text-xs font-semibold flex items-center gap-2.5">
+                                <Info className="w-4 h-4 text-amber-400 shrink-0" />
+                                <span>Your photo/video will be labeled as &apos;Paid partnership&apos;</span>
                               </div>
                             )}
 
