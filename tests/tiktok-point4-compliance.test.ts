@@ -1,4 +1,5 @@
 import assert from 'assert';
+import fs from 'fs';
 import { TikTokAdapter } from '../integrations/tiktok';
 
 // Helper replicate of getTikTokPolicyDeclaration logic for unit validation
@@ -24,8 +25,9 @@ function getTikTokPolicyDeclaration(settings?: {
   if (!disclosureOn) {
     return {
       type: 'NORMAL',
-      title: 'TikTok Terms of Service & Community Guidelines',
+      title: 'TikTok Music Usage Confirmation & Policies',
       badge: 'Point 4 Declaration',
+      musicUsageUrl: 'https://www.tiktok.com/legal/page/global/music-usage-confirmation/en',
       termsUrl: 'https://www.tiktok.com/legal/page/global/terms-of-service/en',
       communityUrl: 'https://www.tiktok.com/community-guidelines/en',
     };
@@ -70,16 +72,32 @@ async function runPoint4TestSuite() {
   // -------------------------------------------------------------------------
   // Scenario 1: Point 4 Declaration - Normal Content (Commercial Disclosure OFF)
   // -------------------------------------------------------------------------
-  console.log('[Scenario 1] Normal Content policy declaration includes Terms of Service & Community Guidelines');
+  console.log('[Scenario 1] Normal Content policy declaration includes Music Usage Confirmation, Terms of Service & Community Guidelines');
   const s1 = getTikTokPolicyDeclaration({
     commercialContentDisclosure: false,
     brandOrganicToggle: false,
     brandContentToggle: false,
   });
   assert.strictEqual(s1.type, 'NORMAL');
+  assert.strictEqual(s1.musicUsageUrl, 'https://www.tiktok.com/legal/page/global/music-usage-confirmation/en');
   assert.strictEqual(s1.termsUrl, 'https://www.tiktok.com/legal/page/global/terms-of-service/en');
   assert.strictEqual(s1.communityUrl, 'https://www.tiktok.com/community-guidelines/en');
-  console.log('✅ Scenario 1 Passed: Normal content correctly binds ToS and Community Guidelines links.\n');
+
+  // Verify page.tsx contains the exact declaration text and clickable links for NORMAL content
+  const pageSource = fs.readFileSync('app/(dashboard)/create-post/page.tsx', 'utf8');
+  assert.ok(
+    pageSource.includes("Music Usage Confirmation"),
+    "Create Post page must render Music Usage Confirmation"
+  );
+  assert.ok(
+    pageSource.includes("https://www.tiktok.com/legal/page/global/music-usage-confirmation/en"),
+    "Create Post page must hyperlink to official Music Usage Confirmation URL"
+  );
+  assert.ok(
+    pageSource.includes("dec.type === 'NORMAL' && ("),
+    "Create Post page must handle NORMAL declaration type"
+  );
+  console.log('✅ Scenario 1 Passed: Normal content correctly binds Music Usage Confirmation, ToS and Community Guidelines links.\n');
 
   // -------------------------------------------------------------------------
   // Scenario 2: Point 4 Declaration - Your Brand Only (Brand Organic)

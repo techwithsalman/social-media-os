@@ -276,8 +276,9 @@ function getTikTokPolicyDeclaration(settings?: PlatformSettingsState): TikTokPol
   if (!disclosureOn) {
     return {
       type: 'NORMAL',
-      title: 'TikTok Terms of Service & Community Guidelines',
+      title: 'TikTok Music Usage Confirmation & Policies',
       badge: 'Point 4 Declaration',
+      musicUsageUrl: 'https://www.tiktok.com/legal/page/global/music-usage-confirmation/en',
       termsUrl: 'https://www.tiktok.com/legal/page/global/terms-of-service/en',
       communityUrl: 'https://www.tiktok.com/community-guidelines/en',
     };
@@ -347,6 +348,16 @@ function TikTokPolicyDeclarationNotice({
         {dec.type === 'NORMAL' && (
           <p>
             By posting, you agree to TikTok&apos;s{' '}
+            <a
+              href={dec.musicUsageUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-red-400 hover:text-red-300 underline font-semibold inline-flex items-center gap-0.5"
+            >
+              Music Usage Confirmation
+              <ExternalLink className="w-3 h-3 ml-0.5 inline shrink-0" />
+            </a>
+            ,{' '}
             <a
               href={dec.termsUrl}
               target="_blank"
@@ -462,7 +473,7 @@ export default function CreatePostPage() {
   const [pinterestBoards, setPinterestBoards] = useState<any[]>([]);
   const [fetchingBoards, setFetchingBoards] = useState(false);
   const [pinterestBoardsError, setPinterestBoardsError] = useState<string | null>(null);
-  const [previewPlatform, setPreviewPlatform] = useState<string>('INSTAGRAM');
+  const [previewPlatform, setPreviewPlatform] = useState<string>('');
 
   // TikTok dynamic creator capabilities
   const [tiktokCreatorInfo, setTiktokCreatorInfo] = useState<{
@@ -552,7 +563,7 @@ export default function CreatePostPage() {
     setPlatformSettings(createDefaultPlatformSettings());
     setMediaFile(null);
     setActiveTab('ALL');
-    setPreviewPlatform('INSTAGRAM');
+    setPreviewPlatform('');
     setScheduledDate(getTodayDateKey(WORKSPACE_TIMEZONE));
     setScheduledTime('');
     setTimezone(WORKSPACE_TIMEZONE);
@@ -1514,11 +1525,74 @@ export default function CreatePostPage() {
 
   const selectedAccounts = accounts.filter((a) => selectedAccountIds.includes(a.id));
 
-  const currentPreviewPlatform = previewPlatform;
-  const hasCaption = !!(platformSettings[currentPreviewPlatform]?.caption || masterCaption);
-  const currentPreviewText =
-    platformSettings[currentPreviewPlatform]?.caption || masterCaption || 'Your caption preview will appear here...';
-  const currentPreviewHashtags = platformSettings[currentPreviewPlatform]?.hashtags || '';
+  // Determine platforms for currently selected accounts in a deterministic order
+  const selectedPlatforms = useMemo(() => {
+    return SUPPORTED_PLATFORM_IDS.filter((plat) =>
+      selectedAccounts.some((a) => a.platform === plat)
+    );
+  }, [selectedAccounts]);
+
+  // Compute effective preview platform: strictly bound to selected accounts
+  const effectivePreviewPlatform = useMemo(() => {
+    if (selectedPlatforms.length === 0) return null;
+    if (previewPlatform && selectedPlatforms.includes(previewPlatform as any)) {
+      return previewPlatform;
+    }
+    return selectedPlatforms[0];
+  }, [selectedPlatforms, previewPlatform]);
+
+  // Automatically keep previewPlatform in sync with selected platforms
+  useEffect(() => {
+    if (selectedPlatforms.length === 0) {
+      if (previewPlatform !== '') setPreviewPlatform('');
+      return;
+    }
+    if (!previewPlatform || !selectedPlatforms.includes(previewPlatform as any)) {
+      setPreviewPlatform(selectedPlatforms[0]);
+    }
+  }, [selectedPlatforms, previewPlatform]);
+
+  // Active account strictly resolved from selectedAccounts - never from unselected accounts
+  const activePreviewAccount = useMemo(() => {
+    if (!effectivePreviewPlatform) return null;
+    return selectedAccounts.find((a) => a.platform === effectivePreviewPlatform) || null;
+  }, [selectedAccounts, effectivePreviewPlatform]);
+
+  const previewAccountName = useMemo(() => {
+    if (!activePreviewAccount) return 'Your Channel';
+    if (effectivePreviewPlatform === 'TIKTOK' && tiktokCreatorInfo?.creatorNickname) {
+      return tiktokCreatorInfo.creatorNickname;
+    }
+    return activePreviewAccount.name || 'Your Channel';
+  }, [activePreviewAccount, effectivePreviewPlatform, tiktokCreatorInfo]);
+
+  const previewUsername = useMemo(() => {
+    if (!activePreviewAccount) return '@yourchannel';
+    if (effectivePreviewPlatform === 'TIKTOK' && tiktokCreatorInfo?.creatorUsername) {
+      return tiktokCreatorInfo.creatorUsername.startsWith('@')
+        ? tiktokCreatorInfo.creatorUsername
+        : `@${tiktokCreatorInfo.creatorUsername}`;
+    }
+    const uname = activePreviewAccount.username || activePreviewAccount.name || 'channel';
+    return uname.startsWith('@') ? uname : `@${uname}`;
+  }, [activePreviewAccount, effectivePreviewPlatform, tiktokCreatorInfo]);
+
+  const previewAvatarUrl = useMemo(() => {
+    if (!activePreviewAccount) return null;
+    if (effectivePreviewPlatform === 'TIKTOK') {
+      return tiktokCreatorInfo?.creatorAvatarUrl || activePreviewAccount.profileImageUrl || null;
+    }
+    return activePreviewAccount.profileImageUrl || null;
+  }, [activePreviewAccount, effectivePreviewPlatform, tiktokCreatorInfo]);
+
+  const currentPreviewPlatform = effectivePreviewPlatform || previewPlatform;
+  const hasCaption = !!(currentPreviewPlatform && (platformSettings[currentPreviewPlatform]?.caption || masterCaption));
+  const currentPreviewText = currentPreviewPlatform
+    ? (platformSettings[currentPreviewPlatform]?.caption || masterCaption || 'Your caption preview will appear here...')
+    : 'Your caption preview will appear here...';
+  const currentPreviewHashtags = currentPreviewPlatform
+    ? (platformSettings[currentPreviewPlatform]?.hashtags || '')
+    : '';
   const scheduleDateLabel = scheduledDate ? formatDateKeyForDisplay(scheduledDate) : '';
   const scheduleTimeLabel = scheduledTime ? formatTimeInputForDisplay(scheduledTime) : '';
   const scheduleTimezoneLabel = getTimezoneLabel(timezone);
@@ -2032,7 +2106,9 @@ export default function CreatePostPage() {
                   key={plat}
                   onClick={() => {
                     setActiveTab(plat);
-                    setPreviewPlatform(plat);
+                    if (selectedPlatforms.includes(plat)) {
+                      setPreviewPlatform(plat);
+                    }
                   }}
                   className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold whitespace-nowrap shrink-0 transition-all ${
                     activeTab === plat
@@ -2550,6 +2626,22 @@ export default function CreatePostPage() {
                               </div>
                             )}
 
+                            {/* Point 3 Requirement Prompt: When Your Brand is selected */}
+                            {platformSettings.TIKTOK?.brandOrganicToggle && !platformSettings.TIKTOK?.brandContentToggle && (
+                              <div className="p-3 rounded-xl bg-red-950/30 border border-red-500/30 text-red-300 text-xs font-semibold flex items-center gap-2.5">
+                                <Info className="w-4 h-4 text-red-400 shrink-0" />
+                                <span>Your photo/video will be labeled as &apos;Promotional content&apos;</span>
+                              </div>
+                            )}
+
+                            {/* Point 3 Requirement Prompt: When Branded Content or Both are selected */}
+                            {platformSettings.TIKTOK?.brandContentToggle && (
+                              <div className="p-3 rounded-xl bg-amber-950/30 border border-amber-500/30 text-amber-300 text-xs font-semibold flex items-center gap-2.5">
+                                <Info className="w-4 h-4 text-amber-400 shrink-0" />
+                                <span>Your photo/video will be labeled as &apos;Paid partnership&apos;</span>
+                              </div>
+                            )}
+
                             {/* Privacy Policy Restriction Callout when Branded content is active */}
                             {platformSettings.TIKTOK?.brandContentToggle && (
                               <div className="p-3 rounded-xl bg-blue-950/30 border border-blue-500/30 text-blue-300 text-xs flex items-center gap-2.5">
@@ -2958,127 +3050,159 @@ export default function CreatePostPage() {
               </div>
 
               {/* Platform Switcher Buttons */}
-              <div className="flex items-center gap-1.5">
-                {SUPPORTED_PLATFORM_IDS.filter(plat => 
-                  selectedAccounts.length > 0 
-                    ? selectedAccounts.some(a => a.platform === plat) 
-                    : accounts.length > 0 
-                      ? accounts.some(a => a.platform === plat) 
-                      : true
-                ).map((plat) => (
-                  <button
-                    key={plat}
-                    onClick={() => setPreviewPlatform(plat)}
-                    title={`Preview on ${plat}`}
-                    className={`p-2 rounded-xl transition-all ${
-                      previewPlatform === plat
-                        ? 'bg-red-600 text-white shadow-md'
-                        : 'bg-[#0e0e12]/70 text-neutral-400 hover:text-neutral-200'
-                    }`}
-                  >
-                    <PlatformIcon platform={plat} size={16} className="w-4 h-4 rounded" />
-                  </button>
-                ))}
-              </div>
+              {selectedPlatforms.length > 0 && (
+                <div className="flex items-center gap-1.5" data-testid="preview-platform-switcher">
+                  {selectedPlatforms.map((plat) => (
+                    <button
+                      key={plat}
+                      type="button"
+                      onClick={() => setPreviewPlatform(plat)}
+                      title={`Preview on ${plat}`}
+                      data-active-preview={effectivePreviewPlatform === plat ? 'true' : 'false'}
+                      className={`p-2 rounded-xl transition-all ${
+                        effectivePreviewPlatform === plat
+                          ? 'bg-red-600 text-white shadow-md'
+                          : 'bg-[#0e0e12]/70 text-neutral-400 hover:text-neutral-200'
+                      }`}
+                    >
+                      <PlatformIcon platform={plat} size={16} className="w-4 h-4 rounded" />
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* PREVIEW CONTAINER */}
-            <div className="p-5 rounded-2xl bg-[#0e0e12] border border-[#22222a] min-h-[460px] flex flex-col justify-between shadow-inner">
-              <div>
-                {/* Simulated Platform Header */}
-                <div className="flex items-center justify-between pb-3.5 border-b border-neutral-900 mb-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-red-600 to-red-600 flex items-center justify-center text-white text-sm font-bold shrink-0">
-                      {(selectedAccounts.find(a => a.platform === previewPlatform)?.name?.[0] || accounts.find(a => a.platform === previewPlatform)?.name?.[0] || 'Y').toUpperCase()}
-                    </div>
-                    <div>
-                      <p className="text-sm font-bold text-white flex items-center gap-2">
-                        <span>{selectedAccounts.find(a => a.platform === previewPlatform)?.name || accounts.find(a => a.platform === previewPlatform)?.name || 'Your Channel'}</span>
-                        <PlatformIcon platform={previewPlatform} size={14} className="w-3.5 h-3.5 rounded" />
-                      </p>
-                      <p className="text-xs text-neutral-500">
-                        {selectedAccounts.find(a => a.platform === previewPlatform)?.username || accounts.find(a => a.platform === previewPlatform)?.username || '@yourchannel'} • Just now
-                      </p>
-                    </div>
-                  </div>
-
-                  <span className="text-neutral-600 font-bold text-sm">•••</span>
+            {!effectivePreviewPlatform || !activePreviewAccount ? (
+              <div
+                data-testid="preview-empty-state"
+                className="p-8 rounded-2xl bg-[#0e0e12] border border-[#22222a] min-h-[460px] flex flex-col items-center justify-center text-center shadow-inner"
+              >
+                <div className="w-14 h-14 rounded-2xl bg-[#14141c] border border-[#262633] flex items-center justify-center text-neutral-500 mb-4">
+                  <Eye className="w-7 h-7 text-neutral-600" />
                 </div>
-
-                {/* YouTube Video Title if applicable */}
-                {previewPlatform === 'YOUTUBE' && (
-                  <div className="mb-3">
-                    <h4 className="text-sm md:text-base font-bold text-white line-clamp-2">
-                      {platformSettings.YOUTUBE?.youtubeTitle || 'Untitled YouTube Video'}
-                    </h4>
-                  </div>
-                )}
-
-                {/* Caption / Description Preview */}
-                <div className={`text-sm md:text-base mb-4 whitespace-pre-wrap leading-relaxed ${hasCaption ? 'text-neutral-200' : 'text-neutral-500 italic'}`}>
-                  {currentPreviewText}
-                  {currentPreviewHashtags && (
-                    <span className="text-red-500 font-bold ml-2 not-italic">
-                      {currentPreviewHashtags}
-                    </span>
-                  )}
-                </div>
-
-                {/* TikTok Commercial Disclosure Badges in Preview */}
-                {previewPlatform === 'TIKTOK' && platformSettings.TIKTOK?.commercialContentDisclosure && (
-                  <div className="flex items-center gap-2 mb-3 flex-wrap">
-                    {platformSettings.TIKTOK?.brandOrganicToggle && (
-                      <span className="text-[10px] font-bold text-neutral-300 bg-neutral-800 px-2 py-0.5 rounded border border-neutral-700 flex items-center gap-1">
-                        <Tag className="w-3 h-3 text-neutral-400" />
-                        <span>Promotional content</span>
-                      </span>
-                    )}
-                    {platformSettings.TIKTOK?.brandContentToggle && (
-                      <span className="text-[10px] font-bold text-amber-300 bg-amber-950/60 px-2 py-0.5 rounded border border-amber-500/40 flex items-center gap-1">
-                        <Tag className="w-3 h-3 text-amber-400" />
-                        <span>Paid partnership</span>
-                      </span>
-                    )}
-                  </div>
-                )}
-
-                {/* Media Preview Box */}
-                <div className="rounded-2xl overflow-hidden bg-[#0e0e12] border border-[#22222a] aspect-video flex items-center justify-center relative shadow-sm">
-                  {mediaFile ? (
-                    !mediaFile.url ? (
-                      <div className="text-center p-6">
-                        <AlertCircle className="w-10 h-10 text-amber-400 mx-auto mb-2" />
-                        <p className="text-xs font-semibold text-amber-300">Media file unavailable</p>
-                        <p className="text-[11px] text-neutral-500 mt-1">Invalid storage URL. Please re-upload video.</p>
-                      </div>
-                    ) : mediaFile.mimeType.startsWith('video/') ? (
-                      <video
-                        src={mediaFile.url}
-                        controls
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={mediaFile.url}
-                        alt="Preview"
-                        className="w-full h-full object-cover"
-                      />
-                    )
-                  ) : (
-                    <div className="text-center p-6">
-                      <ImageIcon className="w-10 h-10 text-neutral-700 mx-auto mb-2" />
-                      <p className="text-xs font-semibold text-neutral-500">No media attached</p>
-                    </div>
-                  )}
+                <h4 className="text-base font-bold text-neutral-200 mb-1.5">
+                  No Target Channel Selected
+                </h4>
+                <p className="text-xs text-neutral-400 max-w-xs leading-relaxed mb-4">
+                  Select one or more social accounts above to preview your post with accurate account branding, captions, and platform layouts.
+                </p>
+                <div className="flex items-center gap-2 text-neutral-600 text-xs">
+                  <PlatformIcon platform="TIKTOK" size={16} className="grayscale opacity-50" />
+                  <PlatformIcon platform="INSTAGRAM" size={16} className="grayscale opacity-50" />
+                  <PlatformIcon platform="FACEBOOK" size={16} className="grayscale opacity-50" />
+                  <PlatformIcon platform="YOUTUBE" size={16} className="grayscale opacity-50" />
                 </div>
               </div>
+            ) : (
+              <div
+                data-testid="preview-active-container"
+                data-preview-platform={effectivePreviewPlatform}
+                className="p-5 rounded-2xl bg-[#0e0e12] border border-[#22222a] min-h-[460px] flex flex-col justify-between shadow-inner"
+              >
+                <div>
+                  {/* Simulated Platform Header */}
+                  <div className="flex items-center justify-between pb-3.5 border-b border-neutral-900 mb-4">
+                    <div className="flex items-center gap-3">
+                      {previewAvatarUrl ? (
+                        <img
+                          src={previewAvatarUrl}
+                          alt={previewAccountName}
+                          className="w-9 h-9 rounded-full object-cover border border-[#33333e] shrink-0"
+                        />
+                      ) : (
+                        <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-red-600 to-red-600 flex items-center justify-center text-white text-sm font-bold shrink-0">
+                          {(previewAccountName?.[0] || 'Y').toUpperCase()}
+                        </div>
+                      )}
+                      <div>
+                        <p className="text-sm font-bold text-white flex items-center gap-2">
+                          <span data-testid="preview-account-name">{previewAccountName}</span>
+                          <PlatformIcon platform={effectivePreviewPlatform} size={14} className="w-3.5 h-3.5 rounded" />
+                        </p>
+                        <p className="text-xs text-neutral-500" data-testid="preview-account-username">
+                          {previewUsername} • Just now
+                        </p>
+                      </div>
+                    </div>
 
-            </div>
+                    <span className="text-neutral-600 font-bold text-sm">•••</span>
+                  </div>
 
-            <div className="mt-4 text-center text-xs text-neutral-500 font-medium">
-              Interactive preview rendering simulation for {previewPlatform}
-            </div>
+                  {/* YouTube Video Title if applicable */}
+                  {effectivePreviewPlatform === 'YOUTUBE' && (
+                    <div className="mb-3">
+                      <h4 className="text-sm md:text-base font-bold text-white line-clamp-2">
+                        {platformSettings.YOUTUBE?.youtubeTitle || 'Untitled YouTube Video'}
+                      </h4>
+                    </div>
+                  )}
+
+                  {/* Caption / Description Preview */}
+                  <div className={`text-sm md:text-base mb-4 whitespace-pre-wrap leading-relaxed ${hasCaption ? 'text-neutral-200' : 'text-neutral-500 italic'}`}>
+                    {currentPreviewText}
+                    {currentPreviewHashtags && (
+                      <span className="text-red-500 font-bold ml-2 not-italic">
+                        {currentPreviewHashtags}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* TikTok Commercial Disclosure Badges in Preview */}
+                  {effectivePreviewPlatform === 'TIKTOK' && platformSettings.TIKTOK?.commercialContentDisclosure && (
+                    <div className="flex items-center gap-2 mb-3 flex-wrap">
+                      {platformSettings.TIKTOK?.brandOrganicToggle && (
+                        <span className="text-[10px] font-bold text-neutral-300 bg-neutral-800 px-2 py-0.5 rounded border border-neutral-700 flex items-center gap-1">
+                          <Tag className="w-3 h-3 text-neutral-400" />
+                          <span>Promotional content</span>
+                        </span>
+                      )}
+                      {platformSettings.TIKTOK?.brandContentToggle && (
+                        <span className="text-[10px] font-bold text-amber-300 bg-amber-950/60 px-2 py-0.5 rounded border border-amber-500/40 flex items-center gap-1">
+                          <Tag className="w-3 h-3 text-amber-400" />
+                          <span>Paid partnership</span>
+                        </span>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Media Preview Box */}
+                  <div className="rounded-2xl overflow-hidden bg-[#0e0e12] border border-[#22222a] aspect-video flex items-center justify-center relative shadow-sm">
+                    {mediaFile ? (
+                      !mediaFile.url ? (
+                        <div className="text-center p-6">
+                          <AlertCircle className="w-10 h-10 text-amber-400 mx-auto mb-2" />
+                          <p className="text-xs font-semibold text-amber-300">Media file unavailable</p>
+                          <p className="text-[11px] text-neutral-500 mt-1">Invalid storage URL. Please re-upload video.</p>
+                        </div>
+                      ) : mediaFile.mimeType.startsWith('video/') ? (
+                        <video
+                          src={mediaFile.url}
+                          controls
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={mediaFile.url}
+                          alt="Preview"
+                          className="w-full h-full object-cover"
+                        />
+                      )
+                    ) : (
+                      <div className="text-center p-6">
+                        <ImageIcon className="w-10 h-10 text-neutral-700 mx-auto mb-2" />
+                        <p className="text-xs font-semibold text-neutral-500">No media attached</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="mt-4 text-center text-xs text-neutral-500 font-medium" data-testid="preview-platform-footer">
+                  Interactive preview rendering simulation for {effectivePreviewPlatform}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>

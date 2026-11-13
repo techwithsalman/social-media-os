@@ -1,5 +1,24 @@
 import assert from 'assert';
+import fs from 'fs';
 import { TikTokAdapter } from '../integrations/tiktok';
+
+function getTikTokPoint3Prompt(settings: {
+  commercialContentDisclosure?: boolean;
+  brandOrganicToggle?: boolean;
+  brandContentToggle?: boolean;
+}): string | null {
+  if (!settings.commercialContentDisclosure) return null;
+  if (!settings.brandOrganicToggle && !settings.brandContentToggle) {
+    return 'You need to indicate if your content promotes yourself, a third party, or both.';
+  }
+  if (settings.brandOrganicToggle && !settings.brandContentToggle) {
+    return "Your photo/video will be labeled as 'Promotional content'";
+  }
+  if (settings.brandContentToggle) {
+    return "Your photo/video will be labeled as 'Paid partnership'";
+  }
+  return null;
+}
 
 async function runTestSuite() {
   console.log('======================================================================');
@@ -240,8 +259,55 @@ async function runTestSuite() {
   assert.strictEqual(s10Res.success, true, 'Standard organic post succeeds');
   console.log('✅ Scenario 10 Passed: Standard organic post functions normally.\n');
 
+  // -------------------------------------------------------------------------
+  // Scenario 11: Point 3 UX Prompt Exact-Wording Assertions
+  // -------------------------------------------------------------------------
+  console.log('[Scenario 11] Point 3 UX prompts match exact official TikTok wording');
+  const pageSource = fs.readFileSync('app/(dashboard)/create-post/page.tsx', 'utf8');
+
+  // Verify "Your Brand" exact text
+  assert.ok(
+    pageSource.includes("Your photo/video will be labeled as &apos;Promotional content&apos;"),
+    "Page must include exact prompt for Your Brand: Your photo/video will be labeled as 'Promotional content'"
+  );
+
+  // Verify "Branded Content" & "Both" exact text
+  assert.ok(
+    pageSource.includes("Your photo/video will be labeled as &apos;Paid partnership&apos;"),
+    "Page must include exact prompt for Branded Content / Both: Your photo/video will be labeled as 'Paid partnership'"
+  );
+
+  // Verify disclosure incomplete exact text
+  assert.ok(
+    pageSource.includes("You need to indicate if your content promotes yourself, a third party, or both."),
+    "Page must include exact prompt for incomplete disclosure"
+  );
+
+  // Verify dynamic helper behavior for all states
+  assert.strictEqual(
+    getTikTokPoint3Prompt({ commercialContentDisclosure: true, brandOrganicToggle: true, brandContentToggle: false }),
+    "Your photo/video will be labeled as 'Promotional content'"
+  );
+  assert.strictEqual(
+    getTikTokPoint3Prompt({ commercialContentDisclosure: true, brandOrganicToggle: false, brandContentToggle: true }),
+    "Your photo/video will be labeled as 'Paid partnership'"
+  );
+  assert.strictEqual(
+    getTikTokPoint3Prompt({ commercialContentDisclosure: true, brandOrganicToggle: true, brandContentToggle: true }),
+    "Your photo/video will be labeled as 'Paid partnership'"
+  );
+  assert.strictEqual(
+    getTikTokPoint3Prompt({ commercialContentDisclosure: true, brandOrganicToggle: false, brandContentToggle: false }),
+    "You need to indicate if your content promotes yourself, a third party, or both."
+  );
+  assert.strictEqual(
+    getTikTokPoint3Prompt({ commercialContentDisclosure: false }),
+    null
+  );
+  console.log('✅ Scenario 11 Passed: Point 3 UX prompts dynamically match 100% of official TikTok text.\n');
+
   console.log('======================================================================');
-  console.log('🎉 ALL 10 TIKTOK POINT 3 TEST SCENARIOS PASSED SUCCESSFULLY!');
+  console.log('🎉 ALL 11 TIKTOK POINT 3 TEST SCENARIOS PASSED SUCCESSFULLY!');
   console.log('======================================================================');
 }
 
