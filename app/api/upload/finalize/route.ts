@@ -12,7 +12,7 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { objectKey, filename, mimeType, size, thumbnailKey } = body;
+    const { objectKey, filename, mimeType, size, thumbnailKey, duration } = body;
 
     if (!objectKey || !filename || !mimeType) {
       return NextResponse.json({ error: 'Missing required parameters.' }, { status: 400 });
@@ -59,6 +59,7 @@ export async function POST(req: NextRequest) {
         size: size || 0,
         url: objectKey, // We store the actual R2 key as the authoritative URL
         thumbnailUrl: thumbnailKey || null,
+        duration: typeof duration === 'number' && !isNaN(duration) && duration > 0 ? duration : null,
       },
     });
 

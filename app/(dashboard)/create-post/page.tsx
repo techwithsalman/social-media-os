@@ -15,6 +15,12 @@ import {
   getTodayDateKey,
   zonedDateTimeToUtcIso,
 } from '@/lib/timezone';
+import {
+  formatDurationHuman,
+  validateTikTokVideoDuration,
+  extractVideoDurationFromFile,
+  extractVideoDurationFromUrl,
+} from '@/lib/tiktok-video-validation';
 import { SUPPORTED_PLATFORM_IDS } from '@/lib/platforms';
 import {
   ArrowLeft,
@@ -76,6 +82,7 @@ interface MediaFileState {
   name: string;
   size: number;
   mimeType: string;
+  duration?: number | null;
 }
 
 interface ComposerDraftState {
@@ -103,6 +110,7 @@ interface EditablePostResponse {
     originalName: string;
     size: number;
     mimeType: string;
+    duration?: number | null;
   } | null;
   platformPosts: Array<{
     id: string;
@@ -670,6 +678,7 @@ export default function CreatePostPage() {
               name: post.mediaAsset.originalName,
               size: post.mediaAsset.size,
               mimeType: post.mediaAsset.mimeType,
+              duration: typeof post.mediaAsset.duration === 'number' ? post.mediaAsset.duration : null,
             }
           : null
       );
@@ -957,6 +966,26 @@ export default function CreatePostPage() {
     };
   }, [selectedTikTokAccountId]);
 
+  // Fallback: If mediaFile is a video and duration is missing (e.g. loaded from older post or draft), attempt URL metadata extraction
+  useEffect(() => {
+    let active = true;
+    if (
+      mediaFile &&
+      mediaFile.url &&
+      (mediaFile.mimeType?.startsWith('video/') || /\.(mp4|mov|webm|m4v)$/i.test(mediaFile.name)) &&
+      (typeof mediaFile.duration !== 'number' || mediaFile.duration <= 0)
+    ) {
+      extractVideoDurationFromUrl(mediaFile.url).then((dur) => {
+        if (active && typeof dur === 'number' && dur > 0) {
+          setMediaFile((prev) => (prev && prev.id === mediaFile.id ? { ...prev, duration: dur } : prev));
+        }
+      });
+    }
+    return () => {
+      active = false;
+    };
+  }, [mediaFile?.id, mediaFile?.url, mediaFile?.duration]);
+
   const retryLoadTikTokCreatorInfo = () => {
     if (!selectedTikTokAccountId) return;
     setTiktokCreatorInfoLoading(true);
@@ -1087,6 +1116,17 @@ export default function CreatePostPage() {
 
     let currentPhase: 'MEDIA_PRESIGN' | 'MEDIA_DIRECT_UPLOAD' | 'MEDIA_FINALIZE' = 'MEDIA_PRESIGN';
 
+    // Extract video duration using HTML5 video metadata before/during upload
+    let extractedDuration: number | null = null;
+    if (file.type?.startsWith('video/') || /\.(mp4|mov|webm|m4v)$/i.test(file.name)) {
+      try {
+        extractedDuration = await extractVideoDurationFromFile(file);
+        console.log('[Create Post] Extracted video duration from file:', extractedDuration, 'seconds');
+      } catch (durErr) {
+        console.warn('[Create Post] Could not extract video duration from file:', durErr);
+      }
+    }
+
     try {
       // 1. Get presigned URL & Deduplication Check
       currentPhase = 'MEDIA_PRESIGN';
@@ -1107,6 +1147,13 @@ export default function CreatePostPage() {
       // If asset already exists in Cloudflare R2, reuse it immediately without redundant re-upload!
       if (presignedData?.alreadyExists && presignedData.media) {
         console.log('[Create Post] Reusing existing media asset without re-upload:', presignedData.media.id);
+        const resolvedDuration =
+          typeof extractedDuration === 'number'
+            ? extractedDuration
+            : typeof presignedData.media.duration === 'number'
+            ? presignedData.media.duration
+            : null;
+
         setMediaFile({
           id: presignedData.media.id,
           url: presignedData.media.url,
@@ -1114,6 +1161,7 @@ export default function CreatePostPage() {
           mimeType: presignedData.media.mimeType,
           name: presignedData.media.originalName || presignedData.media.filename || file.name,
           size: presignedData.media.size || file.size,
+          duration: resolvedDuration,
         });
         setUploadProgress(100);
         setUploading(false);
@@ -1174,6 +1222,7 @@ export default function CreatePostPage() {
           filename: file.name,
           mimeType: file.type || 'video/mp4',
           size: file.size,
+          duration: extractedDuration,
         }),
         signal: controller.signal,
       });
@@ -1184,6 +1233,13 @@ export default function CreatePostPage() {
         throw new Error(data?.error || 'Failed to finalize media upload');
       }
 
+      const resolvedDuration =
+        typeof extractedDuration === 'number'
+          ? extractedDuration
+          : typeof data.media.duration === 'number'
+          ? data.media.duration
+          : null;
+
       setMediaFile({
         id: data.media.id,
         url: data.media.url,
@@ -1191,6 +1247,7 @@ export default function CreatePostPage() {
         mimeType: data.media.mimeType,
         name: data.media.originalName || data.media.filename || data.media.fileName || file.name,
         size: data.media.size || file.size,
+        duration: resolvedDuration,
       });
       setUploadProgress(100);
     } catch (err: any) {
@@ -1312,6 +1369,16 @@ export default function CreatePostPage() {
         !tiktokCreatorInfo.privacyLevelOptions.includes(tikTokSettings.visibility)
       ) {
         return `Selected privacy level is not supported for this TikTok account. Permitted options: ${tiktokCreatorInfo.privacyLevelOptions.join(', ')}`;
+      }
+
+      // Video duration validation against latest creator capabilities (Official Content Sharing Guidelines)
+      const durationError = validateTikTokVideoDuration({
+        mediaFile,
+        maxVideoPostDurationSec: tiktokCreatorInfo.maxVideoPostDurationSec,
+        creatorUsername: tiktokCreatorInfo.creatorUsername,
+      });
+      if (durationError) {
+        return durationError;
       }
 
       // Point 3: Commercial Content Disclosure checks
@@ -1986,6 +2053,9 @@ export default function CreatePostPage() {
                     <p className="text-xs md:text-sm text-neutral-400 mt-1">
                       {(mediaFile.size / (1024 * 1024)).toFixed(2)} MB •{' '}
                       {mediaFile.mimeType.split('/')[1]?.toUpperCase()}
+                      {typeof mediaFile.duration === 'number' && mediaFile.duration > 0 && (
+                        <> • {formatDurationHuman(mediaFile.duration)}</>
+                      )}
                     </p>
                     {mediaFile.url ? (
                       <span className="inline-flex items-center gap-1.5 text-xs text-emerald-400 font-bold mt-1.5">
@@ -2306,9 +2376,16 @@ export default function CreatePostPage() {
                           </span>
                         </div>
                       </div>
-                      <span className="text-xs text-neutral-400 font-medium hidden sm:inline-block">
-                        Target Account
-                      </span>
+                      <div className="flex flex-col items-end gap-1">
+                        <span className="text-xs text-neutral-400 font-medium hidden sm:inline-block">
+                          Target Account
+                        </span>
+                        {tiktokCreatorInfo?.maxVideoPostDurationSec && (
+                          <span className="text-[11px] text-neutral-400 font-semibold bg-neutral-900/80 px-2 py-0.5 rounded border border-neutral-800">
+                            Max duration: {formatDurationHuman(tiktokCreatorInfo.maxVideoPostDurationSec)}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   )}
 

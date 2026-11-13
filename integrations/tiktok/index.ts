@@ -338,6 +338,15 @@ export class TikTokAdapter implements ISocialPlatformAdapter {
             };
           }
         }
+
+        const maxDurationSec = creatorInfo?.maxVideoPostDurationSec || 600;
+        if (typeof payload.metadata?.duration === 'number' && payload.metadata.duration > maxDurationSec) {
+          return {
+            success: false,
+            errorCode: 'TIKTOK_DURATION_EXCEEDED',
+            errorMessage: `TikTok Error: Video duration (${Math.round(payload.metadata.duration)}s) exceeds TikTok's maximum allowed limit of ${maxDurationSec}s for this account.`,
+          };
+        }
       }
 
       const disableComment = creatorInfo?.commentDisabled
