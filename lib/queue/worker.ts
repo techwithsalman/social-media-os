@@ -92,9 +92,9 @@ export async function processDueScheduledPosts() {
 
   let cleanupSummary = null;
   try {
-    cleanupSummary = await processScheduledMediaCleanup();
+    cleanupSummary = await processScheduledMediaCleanup({ batchSize: 3, scanLimit: 15 });
     if (cleanupSummary.deletedCount > 0) {
-      console.log(`[Queue Worker] Maintenance R2 cleanup deleted ${cleanupSummary.deletedCount} asset(s).`);
+      console.log(`[Queue Worker] Maintenance R2 cleanup deleted ${cleanupSummary.deletedCount} asset(s) (scanned ${cleanupSummary.scannedCount}).`);
     }
   } catch (cleanupErr) {
     console.error('[Queue Worker] Non-critical error during maintenance media cleanup:', cleanupErr);

@@ -8,11 +8,13 @@ import { PlatformIcon } from '@/components/ui/PlatformIcons';
 import { MediaThumbnail } from '@/components/ui/MediaThumbnail';
 import {
   AlertCircle,
+  AlertTriangle,
   Calendar,
   CheckCircle2,
   Clock,
   Copy,
   FileText,
+  Info,
   Play,
   Pencil,
   Plus,
@@ -87,6 +89,10 @@ export default function ScheduledPostsPage() {
 
   // Actions
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
+  const [actionFeedback, setActionFeedback] = useState<{
+    type: 'success' | 'warning' | 'info' | 'error';
+    message: string;
+  } | null>(null);
   
   // Reschedule Modal
   const [reschedulePostId, setReschedulePostId] = useState<string | null>(null);
@@ -229,10 +235,38 @@ export default function ScheduledPostsPage() {
     try {
       setActionLoadingId(id);
       const res = await fetch(`/api/posts/${id}`, { method: 'DELETE' });
-      if (!res.ok) throw new Error('Failed to delete');
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || 'Failed to delete');
+
+      // Distinct feedback for R2 media cleanup vs shared media preservation vs failure
+      if (data.mediaCleanup?.action === 'DELETED') {
+        setActionFeedback({
+          type: 'success',
+          message: 'Scheduled post and its exclusive video were permanently deleted from Cloudflare R2.',
+        });
+      } else if (data.mediaCleanup?.action === 'SKIPPED') {
+        setActionFeedback({
+          type: 'info',
+          message: `Scheduled post deleted. ${data.mediaCleanup.reason || 'Associated video was preserved because it is shared with other content.'}`,
+        });
+      } else if (data.mediaCleanup?.action === 'FAILED') {
+        setActionFeedback({
+          type: 'warning',
+          message: `Scheduled post deleted, but Cloudflare R2 video deletion encountered an issue: ${data.mediaCleanup.reason || 'Deletion failed'}. Queued for automatic retry.`,
+        });
+      } else {
+        setActionFeedback({
+          type: 'success',
+          message: 'Scheduled post was permanently deleted.',
+        });
+      }
+
       await fetchPosts();
     } catch (e: any) {
-      alert(e.message);
+      setActionFeedback({
+        type: 'error',
+        message: e.message || 'Failed to delete scheduled post',
+      });
     } finally {
       setActionLoadingId(null);
     }
@@ -347,6 +381,40 @@ export default function ScheduledPostsPage() {
         <div className="mb-6 p-4 rounded-2xl bg-red-500/10 border border-red-500/30 text-red-400 flex items-center gap-3">
           <AlertCircle className="w-5 h-5 shrink-0" />
           <p className="font-semibold">{error}</p>
+        </div>
+      )}
+
+      {actionFeedback && (
+        <div
+          className={`mb-6 p-4 rounded-2xl border flex items-center justify-between gap-3 shadow-xs ${
+            actionFeedback.type === 'success'
+              ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
+              : actionFeedback.type === 'warning'
+              ? 'bg-amber-500/10 border-amber-500/30 text-amber-400'
+              : actionFeedback.type === 'info'
+              ? 'bg-blue-500/10 border-blue-500/30 text-blue-400'
+              : 'bg-red-500/10 border-red-500/30 text-red-400'
+          }`}
+        >
+          <div className="flex items-center gap-3">
+            {actionFeedback.type === 'success' ? (
+              <CheckCircle2 className="w-5 h-5 shrink-0 text-emerald-400" />
+            ) : actionFeedback.type === 'warning' ? (
+              <AlertTriangle className="w-5 h-5 shrink-0 text-amber-400" />
+            ) : actionFeedback.type === 'info' ? (
+              <Info className="w-5 h-5 shrink-0 text-blue-400" />
+            ) : (
+              <AlertCircle className="w-5 h-5 shrink-0 text-red-400" />
+            )}
+            <p className="font-semibold text-sm">{actionFeedback.message}</p>
+          </div>
+          <button
+            onClick={() => setActionFeedback(null)}
+            className="p-1.5 hover:bg-white/10 rounded-xl text-neutral-400 hover:text-white transition"
+            title="Dismiss"
+          >
+            <X className="w-4 h-4" />
+          </button>
         </div>
       )}
 

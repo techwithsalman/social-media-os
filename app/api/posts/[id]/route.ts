@@ -7,6 +7,7 @@ import { WORKSPACE_TIMEZONE, zonedDateTimeToUtcDate } from '@/lib/timezone';
 import { EntitlementError, assertCanCreateBillablePost, recordPostUsage } from '@/lib/billing';
 import { validateWorkspacePostTargets } from '@/lib/social-account-validation';
 import { resolveMediaAccessUrl } from '@/lib/storage/r2';
+import { deletePostAndAssociatedMedia } from '@/lib/storage/r2-cleanup';
 
 function parseScheduleDate(body: any, timezone: string) {
   if (body.scheduledFor === null) return null;
@@ -301,11 +302,20 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    await prisma.contentPost.delete({
-      where: { id: params.id, workspaceId: session.workspaceId },
-    });
+    const result = await deletePostAndAssociatedMedia(params.id, session.workspaceId);
 
-    return NextResponse.json({ success: true });
+    if (!result.success) {
+      return NextResponse.json(
+        { error: result.error || 'Failed to delete post' },
+        { status: result.error === 'Post not found' ? 404 : 400 }
+      );
+    }
+
+    return NextResponse.json({
+      success: true,
+      postDeleted: result.postDeleted,
+      mediaCleanup: result.mediaCleanup,
+    });
   } catch (error: any) {
     return NextResponse.json({ error: error.message || 'Error deleting post' }, { status: 500 });
   }
