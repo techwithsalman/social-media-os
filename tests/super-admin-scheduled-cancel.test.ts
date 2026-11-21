@@ -742,6 +742,284 @@ async function runSuite() {
       assert.strictEqual(updatedMediaUrls['media_cancel_exclusive'], 'archived_retry://workspaces/ws_tenant/dance.mp4');
     });
 
+    // -------------------------------------------------------------------------
+    console.log('\n--- Group 5: Pre-Production Security & Concurrency Verification ---');
+    // -------------------------------------------------------------------------
+
+    await testCase('Matches protected YouTube channels by actual Channel ID and env variable', () => {
+      // Direct channel ID matching via env
+      const origEnv = process.env.APPROVED_YOUTUBE_CHANNEL_IDS;
+      try {
+        process.env.APPROVED_YOUTUBE_CHANNEL_IDS = 'UC_custom_salman_channel,UC_custom_beyond_history';
+
+        const match1 = matchProtectedYouTubeChannel({
+          platform: 'YOUTUBE',
+          platformAccountId: 'UC_custom_salman_channel',
+          name: 'Some Channel Title',
+          username: 'custom_user',
+        });
+        assert.strictEqual(match1.isProtected, true);
+        assert.ok(match1.matchReason?.includes('UC_custom_salman_channel'));
+
+        const match2 = matchProtectedYouTubeChannel({
+          platform: 'YOUTUBE',
+          platformAccountId: 'UC_unapproved_channel',
+          name: 'Unapproved Channel',
+          username: 'unapproved',
+        });
+        assert.strictEqual(match2.isProtected, false);
+      } finally {
+        process.env.APPROVED_YOUTUBE_CHANNEL_IDS = origEnv;
+      }
+    });
+
+    await testCase('Protects in-flight posts (PROCESSING / UPLOADING) from cancellation and R2 deletion', async () => {
+      const inFlightPosts = [
+        {
+          id: 'post_in_flight_processing',
+          workspaceId: 'ws_tenant',
+          title: 'Currently Publishing Video',
+          masterCaption: 'In flight clip',
+          scheduledFor: new Date('2026-12-01T10:00:00Z'),
+          status: 'PROCESSING',
+          workspace: {
+            id: 'ws_tenant',
+            name: 'Tenant Workspace',
+            slug: 'tenant-ws',
+            members: [{ user: { email: 'tenant@example.com', firstName: 'Tenant', lastName: 'User' } }],
+          },
+          platformPosts: [
+            {
+              id: 'pp_processing_1',
+              platform: 'TIKTOK',
+              status: 'PROCESSING',
+              socialAccountId: 'sa_tt_1',
+              socialAccount: {
+                id: 'sa_tt_1',
+                platform: 'TIKTOK',
+                name: 'TikTok User',
+                username: 'ttuser',
+                platformAccountId: 'TT_1',
+              },
+            },
+          ],
+          mediaAsset: {
+            id: 'media_in_flight',
+            originalName: 'inflight.mp4',
+            mimeType: 'video/mp4',
+            size: 50 * 1024 * 1024,
+            url: 'https://r2.socialos.dev/workspaces/ws_tenant/inflight.mp4',
+            posts: [
+              {
+                id: 'post_in_flight_processing',
+                status: 'PROCESSING',
+                platformPosts: [{ id: 'pp_processing_1', platform: 'TIKTOK', status: 'PROCESSING' }],
+              },
+            ],
+          },
+        },
+      ];
+
+      prisma.contentPost.findMany = (async () => inFlightPosts) as any;
+
+      const audit = await auditScheduledPosts();
+      assert.strictEqual(audit.counts.inFlightPosts, 1);
+      assert.strictEqual(audit.items[0].classification, 'IN_FLIGHT');
+      assert.strictEqual(audit.items[0].mediaAudit?.status, 'RETAINED_IN_FLIGHT');
+
+      // Cancellation execution MUST skip in-flight posts completely
+      let r2DeleteCalled = false;
+      const result = await executeBulkCancelScheduledPosts({
+        confirmToken: 'CONFIRM_CANCEL',
+        deleteR2Fn: async () => {
+          r2DeleteCalled = true;
+          return { success: true };
+        },
+      });
+
+      assert.strictEqual(result.cancelledPostsCount, 0);
+      assert.strictEqual(result.cancelledTargetsCount, 0);
+      assert.strictEqual(result.skippedInFlightCount, 1);
+      assert.strictEqual(result.mediaCleanupResult.deletedR2Count, 0);
+      assert.strictEqual(r2DeleteCalled, false, 'In-flight media must NEVER be deleted');
+    });
+
+    await testCase('Multi-platform cancellation matrix handles LinkedIn, Facebook, Instagram, TikTok, X, Pinterest', async () => {
+      const allPlatformsPost = [
+        {
+          id: 'post_omnichannel',
+          workspaceId: 'ws_owner',
+          title: 'Omnichannel Campaign',
+          masterCaption: 'Global update across 7 platforms',
+          scheduledFor: new Date('2026-12-05T10:00:00Z'),
+          status: 'SCHEDULED',
+          workspace: {
+            id: 'ws_owner',
+            name: "Salman's Studio",
+            slug: 'salman-studio',
+            members: [{ user: { email: 'salmandesigner24@gmail.com', firstName: 'Salman', lastName: 'Designer' } }],
+          },
+          platformPosts: [
+            {
+              id: 'pp_yt_vexora',
+              platform: 'YOUTUBE',
+              status: 'SCHEDULED',
+              socialAccountId: 'sa_yt_vex',
+              socialAccount: {
+                id: 'sa_yt_vex',
+                platform: 'YOUTUBE',
+                name: 'VEXORA',
+                username: '@vexora',
+                platformAccountId: 'UC_vexora_official',
+              },
+            },
+            {
+              id: 'pp_li',
+              platform: 'LINKEDIN',
+              status: 'SCHEDULED',
+              socialAccountId: 'sa_li',
+              socialAccount: { id: 'sa_li', platform: 'LINKEDIN', name: 'LinkedIn Account', username: 'li_user' },
+            },
+            {
+              id: 'pp_fb',
+              platform: 'FACEBOOK',
+              status: 'SCHEDULED',
+              socialAccountId: 'sa_fb',
+              socialAccount: { id: 'sa_fb', platform: 'FACEBOOK', name: 'Facebook Page', username: 'fb_page' },
+            },
+            {
+              id: 'pp_ig',
+              platform: 'INSTAGRAM',
+              status: 'SCHEDULED',
+              socialAccountId: 'sa_ig',
+              socialAccount: { id: 'sa_ig', platform: 'INSTAGRAM', name: 'Instagram Account', username: 'ig_user' },
+            },
+            {
+              id: 'pp_tt',
+              platform: 'TIKTOK',
+              status: 'SCHEDULED',
+              socialAccountId: 'sa_tt',
+              socialAccount: { id: 'sa_tt', platform: 'TIKTOK', name: 'TikTok Account', username: 'tt_user' },
+            },
+            {
+              id: 'pp_x',
+              platform: 'X',
+              status: 'SCHEDULED',
+              socialAccountId: 'sa_x',
+              socialAccount: { id: 'sa_x', platform: 'X', name: 'X Account', username: 'x_user' },
+            },
+            {
+              id: 'pp_pin',
+              platform: 'PINTEREST',
+              status: 'SCHEDULED',
+              socialAccountId: 'sa_pin',
+              socialAccount: { id: 'sa_pin', platform: 'PINTEREST', name: 'Pinterest Board', username: 'pin_user' },
+            },
+          ],
+          mediaAsset: {
+            id: 'media_omnichannel',
+            originalName: 'omni.mp4',
+            mimeType: 'video/mp4',
+            size: 30 * 1024 * 1024,
+            url: 'https://r2.socialos.dev/workspaces/ws_owner/omni.mp4',
+            posts: [
+              {
+                id: 'post_omnichannel',
+                status: 'SCHEDULED',
+                platformPosts: [
+                  {
+                    platform: 'YOUTUBE',
+                    status: 'SCHEDULED',
+                    socialAccount: { platform: 'YOUTUBE', name: 'VEXORA', username: '@vexora' },
+                  },
+                ],
+              },
+            ],
+          },
+        },
+      ];
+
+      prisma.contentPost.findMany = (async () => allPlatformsPost) as any;
+      const cancelledPlatformIds: string[] = [];
+      prisma.platformPost.updateMany = (async ({ where }: any) => {
+        cancelledPlatformIds.push(...(where?.id?.in || []));
+        return { count: where?.id?.in?.length || 0 };
+      }) as any;
+      prisma.publishingJob.updateMany = (async () => ({ count: 0 })) as any;
+      prisma.activityLog.create = (async () => ({ id: 'log_omni', createdAt: new Date() })) as any;
+
+      let r2DeleteCalled = false;
+      const result = await executeBulkCancelScheduledPosts({
+        confirmToken: 'CONFIRM_CANCEL',
+        deleteR2Fn: async () => {
+          r2DeleteCalled = true;
+          return { success: true };
+        },
+      });
+
+      // Exactly 6 non-whitelisted platforms cancelled (LinkedIn, FB, IG, TikTok, X, Pinterest)
+      assert.strictEqual(result.cancelledTargetsCount, 6);
+      assert.strictEqual(cancelledPlatformIds.includes('pp_li'), true);
+      assert.strictEqual(cancelledPlatformIds.includes('pp_fb'), true);
+      assert.strictEqual(cancelledPlatformIds.includes('pp_ig'), true);
+      assert.strictEqual(cancelledPlatformIds.includes('pp_tt'), true);
+      assert.strictEqual(cancelledPlatformIds.includes('pp_x'), true);
+      assert.strictEqual(cancelledPlatformIds.includes('pp_pin'), true);
+
+      // YouTube target preserved:
+      assert.strictEqual(cancelledPlatformIds.includes('pp_yt_vexora'), false);
+
+      // Parent ContentPost kept active:
+      assert.strictEqual(result.cancelledPostsCount, 0);
+      assert.strictEqual(result.preservedProtectedPostsCount, 1);
+
+      // Media attached to VEXORA YouTube must NOT be deleted:
+      assert.strictEqual(r2DeleteCalled, false);
+      assert.strictEqual(result.mediaCleanupResult.deletedR2Count, 0);
+      assert.strictEqual(result.mediaCleanupResult.retainedProtectedChannelCount, 1);
+    });
+
+    await testCase('Repeated cancellation requests are idempotent and produce zero side-effects', async () => {
+      // When no scheduled posts remain
+      prisma.contentPost.findMany = (async () => []) as any;
+      prisma.activityLog.create = (async () => ({ id: 'log_empty', createdAt: new Date() })) as any;
+
+      const result = await executeBulkCancelScheduledPosts({
+        confirmToken: 'CONFIRM_CANCEL',
+      });
+
+      assert.strictEqual(result.success, true);
+      assert.strictEqual(result.cancelledPostsCount, 0);
+      assert.strictEqual(result.cancelledTargetsCount, 0);
+      assert.strictEqual(result.mediaCleanupResult.deletedR2Count, 0);
+    });
+
+    await testCase('Cross-workspace R2 deletion attempt is rejected by security boundary guard', async () => {
+      const { safeCleanupMediaAsset } = await import('../lib/storage/r2-cleanup');
+
+      // Asset belongs to ws_tenant_A, but cleanup is invoked for ws_tenant_B
+      prisma.mediaAsset.findUnique = (async () => ({
+        id: 'asset_cross_ws',
+        workspaceId: 'ws_tenant_A',
+        url: 'https://r2.socialos.dev/workspaces/ws_tenant_A/video.mp4',
+        storageKey: 'workspaces/ws_tenant_A/video.mp4',
+        posts: [],
+      })) as any;
+
+      let r2DeleteCalled = false;
+      const res = await safeCleanupMediaAsset('asset_cross_ws', 'ws_tenant_B', {
+        deleteR2Fn: async () => {
+          r2DeleteCalled = true;
+          return { success: true };
+        },
+      });
+
+      assert.strictEqual(res.success, false);
+      assert.strictEqual(res.action, 'SKIPPED');
+      assert.ok(res.reason?.includes('Workspace mismatch'));
+      assert.strictEqual(r2DeleteCalled, false, 'Cross-workspace R2 deletion must be blocked');
+    });
+
   } finally {
     // Restore mocks
     prisma.contentPost.findMany = origContentPostFindMany;

@@ -12,28 +12,36 @@ export const APPROVED_YOUTUBE_CHANNELS: ProtectedChannelDef[] = [
     displayName: 'Tech With Salman',
     handle: '@Tech With Salman',
     normalizedKeys: ['techwithsalman', 'techwithsalmanonline'],
-    knownAccountIds: [],
+    knownAccountIds: [
+      ...(process.env.YOUTUBE_CHANNEL_ID_TECH_WITH_SALMAN ? [process.env.YOUTUBE_CHANNEL_ID_TECH_WITH_SALMAN.trim()] : []),
+    ],
   },
   {
     id: 'beyond_history',
     displayName: 'Beyond History',
     handle: '@Beyond History',
     normalizedKeys: ['beyondhistory'],
-    knownAccountIds: [],
+    knownAccountIds: [
+      ...(process.env.YOUTUBE_CHANNEL_ID_BEYOND_HISTORY ? [process.env.YOUTUBE_CHANNEL_ID_BEYOND_HISTORY.trim()] : []),
+    ],
   },
   {
     id: 'sheru_bhai_official',
     displayName: 'Sheru Bhai Official',
     handle: '@Sheru Bhai Official',
     normalizedKeys: ['sherubhaiofficial', 'sherubhai'],
-    knownAccountIds: [],
+    knownAccountIds: [
+      ...(process.env.YOUTUBE_CHANNEL_ID_SHERU_BHAI ? [process.env.YOUTUBE_CHANNEL_ID_SHERU_BHAI.trim()] : []),
+    ],
   },
   {
     id: 'vexora',
     displayName: 'VEXORA',
     handle: '@VEXORA',
     normalizedKeys: ['vexora'],
-    knownAccountIds: [],
+    knownAccountIds: [
+      ...(process.env.YOUTUBE_CHANNEL_ID_VEXORA ? [process.env.YOUTUBE_CHANNEL_ID_VEXORA.trim()] : []),
+    ],
   },
 ];
 
@@ -63,6 +71,26 @@ export function matchProtectedYouTubeChannel(account?: {
   const normName = normalizeKey(account.name);
   const normUser = normalizeKey(account.username);
   const accountId = (account.platformAccountId || '').trim();
+
+  // 0. Check global environment variable list of approved channel IDs if provided
+  const envChannelIds = (process.env.APPROVED_YOUTUBE_CHANNEL_IDS || '')
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean);
+
+  if (accountId && envChannelIds.includes(accountId)) {
+    return {
+      isProtected: true,
+      channel: {
+        id: 'env_whitelisted',
+        displayName: account.name || 'Protected YouTube Channel',
+        handle: account.username || account.name || 'YouTube',
+        normalizedKeys: [],
+        knownAccountIds: [accountId],
+      },
+      matchReason: `Matched global protected channel ID from env: ${accountId}`,
+    };
+  }
 
   for (const channel of APPROVED_YOUTUBE_CHANNELS) {
     // 1. Match by known Account/Channel ID if configured

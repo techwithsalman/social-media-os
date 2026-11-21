@@ -241,6 +241,9 @@ export async function auditScheduledPosts(): Promise<ScheduledAuditReport> {
       if (isUsedByProtectedYouTube || currentPostKept) {
         mediaStatus = 'RETAINED_PROTECTED_CHANNEL';
         mediaReason = 'Attached to approved YouTube channel schedule; permanently preserved';
+      } else if (classification === 'IN_FLIGHT' || isUsedByInFlight) {
+        mediaStatus = 'RETAINED_IN_FLIGHT';
+        mediaReason = 'Referenced by an active in-flight publishing job; preserved';
       } else if (isUsedByPublished) {
         mediaStatus = 'RETAINED_PUBLISHED';
         mediaReason = 'Media is also used by an existing published post; preserved';
@@ -250,9 +253,6 @@ export async function auditScheduledPosts(): Promise<ScheduledAuditReport> {
       } else if (isUsedByDraft) {
         mediaStatus = 'RETAINED_DRAFT';
         mediaReason = 'Referenced by a saved draft post; preserved';
-      } else if (isUsedByInFlight) {
-        mediaStatus = 'RETAINED_IN_FLIGHT';
-        mediaReason = 'Referenced by an active in-flight publishing job; preserved';
       } else if (isAlreadyArchived) {
         mediaStatus = 'ALREADY_CLEANED';
         mediaReason = 'R2 media asset already cleaned up previously';
@@ -500,6 +500,7 @@ export async function executeBulkCancelScheduledPosts(options: {
     sizeBytes: number;
     sizeFormatted: string;
   }> = [];
+  const queuedMediaIds = new Set<string>();
 
   for (const item of eligibleItems) {
     if (item.classification === 'MANUAL_REVIEW') {
@@ -566,15 +567,18 @@ export async function executeBulkCancelScheduledPosts(options: {
         preservedTargets: [],
       });
 
-      // If post had media and was marked eligible, queue it for verified R2 cleanup
+      // If post had media and was marked eligible, queue it for verified R2 cleanup (deduplicated)
       if (item.mediaAudit && item.mediaAudit.status === 'ELIGIBLE_FOR_R2_DELETE') {
-        candidateMediaToClean.push({
-          mediaAssetId: item.mediaAudit.mediaAssetId,
-          workspaceId: item.workspaceId,
-          postId: item.id,
-          sizeBytes: item.mediaAudit.sizeBytes,
-          sizeFormatted: item.mediaAudit.sizeFormatted,
-        });
+        if (!queuedMediaIds.has(item.mediaAudit.mediaAssetId)) {
+          queuedMediaIds.add(item.mediaAudit.mediaAssetId);
+          candidateMediaToClean.push({
+            mediaAssetId: item.mediaAudit.mediaAssetId,
+            workspaceId: item.workspaceId,
+            postId: item.id,
+            sizeBytes: item.mediaAudit.sizeBytes,
+            sizeFormatted: item.mediaAudit.sizeFormatted,
+          });
+        }
       }
     }
 
