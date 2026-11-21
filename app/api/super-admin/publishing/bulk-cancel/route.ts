@@ -28,7 +28,7 @@ export async function POST(req: NextRequest) {
     const { user } = await requireSuperAdmin();
 
     const body = await req.json().catch(() => ({}));
-    const { confirmToken, selectedPostIds, dryRun } = body;
+    const { confirmToken, selectedPostIds, dryRun, cleanupMedia } = body;
 
     if (confirmToken !== 'CONFIRM_CANCEL') {
       return NextResponse.json(
@@ -45,6 +45,7 @@ export async function POST(req: NextRequest) {
       actorUserId: user.id,
       selectedPostIds,
       dryRun: !!dryRun,
+      cleanupMedia: cleanupMedia !== false,
     });
 
     return NextResponse.json(result);

@@ -19,12 +19,15 @@ import {
   Calendar,
   Lock,
   RotateCcw,
+  HardDrive,
+  CheckCircle,
+  Database,
 } from 'lucide-react';
-import {
+import type {
   ScheduledAuditReport,
   BulkCancelResult,
-  APPROVED_YOUTUBE_CHANNELS,
-} from '@/lib/super-admin-scheduled-cancel';
+} from '@/lib/super-admin-scheduled-cancel-types';
+import { APPROVED_YOUTUBE_CHANNELS } from '@/lib/super-admin-scheduled-cancel-types';
 
 interface Props {
   initialAudit: ScheduledAuditReport;
@@ -38,6 +41,7 @@ export function PublishingManagementClient({ initialAudit }: Props) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [confirmInput, setConfirmInput] = useState('');
   const [isDryRun, setIsDryRun] = useState(false);
+  const [cleanupMedia, setCleanupMedia] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [executionResult, setExecutionResult] = useState<BulkCancelResult | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -75,6 +79,7 @@ export function PublishingManagementClient({ initialAudit }: Props) {
         body: JSON.stringify({
           confirmToken: 'CONFIRM_CANCEL',
           dryRun: isDryRun,
+          cleanupMedia,
         }),
       });
 
@@ -305,9 +310,76 @@ export function PublishingManagementClient({ initialAudit }: Props) {
         </div>
       </div>
 
+      {/* Section 3.5: Cloudflare R2 Media Cleanup & Storage Preview */}
+      <div className="bg-[#0a0404] border border-[#2a1010] p-5 rounded-2xl">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-3 border-b border-[#2a1010]">
+          <div>
+            <div className="flex items-center gap-2">
+              <HardDrive className="w-5 h-5 text-amber-400" />
+              <h3 className="text-base font-black text-white">
+                Cloudflare R2 Media Cleanup & Storage Preview
+              </h3>
+            </div>
+            <p className="text-xs text-neutral-400 mt-1">
+              Automatic inspection ensures media is only deleted if exclusively attached to cancelled posts with zero external references.
+            </p>
+          </div>
+          <span className="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-500/10 text-amber-400 border border-amber-500/25">
+            Safe Storage Cleanup
+          </span>
+        </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4">
+          <div className="p-3.5 rounded-xl bg-[#050202] border border-[#2a1010]">
+            <div className="text-[10px] font-black uppercase tracking-wider text-neutral-500">
+              Attached Media Files
+            </div>
+            <div className="text-xl font-black text-white mt-1">
+              {audit.mediaSummary?.totalAttachedMedia || 0}
+            </div>
+            <div className="text-[11px] text-neutral-400 mt-0.5">Across scheduled posts</div>
+          </div>
+
+          <div className="p-3.5 rounded-xl bg-[#050202] border border-red-500/20">
+            <div className="text-[10px] font-black uppercase tracking-wider text-red-400">
+              Eligible for R2 Deletion
+            </div>
+            <div className="text-xl font-black text-red-400 mt-1">
+              {audit.mediaSummary?.expectedDeletedMediaCount || 0}
+            </div>
+            <div className="text-[11px] text-neutral-400 mt-0.5">Exclusively cancelled posts</div>
+          </div>
+
+          <div className="p-3.5 rounded-xl bg-[#050202] border border-emerald-500/20">
+            <div className="text-[10px] font-black uppercase tracking-wider text-emerald-400">
+              Est. Freed Storage
+            </div>
+            <div className="text-xl font-black text-emerald-400 mt-1">
+              {audit.mediaSummary?.expectedFreedStorageMB || 0} MB
+            </div>
+            <div className="text-[11px] text-neutral-400 mt-0.5">
+              ~{audit.mediaSummary?.expectedFreedStorageGB || 0} GB
+            </div>
+          </div>
+
+          <div className="p-3.5 rounded-xl bg-[#050202] border border-blue-500/20">
+            <div className="text-[10px] font-black uppercase tracking-wider text-blue-400">
+              Retained Safely
+            </div>
+            <div className="text-xl font-black text-blue-300 mt-1">
+              {(audit.mediaSummary?.sharedMediaRetainedCount || 0) +
+                (audit.mediaSummary?.protectedChannelMediaRetainedCount || 0)}
+            </div>
+            <div className="text-[11px] text-neutral-400 mt-0.5">
+              Whitelisted YT ({audit.mediaSummary?.protectedChannelMediaRetainedCount || 0}) / Shared ({audit.mediaSummary?.sharedMediaRetainedCount || 0})
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Execution Results Banner if available */}
       {executionResult && (
-        <div className="p-5 rounded-2xl bg-emerald-950/20 border border-emerald-500/30 text-emerald-200 space-y-2">
+        <div className="p-5 rounded-2xl bg-emerald-950/20 border border-emerald-500/30 text-emerald-200 space-y-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 font-black text-sm text-emerald-300">
               <CheckCircle2 className="w-5 h-5 text-emerald-400" />
@@ -319,7 +391,7 @@ export function PublishingManagementClient({ initialAudit }: Props) {
               {new Date(executionResult.recoveryLog.timestamp).toLocaleString()}
             </span>
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2 text-xs">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
             <div className="p-2.5 rounded-lg bg-[#050202]/60 border border-emerald-500/20">
               <div className="text-neutral-400">Cancelled Posts:</div>
               <div className="text-base font-black text-white">{executionResult.cancelledPostsCount}</div>
@@ -341,6 +413,47 @@ export function PublishingManagementClient({ initialAudit }: Props) {
               </div>
             </div>
           </div>
+
+          {/* R2 Media Cleanup Results */}
+          {executionResult.mediaCleanupResult && (
+            <div className="pt-3 border-t border-emerald-500/20 space-y-2">
+              <div className="text-xs font-bold text-emerald-400 flex items-center gap-1.5">
+                <HardDrive className="w-4 h-4 text-emerald-400" />
+                <span>Cloudflare R2 Media Cleanup Summary:</span>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+                <div className="p-2.5 rounded-lg bg-[#050202]/60 border border-emerald-500/20">
+                  <div className="text-neutral-400">R2 Objects Deleted:</div>
+                  <div className="text-base font-black text-red-300">
+                    {executionResult.mediaCleanupResult.deletedR2Count}
+                  </div>
+                </div>
+                <div className="p-2.5 rounded-lg bg-[#050202]/60 border border-emerald-500/20">
+                  <div className="text-neutral-400">Storage Freed:</div>
+                  <div className="text-base font-black text-emerald-300">
+                    {executionResult.mediaCleanupResult.freedMB} MB
+                  </div>
+                  <div className="text-[10px] text-neutral-400 font-mono">
+                    ~{executionResult.mediaCleanupResult.freedGB} GB
+                  </div>
+                </div>
+                <div className="p-2.5 rounded-lg bg-[#050202]/60 border border-emerald-500/20">
+                  <div className="text-neutral-400">Safely Retained:</div>
+                  <div className="text-base font-black text-cyan-300">
+                    {executionResult.mediaCleanupResult.retainedSharedCount +
+                      executionResult.mediaCleanupResult.retainedProtectedChannelCount}
+                  </div>
+                  <div className="text-[10px] text-neutral-400">Protected / shared</div>
+                </div>
+                <div className="p-2.5 rounded-lg bg-[#050202]/60 border border-emerald-500/20">
+                  <div className="text-neutral-400">Failed / Retrying:</div>
+                  <div className="text-base font-black text-amber-300">
+                    {executionResult.mediaCleanupResult.failedRetryCount}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -413,6 +526,7 @@ export function PublishingManagementClient({ initialAudit }: Props) {
                   <th className="py-3 px-4">Workspace & User</th>
                   <th className="py-3 px-4">Scheduled For</th>
                   <th className="py-3 px-4">Platform Targets</th>
+                  <th className="py-3 px-4">R2 Media Status</th>
                   <th className="py-3 px-4">Action Status</th>
                 </tr>
               </thead>
@@ -466,6 +580,55 @@ export function PublishingManagementClient({ initialAudit }: Props) {
                       </div>
                     </td>
 
+                    {/* R2 Media Status */}
+                    <td className="py-3.5 px-4 whitespace-nowrap">
+                      {item.mediaAudit ? (
+                        <div>
+                          {item.mediaAudit.status === 'ELIGIBLE_FOR_R2_DELETE' && (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-black uppercase bg-red-500/15 text-red-300 border border-red-500/30">
+                              <Trash2 className="w-2.5 h-2.5" />
+                              Auto-Delete ({item.mediaAudit.sizeFormatted})
+                            </span>
+                          )}
+                          {item.mediaAudit.status === 'RETAINED_PROTECTED_CHANNEL' && (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-black uppercase bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+                              <ShieldCheck className="w-2.5 h-2.5" />
+                              Retained (Whitelisted YT)
+                            </span>
+                          )}
+                          {item.mediaAudit.status === 'RETAINED_PUBLISHED' && (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-black uppercase bg-blue-500/15 text-blue-300 border border-blue-500/30">
+                              <CheckCircle className="w-2.5 h-2.5" />
+                              Retained (Published)
+                            </span>
+                          )}
+                          {item.mediaAudit.status === 'RETAINED_SHARED_SCHEDULED' && (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-black uppercase bg-purple-500/15 text-purple-300 border border-purple-500/30">
+                              <Layers className="w-2.5 h-2.5" />
+                              Retained (Shared Schedule)
+                            </span>
+                          )}
+                          {item.mediaAudit.status === 'RETAINED_DRAFT' && (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-black uppercase bg-neutral-800 text-neutral-300 border border-neutral-700">
+                              Retained (Draft)
+                            </span>
+                          )}
+                          {item.mediaAudit.status === 'RETAINED_IN_FLIGHT' && (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-black uppercase bg-cyan-500/15 text-cyan-300 border border-cyan-500/30">
+                              Retained (In-Flight)
+                            </span>
+                          )}
+                          {item.mediaAudit.status === 'SKIPPED_UNCERTAIN' && (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-black uppercase bg-amber-500/15 text-amber-300 border border-amber-500/30">
+                              Skipped (Uncertain Usage)
+                            </span>
+                          )}
+                        </div>
+                      ) : (
+                        <span className="text-[10px] text-neutral-600 italic">No Media</span>
+                      )}
+                    </td>
+
                     {/* Action Classification */}
                     <td className="py-3.5 px-4 whitespace-nowrap">
                       {item.classification === 'PROTECTED_EXCLUSIVE' && (
@@ -499,7 +662,7 @@ export function PublishingManagementClient({ initialAudit }: Props) {
 
                 {filteredItems.length === 0 && (
                   <tr>
-                    <td colSpan={5} className="py-12 text-center text-neutral-500 font-medium">
+                    <td colSpan={6} className="py-12 text-center text-neutral-500 font-medium">
                       No scheduled posts matching this filter.
                     </td>
                   </tr>
@@ -531,9 +694,46 @@ export function PublishingManagementClient({ initialAudit }: Props) {
                   <strong className="text-red-400">Cancelled:</strong> All other platforms (Facebook, Instagram, TikTok, LinkedIn, X, Pinterest) and other YouTube channels.
                 </li>
                 <li>
-                  <strong className="text-blue-400">Safe:</strong> Published posts, draft posts, uploaded R2 media, and social accounts are NOT deleted.
+                  <strong className="text-blue-400">Protected:</strong> Published posts, draft posts, social accounts, and shared/protected media are never touched.
                 </li>
               </ul>
+            </div>
+
+            {/* R2 Media Cleanup Preview Box inside Modal */}
+            <div className="p-3.5 rounded-xl bg-[#070303] border border-amber-500/25 text-xs space-y-2">
+              <div className="flex items-center gap-2 font-bold text-amber-300">
+                <HardDrive className="w-4 h-4 text-amber-400" />
+                <span>Automatic Cloudflare R2 Media Cleanup</span>
+              </div>
+              <p className="text-[11px] text-neutral-400">
+                Exclusive media attached ONLY to cancelled posts will be purged from Cloudflare R2.
+              </p>
+              <div className="grid grid-cols-2 gap-2 text-[11px]">
+                <div className="bg-[#0e0404] p-2 rounded-lg border border-[#2a1010]">
+                  <span className="text-neutral-400 block">Eligible to Purge:</span>
+                  <span className="font-bold text-red-300 font-mono">
+                    {audit.mediaSummary?.expectedDeletedMediaCount || 0} files (~{audit.mediaSummary?.expectedFreedStorageMB || 0} MB)
+                  </span>
+                </div>
+                <div className="bg-[#0e0404] p-2 rounded-lg border border-[#2a1010]">
+                  <span className="text-neutral-400 block">Safely Retained:</span>
+                  <span className="font-bold text-emerald-300 font-mono">
+                    {(audit.mediaSummary?.sharedMediaRetainedCount || 0) + (audit.mediaSummary?.protectedChannelMediaRetainedCount || 0)} files
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between pt-1">
+                <label className="text-neutral-300 font-medium text-[11px] cursor-pointer">
+                  Purge exclusive R2 media automatically:
+                </label>
+                <input
+                  type="checkbox"
+                  checked={cleanupMedia}
+                  onChange={(e) => setCleanupMedia(e.target.checked)}
+                  className="rounded bg-[#1a0a0a] border-[#3a1515] text-red-500 focus:ring-red-500 w-4 h-4"
+                />
+              </div>
             </div>
 
             <div className="space-y-3">

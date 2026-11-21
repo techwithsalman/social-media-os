@@ -1,150 +1,21 @@
 import prisma from './prisma';
+import { formatBytes } from './storage/r2-storage-monitor';
+import { safeCleanupMediaAsset, extractObjectKey } from './storage/r2-cleanup';
 
-export interface ProtectedChannelDef {
-  id: string;
-  displayName: string;
-  handle: string;
-  normalizedKeys: string[];
-  knownAccountIds: string[];
-}
-
-export const APPROVED_YOUTUBE_CHANNELS: ProtectedChannelDef[] = [
-  {
-    id: 'tech_with_salman',
-    displayName: 'Tech With Salman',
-    handle: '@Tech With Salman',
-    normalizedKeys: ['techwithsalman', 'techwithsalmanonline'],
-    knownAccountIds: [],
-  },
-  {
-    id: 'beyond_history',
-    displayName: 'Beyond History',
-    handle: '@Beyond History',
-    normalizedKeys: ['beyondhistory'],
-    knownAccountIds: [],
-  },
-  {
-    id: 'sheru_bhai_official',
-    displayName: 'Sheru Bhai Official',
-    handle: '@Sheru Bhai Official',
-    normalizedKeys: ['sherubhaiofficial', 'sherubhai'],
-    knownAccountIds: [],
-  },
-  {
-    id: 'vexora',
-    displayName: 'VEXORA',
-    handle: '@VEXORA',
-    normalizedKeys: ['vexora'],
-    knownAccountIds: [],
-  },
-];
-
-export function normalizeKey(str?: string | null): string {
-  if (!str) return '';
-  return str.toLowerCase().replace(/[@\s_\-\.]/g, '').trim();
-}
+export * from './super-admin-scheduled-cancel-types';
+import {
+  APPROVED_YOUTUBE_CHANNELS,
+  matchProtectedYouTubeChannel,
+  ProtectedChannelDef,
+  ScheduledTargetAudit,
+  MediaCleanupAuditItem,
+  ScheduledPostAuditItem,
+  ScheduledAuditReport,
+  BulkCancelResult,
+} from './super-admin-scheduled-cancel-types';
 
 /**
- * Accurately identify if a connected social account matches one of the 4 protected YouTube channels
- */
-export function matchProtectedYouTubeChannel(account?: {
-  platform?: string | null;
-  name?: string | null;
-  username?: string | null;
-  platformAccountId?: string | null;
-} | null): { isProtected: boolean; channel?: ProtectedChannelDef; matchReason?: string } {
-  if (!account || !account.platform) {
-    return { isProtected: false };
-  }
-
-  // Must be YouTube platform
-  if (account.platform.toUpperCase() !== 'YOUTUBE') {
-    return { isProtected: false };
-  }
-
-  const normName = normalizeKey(account.name);
-  const normUser = normalizeKey(account.username);
-  const accountId = (account.platformAccountId || '').trim();
-
-  for (const channel of APPROVED_YOUTUBE_CHANNELS) {
-    // 1. Match by known Account/Channel ID if configured
-    if (accountId && channel.knownAccountIds.includes(accountId)) {
-      return { isProtected: true, channel, matchReason: `Matched Channel ID: ${accountId}` };
-    }
-
-    // 2. Match by normalized name or handle
-    for (const key of channel.normalizedKeys) {
-      if (normName === key || normUser === key) {
-        return { isProtected: true, channel, matchReason: `Matched handle/key: ${key}` };
-      }
-      if (normName.includes(key) || normUser.includes(key)) {
-        return { isProtected: true, channel, matchReason: `Contains channel key: ${key}` };
-      }
-    }
-  }
-
-  return { isProtected: false };
-}
-
-export interface ScheduledTargetAudit {
-  platformPostId: string;
-  platform: string;
-  status: string;
-  socialAccountId: string;
-  accountName: string;
-  accountUsername: string;
-  channelId: string;
-  isProtected: boolean;
-  matchedChannelName?: string;
-  matchReason?: string;
-}
-
-export interface ScheduledPostAuditItem {
-  id: string;
-  workspaceId: string;
-  workspaceName: string;
-  workspaceSlug: string;
-  userEmail: string;
-  userName: string;
-  title: string | null;
-  masterCaption: string;
-  scheduledFor: string | null;
-  status: string;
-  hasMedia: boolean;
-  classification: 'PROTECTED_EXCLUSIVE' | 'PROTECTED_PARTIAL' | 'CANCEL_CANDIDATE' | 'IN_FLIGHT' | 'MANUAL_REVIEW';
-  targets: ScheduledTargetAudit[];
-  protectedTargetsCount: number;
-  cancelTargetsCount: number;
-}
-
-export interface ScheduledAuditReport {
-  timestamp: string;
-  totalScheduledPosts: number;
-  totalPlatformTargets: number;
-  counts: {
-    protectedExclusivePosts: number;
-    protectedPartialPosts: number;
-    cancelCandidatePosts: number;
-    inFlightPosts: number;
-    manualReviewPosts: number;
-    totalCancelledTargets: number;
-    totalPreservedTargets: number;
-  };
-  platformBreakdown: Record<string, { total: number; protected: number; toCancel: number }>;
-  workspaceBreakdown: Array<{
-    workspaceId: string;
-    workspaceName: string;
-    userEmail: string;
-    totalScheduled: number;
-    protected: number;
-    toCancel: number;
-  }>;
-  approvedChannels: typeof APPROVED_YOUTUBE_CHANNELS;
-  items: ScheduledPostAuditItem[];
-}
-
-/**
- * Complete read-only audit of all scheduled posts across the entire platform
+ * Complete read-only audit of all scheduled posts and their associated R2 media assets
  */
 export async function auditScheduledPosts(): Promise<ScheduledAuditReport> {
   const posts = await prisma.contentPost.findMany({
@@ -188,7 +59,35 @@ export async function auditScheduledPosts(): Promise<ScheduledAuditReport> {
         },
       },
       mediaAsset: {
-        select: { id: true },
+        select: {
+          id: true,
+          size: true,
+          mimeType: true,
+          filename: true,
+          originalName: true,
+          url: true,
+          posts: {
+            select: {
+              id: true,
+              status: true,
+              platformPosts: {
+                select: {
+                  id: true,
+                  platform: true,
+                  status: true,
+                  socialAccount: {
+                    select: {
+                      platform: true,
+                      name: true,
+                      username: true,
+                      platformAccountId: true,
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
       },
     },
     orderBy: { scheduledFor: 'asc' },
@@ -215,6 +114,9 @@ export async function auditScheduledPosts(): Promise<ScheduledAuditReport> {
   let totalCancelledTargets = 0;
   let totalPreservedTargets = 0;
   let totalPlatformTargets = 0;
+
+  // Track unique media assets across posts to prevent double counting in summary
+  const auditedMediaMap = new Map<string, MediaCleanupAuditItem>();
 
   const items: ScheduledPostAuditItem[] = [];
 
@@ -288,6 +190,100 @@ export async function auditScheduledPosts(): Promise<ScheduledAuditReport> {
       cancelCandidatePosts++;
     }
 
+    // Evaluate Media Asset Usage & Safety
+    let mediaAudit: MediaCleanupAuditItem | null = null;
+    if (post.mediaAsset) {
+      const ma = post.mediaAsset;
+      const mediaUrl = ma.url || (ma as any).storageKey || '';
+      const objectKey = extractObjectKey(mediaUrl);
+      const isAlreadyArchived = mediaUrl ? mediaUrl.startsWith('archived://') : false;
+
+      // Check all posts referencing this media asset
+      const referencingPosts = ma.posts || [];
+      const otherPosts = referencingPosts.filter((p) => p.id !== post.id);
+
+      let isUsedByProtectedYouTube = false;
+      let isUsedByPublished = false;
+      let isUsedByOtherScheduled = false;
+      let isUsedByDraft = false;
+      let isUsedByInFlight = false;
+
+      // Check if ANY target in ANY referencing post is a protected YouTube channel
+      for (const refPost of referencingPosts) {
+        for (const pPost of refPost.platformPosts || []) {
+          if (matchProtectedYouTubeChannel(pPost.socialAccount).isProtected) {
+            isUsedByProtectedYouTube = true;
+            break;
+          }
+        }
+        if (isUsedByProtectedYouTube) break;
+      }
+
+      // Check statuses of OTHER referencing posts
+      for (const op of otherPosts) {
+        if (op.status === 'PUBLISHED' || op.status === 'PARTIALLY_FAILED') {
+          isUsedByPublished = true;
+        } else if (op.status === 'SCHEDULED') {
+          isUsedByOtherScheduled = true;
+        } else if (op.status === 'DRAFT') {
+          isUsedByDraft = true;
+        } else if (op.status === 'PROCESSING' || op.status === 'UPLOADING') {
+          isUsedByInFlight = true;
+        }
+      }
+
+      // Also check if current post itself retains an active protected YouTube schedule
+      const currentPostKept = postProtectedTargets > 0;
+
+      let mediaStatus: MediaCleanupAuditItem['status'] = 'ELIGIBLE_FOR_R2_DELETE';
+      let mediaReason = 'Exclusively associated with cancelled post; safe to clean up from R2';
+
+      if (isUsedByProtectedYouTube || currentPostKept) {
+        mediaStatus = 'RETAINED_PROTECTED_CHANNEL';
+        mediaReason = 'Attached to approved YouTube channel schedule; permanently preserved';
+      } else if (isUsedByPublished) {
+        mediaStatus = 'RETAINED_PUBLISHED';
+        mediaReason = 'Media is also used by an existing published post; preserved';
+      } else if (isUsedByOtherScheduled) {
+        mediaStatus = 'RETAINED_SHARED_SCHEDULED';
+        mediaReason = 'Shared with another active scheduled post; preserved';
+      } else if (isUsedByDraft) {
+        mediaStatus = 'RETAINED_DRAFT';
+        mediaReason = 'Referenced by a saved draft post; preserved';
+      } else if (isUsedByInFlight) {
+        mediaStatus = 'RETAINED_IN_FLIGHT';
+        mediaReason = 'Referenced by an active in-flight publishing job; preserved';
+      } else if (isAlreadyArchived) {
+        mediaStatus = 'ALREADY_CLEANED';
+        mediaReason = 'R2 media asset already cleaned up previously';
+      } else if (!objectKey) {
+        mediaStatus = 'SKIPPED_UNCERTAIN';
+        mediaReason = 'Local upload or non-R2 media path; skipped';
+      } else if (classification !== 'CANCEL_CANDIDATE') {
+        mediaStatus = 'SKIPPED_UNCERTAIN';
+        mediaReason = 'Parent post is not a full cancel candidate; skipped';
+      }
+
+      const rawSize = ma.size ?? (ma as any).sizeBytes ?? 0;
+      mediaAudit = {
+        mediaAssetId: ma.id,
+        filename: ma.filename || ma.originalName || 'media',
+        originalName: ma.originalName || ma.filename || 'media',
+        mimeType: ma.mimeType || 'application/octet-stream',
+        sizeBytes: rawSize,
+        sizeFormatted: formatBytes(rawSize),
+        objectKey,
+        status: mediaStatus,
+        reason: mediaReason,
+        isShared: referencingPosts.length > 1,
+        sharedWithPostsCount: referencingPosts.length,
+      };
+
+      if (!auditedMediaMap.has(ma.id)) {
+        auditedMediaMap.set(ma.id, mediaAudit);
+      }
+    }
+
     // Workspace aggregator
     if (!workspaceMap.has(post.workspaceId)) {
       workspaceMap.set(post.workspaceId, {
@@ -322,8 +318,37 @@ export async function auditScheduledPosts(): Promise<ScheduledAuditReport> {
       targets,
       protectedTargetsCount: postProtectedTargets,
       cancelTargetsCount: postCancelTargets,
+      mediaAudit,
     });
   }
+
+  // Aggregate Media Summary across all unique assets
+  let expectedDeletedMediaCount = 0;
+  let expectedFreedStorageBytes = 0;
+  let sharedMediaRetainedCount = 0;
+  let protectedChannelMediaRetainedCount = 0;
+  let skippedMediaCount = 0;
+
+  for (const media of auditedMediaMap.values()) {
+    if (media.status === 'ELIGIBLE_FOR_R2_DELETE') {
+      expectedDeletedMediaCount++;
+      expectedFreedStorageBytes += media.sizeBytes;
+    } else if (media.status === 'RETAINED_PROTECTED_CHANNEL') {
+      protectedChannelMediaRetainedCount++;
+    } else if (
+      media.status === 'RETAINED_PUBLISHED' ||
+      media.status === 'RETAINED_SHARED_SCHEDULED' ||
+      media.status === 'RETAINED_DRAFT' ||
+      media.status === 'RETAINED_IN_FLIGHT'
+    ) {
+      sharedMediaRetainedCount++;
+    } else {
+      skippedMediaCount++;
+    }
+  }
+
+  const expectedFreedStorageMB = Number((expectedFreedStorageBytes / (1024 * 1024)).toFixed(2));
+  const expectedFreedStorageGB = Number((expectedFreedStorageBytes / (1024 * 1024 * 1024)).toFixed(3));
 
   return {
     timestamp: new Date().toISOString(),
@@ -338,6 +363,16 @@ export async function auditScheduledPosts(): Promise<ScheduledAuditReport> {
       totalCancelledTargets,
       totalPreservedTargets,
     },
+    mediaSummary: {
+      totalAttachedMedia: auditedMediaMap.size,
+      expectedDeletedMediaCount,
+      expectedFreedStorageBytes,
+      expectedFreedStorageMB,
+      expectedFreedStorageGB,
+      sharedMediaRetainedCount,
+      protectedChannelMediaRetainedCount,
+      skippedMediaCount,
+    },
     platformBreakdown,
     workspaceBreakdown: Array.from(workspaceMap.values()).sort((a, b) => b.totalScheduled - a.totalScheduled),
     approvedChannels: APPROVED_YOUTUBE_CHANNELS,
@@ -345,42 +380,16 @@ export async function auditScheduledPosts(): Promise<ScheduledAuditReport> {
   };
 }
 
-export interface BulkCancelResult {
-  success: boolean;
-  dryRun: boolean;
-  cancelledPostsCount: number;
-  cancelledTargetsCount: number;
-  preservedProtectedPostsCount: number;
-  skippedInFlightCount: number;
-  skippedManualReviewCount: number;
-  cancelledPosts: Array<{
-    postId: string;
-    workspaceId: string;
-    caption: string;
-    action: 'POST_CANCELLED' | 'TARGETS_CANCELLED';
-    cancelledTargets: string[];
-    preservedTargets: string[];
-  }>;
-  recoveryLog: {
-    auditLogId?: string;
-    timestamp: string;
-    snapshot: Array<{
-      postId: string;
-      originalStatus: string;
-      scheduledFor: string | null;
-      cancelledPlatformPostIds: string[];
-    }>;
-  };
-}
-
 /**
- * Execute safe bulk cancellation of non-whitelisted scheduled posts
+ * Execute safe bulk cancellation of non-whitelisted scheduled posts with automatic R2 media cleanup
  */
 export async function executeBulkCancelScheduledPosts(options: {
   confirmToken: string;
   actorUserId?: string;
   selectedPostIds?: string[];
   dryRun?: boolean;
+  cleanupMedia?: boolean;
+  deleteR2Fn?: (objectKey: string, workspaceId: string) => Promise<{ success: boolean; error?: string }>;
 }): Promise<BulkCancelResult> {
   if (options.confirmToken !== 'CONFIRM_CANCEL') {
     throw new Error("Invalid confirmation token. You must pass confirmToken: 'CONFIRM_CANCEL' to execute.");
@@ -408,6 +417,12 @@ export async function executeBulkCancelScheduledPosts(options: {
   let skippedInFlightCount = audit.counts.inFlightPosts;
   let skippedManualReviewCount = 0;
 
+  // Media cleanup trackers
+  const mediaAttempted: BulkCancelResult['mediaCleanupResult']['deletedMediaAssets'] = [];
+  let deletedR2Count = 0;
+  let failedRetryCount = 0;
+  let freedBytes = 0;
+
   if (options.dryRun) {
     for (const item of eligibleItems) {
       const cancelledTargetIds = item.targets.filter((t) => !t.isProtected).map((t) => t.platformPostId);
@@ -433,6 +448,21 @@ export async function executeBulkCancelScheduledPosts(options: {
         scheduledFor: item.scheduledFor,
         cancelledPlatformPostIds: cancelledTargetIds,
       });
+
+      // Dry-run media preview
+      if (item.mediaAudit && item.mediaAudit.status === 'ELIGIBLE_FOR_R2_DELETE') {
+        deletedR2Count++;
+        freedBytes += item.mediaAudit.sizeBytes;
+        mediaAttempted.push({
+          mediaAssetId: item.mediaAudit.mediaAssetId,
+          objectKey: item.mediaAudit.objectKey,
+          workspaceId: item.workspaceId,
+          postId: item.id,
+          sizeFormatted: item.mediaAudit.sizeFormatted,
+          status: 'DELETED',
+          reason: 'Dry-run: verified safe and exclusive for R2 deletion',
+        });
+      }
     }
 
     return {
@@ -444,6 +474,17 @@ export async function executeBulkCancelScheduledPosts(options: {
       skippedInFlightCount,
       skippedManualReviewCount,
       cancelledPosts,
+      mediaCleanupResult: {
+        attemptedCount: mediaAttempted.length,
+        deletedR2Count,
+        retainedSharedCount: audit.mediaSummary.sharedMediaRetainedCount,
+        retainedProtectedChannelCount: audit.mediaSummary.protectedChannelMediaRetainedCount,
+        failedRetryCount: 0,
+        freedBytes,
+        freedMB: Number((freedBytes / (1024 * 1024)).toFixed(2)),
+        freedGB: Number((freedBytes / (1024 * 1024 * 1024)).toFixed(3)),
+        deletedMediaAssets: mediaAttempted,
+      },
       recoveryLog: {
         timestamp: new Date().toISOString(),
         snapshot: recoverySnapshot,
@@ -451,7 +492,15 @@ export async function executeBulkCancelScheduledPosts(options: {
     };
   }
 
-  // Live Transactional Execution
+  // 1. Live Transactional Post & Target Cancellations
+  const candidateMediaToClean: Array<{
+    mediaAssetId: string;
+    workspaceId: string;
+    postId: string;
+    sizeBytes: number;
+    sizeFormatted: string;
+  }> = [];
+
   for (const item of eligibleItems) {
     if (item.classification === 'MANUAL_REVIEW') {
       skippedManualReviewCount++;
@@ -466,7 +515,7 @@ export async function executeBulkCancelScheduledPosts(options: {
 
     if (nonProtectedIds.length === 0) continue;
 
-    // 1. Cancel the non-whitelisted PlatformPosts
+    // A. Cancel the non-whitelisted PlatformPosts
     await prisma.platformPost.updateMany({
       where: { id: { in: nonProtectedIds } },
       data: {
@@ -475,7 +524,7 @@ export async function executeBulkCancelScheduledPosts(options: {
       },
     });
 
-    // 2. Cancel associated PublishingJobs
+    // B. Cancel associated PublishingJobs
     await prisma.publishingJob.updateMany({
       where: {
         platformPostId: { in: nonProtectedIds },
@@ -489,7 +538,7 @@ export async function executeBulkCancelScheduledPosts(options: {
 
     cancelledTargetsCount += nonProtectedIds.length;
 
-    // 3. Handle Parent ContentPost
+    // C. Handle Parent ContentPost
     if (protectedIds.length > 0) {
       // Post still has active whitelisted YouTube targets! Keep ContentPost as SCHEDULED
       cancelledPosts.push({
@@ -516,6 +565,17 @@ export async function executeBulkCancelScheduledPosts(options: {
         cancelledTargets: nonProtectedIds,
         preservedTargets: [],
       });
+
+      // If post had media and was marked eligible, queue it for verified R2 cleanup
+      if (item.mediaAudit && item.mediaAudit.status === 'ELIGIBLE_FOR_R2_DELETE') {
+        candidateMediaToClean.push({
+          mediaAssetId: item.mediaAudit.mediaAssetId,
+          workspaceId: item.workspaceId,
+          postId: item.id,
+          sizeBytes: item.mediaAudit.sizeBytes,
+          sizeFormatted: item.mediaAudit.sizeFormatted,
+        });
+      }
     }
 
     recoverySnapshot.push({
@@ -526,19 +586,89 @@ export async function executeBulkCancelScheduledPosts(options: {
     });
   }
 
-  // 4. Create Audit Log Entry
+  // 2. Automated Safe R2 Media Cleanup (Separate, Traceable Operation)
+  const shouldCleanupMedia = options.cleanupMedia !== false;
+
+  if (shouldCleanupMedia && candidateMediaToClean.length > 0) {
+    for (const mediaItem of candidateMediaToClean) {
+      try {
+        const cleanupResult = await safeCleanupMediaAsset(
+          mediaItem.mediaAssetId,
+          mediaItem.workspaceId,
+          {
+            auditAction: 'SUPER_ADMIN_SCHEDULE_CANCEL_R2_CLEANUP',
+            auditDetails: `Automatically deleted exclusive R2 media for cancelled post ${mediaItem.postId}`,
+            deleteR2Fn: options.deleteR2Fn,
+          }
+        );
+
+        if (cleanupResult.action === 'DELETED') {
+          deletedR2Count++;
+          freedBytes += mediaItem.sizeBytes;
+          mediaAttempted.push({
+            mediaAssetId: mediaItem.mediaAssetId,
+            objectKey: cleanupResult.reason || '',
+            workspaceId: mediaItem.workspaceId,
+            postId: mediaItem.postId,
+            sizeFormatted: mediaItem.sizeFormatted,
+            status: 'DELETED',
+            reason: 'R2 object successfully deleted and archived',
+          });
+        } else if (cleanupResult.action === 'FAILED') {
+          failedRetryCount++;
+          mediaAttempted.push({
+            mediaAssetId: mediaItem.mediaAssetId,
+            objectKey: cleanupResult.reason || '',
+            workspaceId: mediaItem.workspaceId,
+            postId: mediaItem.postId,
+            sizeFormatted: mediaItem.sizeFormatted,
+            status: 'FAILED_RETRY',
+            reason: cleanupResult.reason || 'R2 deletion failed; queued for background retry',
+          });
+        } else {
+          mediaAttempted.push({
+            mediaAssetId: mediaItem.mediaAssetId,
+            objectKey: cleanupResult.reason || '',
+            workspaceId: mediaItem.workspaceId,
+            postId: mediaItem.postId,
+            sizeFormatted: mediaItem.sizeFormatted,
+            status: 'SKIPPED',
+            reason: cleanupResult.reason || 'Media skipped because it was shared or protected',
+          });
+        }
+      } catch (mediaErr: any) {
+        failedRetryCount++;
+        console.error(`[R2 Cancel Cleanup Error] Asset ${mediaItem.mediaAssetId}:`, mediaErr);
+        mediaAttempted.push({
+          mediaAssetId: mediaItem.mediaAssetId,
+          objectKey: '',
+          workspaceId: mediaItem.workspaceId,
+          postId: mediaItem.postId,
+          sizeFormatted: mediaItem.sizeFormatted,
+          status: 'FAILED_RETRY',
+          reason: mediaErr.message || 'Unexpected cleanup error',
+        });
+      }
+    }
+  }
+
+  // 3. Create Audit Log Entry in ActivityLog
   const auditLog = await prisma.activityLog.create({
     data: {
       action: 'SUPER_ADMIN_BULK_CANCEL_SCHEDULED',
       actorUserId: options.actorUserId || 'super_admin_owner',
-      details: `Bulk cancelled ${cancelledPostsCount} post(s) and ${cancelledTargetsCount} platform target(s). Preserved ${preservedProtectedPostsCount} protected YouTube schedule(s).`,
+      details: `Bulk cancelled ${cancelledPostsCount} post(s) and ${cancelledTargetsCount} platform target(s). Preserved ${preservedProtectedPostsCount} protected YouTube schedule(s). Deleted ${deletedR2Count} exclusive R2 media asset(s) (${formatBytes(freedBytes)} freed).`,
       metadata: JSON.stringify({
         timestamp: new Date().toISOString(),
         actor: options.actorUserId || 'owner',
         cancelledPostsCount,
         cancelledTargetsCount,
         preservedProtectedPostsCount,
+        deletedR2Count,
+        failedRetryCount,
+        freedBytes,
         recoverySnapshot,
+        mediaCleaned: mediaAttempted,
       }),
     },
   });
@@ -552,9 +682,20 @@ export async function executeBulkCancelScheduledPosts(options: {
     skippedInFlightCount,
     skippedManualReviewCount,
     cancelledPosts,
+    mediaCleanupResult: {
+      attemptedCount: mediaAttempted.length,
+      deletedR2Count,
+      retainedSharedCount: audit.mediaSummary.sharedMediaRetainedCount,
+      retainedProtectedChannelCount: audit.mediaSummary.protectedChannelMediaRetainedCount,
+      failedRetryCount,
+      freedBytes,
+      freedMB: Number((freedBytes / (1024 * 1024)).toFixed(2)),
+      freedGB: Number((freedBytes / (1024 * 1024 * 1024)).toFixed(3)),
+      deletedMediaAssets: mediaAttempted,
+    },
     recoveryLog: {
       auditLogId: auditLog.id,
-      timestamp: auditLog.createdAt.toISOString(),
+      timestamp: auditLog.createdAt ? new Date(auditLog.createdAt).toISOString() : new Date().toISOString(),
       snapshot: recoverySnapshot,
     },
   };
