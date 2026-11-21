@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
 import { getPresignedUploadUrl, isR2Configured, resolveMediaAccessUrl } from '@/lib/storage/r2';
 import { EntitlementError, assertCanUploadFile } from '@/lib/billing';
+import { assertPaidSubscription, accessControlErrorResponse, AccessControlError } from '@/lib/access-control';
 import { checkPlanLimit, PlanLimitError, createPlanLimitResponse } from '@/lib/billing/plan-limits';
 import prisma from '@/lib/prisma';
 
@@ -20,6 +21,8 @@ export async function POST(req: NextRequest) {
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    await assertPaidSubscription(session);
 
     if (!isR2Configured()) {
       return NextResponse.json(
@@ -137,6 +140,9 @@ export async function POST(req: NextRequest) {
       expiresInSeconds: 900,
     });
   } catch (error: any) {
+    if (error instanceof AccessControlError) {
+      return accessControlErrorResponse(error);
+    }
     console.error('Presigned Upload Error:', error);
     if (error instanceof EntitlementError) {
       return NextResponse.json({ error: error.message, code: error.code }, { status: error.status });

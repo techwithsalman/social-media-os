@@ -12,6 +12,7 @@ import {
 
 import { isRealTikTokConfigured, getTikTokEnvironmentInfo } from '@/lib/tiktok-oauth';
 import { getWorkspaceEntitlements, serializeEntitlements } from '@/lib/billing';
+import { assertPaidSubscription, accessControlErrorResponse, AccessControlError } from '@/lib/access-control';
 
 export async function GET() {
   try {
@@ -19,6 +20,8 @@ export async function GET() {
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    await assertPaidSubscription(session);
 
     await syncMetaAccountTokenStatuses(session.workspaceId);
 
@@ -85,6 +88,9 @@ export async function GET() {
       },
     });
   } catch (error: any) {
+    if (error instanceof AccessControlError) {
+      return accessControlErrorResponse(error);
+    }
     return NextResponse.json({ error: error.message || 'Failed to fetch accounts' }, { status: 500 });
   }
 }
@@ -95,6 +101,8 @@ export async function DELETE(req: NextRequest) {
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    await assertPaidSubscription(session);
 
     const { searchParams } = new URL(req.url);
     const accountId = searchParams.get('id');
@@ -109,6 +117,9 @@ export async function DELETE(req: NextRequest) {
 
     return NextResponse.json({ success: true, message: 'Account disconnected successfully' });
   } catch (error: any) {
+    if (error instanceof AccessControlError) {
+      return accessControlErrorResponse(error);
+    }
     return NextResponse.json({ error: error.message || 'Failed to disconnect account' }, { status: 500 });
   }
 }

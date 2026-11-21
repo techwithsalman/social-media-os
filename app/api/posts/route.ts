@@ -5,6 +5,7 @@ import { decryptToken } from '@/lib/crypto';
 import { PublishingEngine } from '@/lib/queue/publisher';
 import { WORKSPACE_TIMEZONE, zonedDateTimeToUtcDate } from '@/lib/timezone';
 import { EntitlementError, assertCanCreateBillablePost, recordPostUsage, getWorkspaceUsage } from '@/lib/billing';
+import { assertPaidSubscription, accessControlErrorResponse, AccessControlError } from '@/lib/access-control';
 import { checkPlanLimit, PlanLimitError, createPlanLimitResponse } from '@/lib/billing/plan-limits';
 import { validateWorkspacePostTargets } from '@/lib/social-account-validation';
 import { resolveMediaAccessUrl } from '@/lib/storage/r2';
@@ -46,6 +47,8 @@ export async function GET(req: NextRequest) {
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    await assertPaidSubscription(session);
 
     const { searchParams } = new URL(req.url);
     const status = searchParams.get('status');
@@ -187,6 +190,9 @@ export async function GET(req: NextRequest) {
       posts: resolvedPosts,
     });
   } catch (error: any) {
+    if (error instanceof AccessControlError) {
+      return accessControlErrorResponse(error);
+    }
     console.error('Fetch posts error:', error);
     return NextResponse.json({ error: error.message || 'Failed to fetch posts' }, { status: 500 });
   }
@@ -198,6 +204,8 @@ export async function POST(req: NextRequest) {
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    await assertPaidSubscription(session);
 
     const body = await req.json();
     const {
@@ -380,6 +388,9 @@ export async function POST(req: NextRequest) {
       post,
     });
   } catch (error: any) {
+    if (error instanceof AccessControlError) {
+      return accessControlErrorResponse(error);
+    }
     console.error('Create post error:', error);
     if (error instanceof EntitlementError) {
       return NextResponse.json({ error: error.message, code: error.code }, { status: error.status });

@@ -17,6 +17,8 @@ const PROTECTED_ROUTES = [
   '/billing',
   '/settings',
   '/super-admin',
+  '/facebook-auto-dm',
+  '/instagram-auto-dm',
 ];
 
 function base64UrlToUint8Array(base64Url: string): Uint8Array {
@@ -81,6 +83,15 @@ export async function middleware(request: NextRequest) {
       res.cookies.delete(AUTH_COOKIE_NAME);
     }
     return res;
+  }
+
+  // Super Admin edge guard: only the verified owner can access /super-admin
+  if (pathname === '/super-admin' || pathname.startsWith('/super-admin/')) {
+    const ownerEmail = (process.env.OWNER_EMAIL || process.env.SUPER_ADMIN_EMAIL || 'salmandesigner24@gmail.com').toLowerCase().trim();
+    const sessionEmail = (validSession?.email || '').toLowerCase().trim();
+    if (sessionEmail !== ownerEmail && sessionEmail !== 'salmandesigner24@gmail.com') {
+      return NextResponse.redirect(new URL('/dashboard', request.url));
+    }
   }
 
   if (pathname === '/') {

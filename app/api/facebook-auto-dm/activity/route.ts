@@ -1,11 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
 import prisma from '@/lib/prisma';
+import { assertPaidSubscription, accessControlErrorResponse, AccessControlError } from '@/lib/access-control';
 
 export async function GET(req: NextRequest) {
   try {
     const session = await getSession();
     if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+    await assertPaidSubscription(session);
 
     const executions = await prisma.facebookAutoDmExecution.findMany({
       where: { workspaceId: session.workspaceId },
@@ -19,6 +22,9 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({ executions });
   } catch (error) {
+    if (error instanceof AccessControlError) {
+      return accessControlErrorResponse(error);
+    }
     console.error('Failed to fetch Facebook auto DM activity:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }

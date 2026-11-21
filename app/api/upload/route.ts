@@ -3,6 +3,7 @@ import { getSession } from '@/lib/auth';
 import { uploadMediaAsset, resolveMediaAccessUrl } from '@/lib/storage/r2';
 import prisma from '@/lib/prisma';
 import { EntitlementError, assertCanUploadFile, recordUploadedBytes } from '@/lib/billing';
+import { assertPaidSubscription, accessControlErrorResponse, AccessControlError } from '@/lib/access-control';
 
 const ALLOWED_MIME_TYPES = [
   'image/jpeg',
@@ -25,6 +26,8 @@ export async function GET(req: NextRequest) {
     if (!session || !session.workspaceId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    await assertPaidSubscription(session);
 
     const { searchParams } = new URL(req.url);
     const type = searchParams.get('type'); // 'video' | 'image'
@@ -67,6 +70,9 @@ export async function GET(req: NextRequest) {
       mediaAssets: mediaWithUrls,
     });
   } catch (error: any) {
+    if (error instanceof AccessControlError) {
+      return accessControlErrorResponse(error);
+    }
     console.error('Fetch Media Assets Error:', error);
     return NextResponse.json(
       { error: error.message || 'Failed to fetch media assets' },
@@ -85,6 +91,8 @@ export async function POST(req: NextRequest) {
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    await assertPaidSubscription(session);
 
     const formData = await req.formData();
     const file = formData.get('file') as File | null;
@@ -167,6 +175,9 @@ export async function POST(req: NextRequest) {
       },
     });
   } catch (error: any) {
+    if (error instanceof AccessControlError) {
+      return accessControlErrorResponse(error);
+    }
     console.error('Upload Error:', error);
     if (error instanceof EntitlementError) {
       return NextResponse.json({ error: error.message, code: error.code }, { status: error.status });

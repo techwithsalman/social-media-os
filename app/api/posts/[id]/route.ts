@@ -5,6 +5,7 @@ import { getSession } from '@/lib/auth';
 import { PublishingEngine } from '@/lib/queue/publisher';
 import { WORKSPACE_TIMEZONE, zonedDateTimeToUtcDate } from '@/lib/timezone';
 import { EntitlementError, assertCanCreateBillablePost, recordPostUsage } from '@/lib/billing';
+import { assertPaidSubscription, accessControlErrorResponse, AccessControlError } from '@/lib/access-control';
 import { validateWorkspacePostTargets } from '@/lib/social-account-validation';
 import { resolveMediaAccessUrl } from '@/lib/storage/r2';
 import { deletePostAndAssociatedMedia } from '@/lib/storage/r2-cleanup';
@@ -49,6 +50,8 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    await assertPaidSubscription(session);
+
     const post = await prisma.contentPost.findUnique({
       where: { id: params.id, workspaceId: session.workspaceId },
       include: {
@@ -77,6 +80,9 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
 
     return NextResponse.json({ post });
   } catch (error: any) {
+    if (error instanceof AccessControlError) {
+      return accessControlErrorResponse(error);
+    }
     return NextResponse.json({ error: error.message || 'Error fetching post' }, { status: 500 });
   }
 }
@@ -88,6 +94,8 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    await assertPaidSubscription(session);
 
     const existingPost = await prisma.contentPost.findUnique({
       where: { id: params.id, workspaceId: session.workspaceId },
@@ -237,6 +245,9 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
       post,
     });
   } catch (error: any) {
+    if (error instanceof AccessControlError) {
+      return accessControlErrorResponse(error);
+    }
     console.error('Update post error:', error);
     if (error instanceof EntitlementError) {
       return NextResponse.json({ error: error.message, code: error.code }, { status: error.status });
@@ -252,6 +263,8 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    await assertPaidSubscription(session);
 
     const { status } = await req.json();
     if (status !== 'CANCELLED') {
@@ -290,6 +303,9 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
       post: updatedPost,
     });
   } catch (error: any) {
+    if (error instanceof AccessControlError) {
+      return accessControlErrorResponse(error);
+    }
     return NextResponse.json({ error: error.message || 'Error updating post' }, { status: 500 });
   }
 }
@@ -301,6 +317,8 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    await assertPaidSubscription(session);
 
     const result = await deletePostAndAssociatedMedia(params.id, session.workspaceId);
 
@@ -317,6 +335,9 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
       mediaCleanup: result.mediaCleanup,
     });
   } catch (error: any) {
+    if (error instanceof AccessControlError) {
+      return accessControlErrorResponse(error);
+    }
     return NextResponse.json({ error: error.message || 'Error deleting post' }, { status: 500 });
   }
 }

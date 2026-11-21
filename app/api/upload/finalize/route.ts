@@ -3,6 +3,7 @@ import { getSession } from '@/lib/auth';
 import prisma from '@/lib/prisma';
 import { recordUploadedBytes } from '@/lib/billing';
 import { resolveMediaAccessUrl } from '@/lib/storage/r2';
+import { assertPaidSubscription, accessControlErrorResponse, AccessControlError } from '@/lib/access-control';
 
 export async function POST(req: NextRequest) {
   try {
@@ -10,6 +11,8 @@ export async function POST(req: NextRequest) {
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    await assertPaidSubscription(session);
 
     const body = await req.json();
     const { objectKey, filename, mimeType, size, thumbnailKey, duration } = body;
@@ -78,6 +81,9 @@ export async function POST(req: NextRequest) {
       },
     });
   } catch (error: any) {
+    if (error instanceof AccessControlError) {
+      return accessControlErrorResponse(error);
+    }
     console.error('Finalize Upload Error:', error);
     return NextResponse.json(
       { error: error.message || 'Failed to finalize media upload' },

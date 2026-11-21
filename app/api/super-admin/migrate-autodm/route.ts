@@ -1,15 +1,11 @@
 import { NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
+import prisma from '@/lib/prisma';
+import { requireSuperAdmin, adminErrorResponse } from '@/lib/super-admin';
 
 export async function POST(req: Request) {
   try {
-    const authHeader = req.headers.get('Authorization');
-    if (authHeader !== 'Bearer AUTO_DM_SECURE_MIGRATE_123') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    await requireSuperAdmin();
 
-    const prisma = new PrismaClient();
-    
     const check: any = await prisma.$queryRaw`
         SELECT column_name 
         FROM information_schema.columns 
@@ -21,9 +17,12 @@ export async function POST(req: Request) {
     }
 
     await prisma.$executeRawUnsafe(`ALTER TABLE "OAuthToken" ADD COLUMN "autoDmAccessToken" TEXT;`);
-    
+
     return NextResponse.json({ status: 'MIGRATED', message: 'Column autoDmAccessToken successfully added.' });
   } catch (error) {
+    if ((error as any)?.status) {
+      return adminErrorResponse(error);
+    }
     console.error('Migration failed:', error);
     return NextResponse.json({ error: 'Migration failed', details: String(error) }, { status: 500 });
   }

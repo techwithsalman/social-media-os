@@ -1,11 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
 import prisma from '@/lib/prisma';
+import { assertPaidSubscription, accessControlErrorResponse, AccessControlError } from '@/lib/access-control';
 
 export async function GET(req: NextRequest) {
   try {
     const session = await getSession();
     if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    await assertPaidSubscription(session);
 
     const rules = await prisma.facebookAutoDmRule.findMany({
       where: { workspaceId: session.workspaceId },
@@ -36,6 +38,9 @@ export async function GET(req: NextRequest) {
       }
     });
   } catch (error) {
+    if (error instanceof AccessControlError) {
+      return accessControlErrorResponse(error);
+    }
     console.error('Failed to fetch Facebook auto DM rules:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
@@ -45,6 +50,7 @@ export async function POST(req: NextRequest) {
   try {
     const session = await getSession();
     if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    await assertPaidSubscription(session);
 
     const body = await req.json();
     const { name, socialAccountId, postId, keyword, matchType, message, buttonLabel, destinationUrl, enabled } = body;
@@ -83,6 +89,9 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(rule);
   } catch (error) {
+    if (error instanceof AccessControlError) {
+      return accessControlErrorResponse(error);
+    }
     console.error('Failed to create Facebook auto DM rule:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
@@ -92,6 +101,7 @@ export async function PATCH(req: NextRequest) {
   try {
     const session = await getSession();
     if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    await assertPaidSubscription(session);
 
     const body = await req.json();
     const { id, enabled } = body;
@@ -114,6 +124,7 @@ export async function DELETE(req: NextRequest) {
   try {
     const session = await getSession();
     if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    await assertPaidSubscription(session);
 
     const { searchParams } = new URL(req.url);
     const id = searchParams.get('id');
@@ -126,6 +137,9 @@ export async function DELETE(req: NextRequest) {
 
     return NextResponse.json({ success: true, count: rule.count });
   } catch (error) {
+    if (error instanceof AccessControlError) {
+      return accessControlErrorResponse(error);
+    }
     console.error('Failed to delete Facebook auto DM rule:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }

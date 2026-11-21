@@ -4,7 +4,8 @@ import { getSession } from '@/lib/auth';
 import { platformRegistry, SocialPlatformType } from '@/integrations';
 import { encryptToken } from '@/lib/crypto';
 import { DEMO_SOCIAL_ACCOUNT_BY_PLATFORM, SupportedPlatformId } from '@/lib/platforms';
-import { EntitlementError } from '@/lib/billing';
+import { EntitlementError, assertCanConnectSocialAccount } from '@/lib/billing';
+import { assertPaidSubscription, accessControlErrorResponse, AccessControlError } from '@/lib/access-control';
 import { checkPlanLimit, PlanLimitError, createPlanLimitResponse } from '@/lib/billing/plan-limits';
 import { isMetaPlatform, isRealApiMode } from '@/lib/meta-token-service';
 
@@ -15,11 +16,15 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    await assertPaidSubscription(session);
+
     const { platform } = await req.json();
 
     if (!platform) {
       return NextResponse.json({ error: 'Platform is required' }, { status: 400 });
     }
+
+    await assertCanConnectSocialAccount(session.workspaceId);
 
     const platformId = platform as SocialPlatformType;
     if (isRealApiMode() && isMetaPlatform(platformId)) {
@@ -108,6 +113,9 @@ export async function POST(req: NextRequest) {
       account,
     });
   } catch (error: any) {
+    if (error instanceof AccessControlError) {
+      return accessControlErrorResponse(error);
+    }
     console.error('Mock connect error:', error);
     if (error instanceof PlanLimitError) {
       return createPlanLimitResponse(error);
