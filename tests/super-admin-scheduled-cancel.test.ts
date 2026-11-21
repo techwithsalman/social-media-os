@@ -155,7 +155,7 @@ async function runSuite() {
                 platform: 'YOUTUBE',
                 name: 'Tech With Salman',
                 username: '@Tech With Salman',
-                platformAccountId: 'UC_tech_salman',
+                platformAccountId: 'UCBnZGCVHvAdpgxAmofMWMIA',
               },
             },
           ],
@@ -186,7 +186,7 @@ async function runSuite() {
                 platform: 'YOUTUBE',
                 name: 'Beyond History',
                 username: '@Beyond History',
-                platformAccountId: 'UC_beyond_history',
+                platformAccountId: 'UCIfCPF9nczFDWt13KradQSw',
               },
             },
             {
@@ -368,7 +368,7 @@ async function runSuite() {
               platform: 'YOUTUBE',
               name: 'Sheru Bhai Official',
               username: '@SheruBhaiOfficial',
-              platformAccountId: 'UC_sheru_123',
+              platformAccountId: 'UC0YEctuSxrrTusjvr6T0weQ',
             },
           },
         ],
@@ -390,7 +390,7 @@ async function runSuite() {
                     platform: 'YOUTUBE',
                     name: 'Sheru Bhai Official',
                     username: '@SheruBhaiOfficial',
-                    platformAccountId: 'UC_sheru_123',
+                    platformAccountId: 'UC0YEctuSxrrTusjvr6T0weQ',
                   },
                 },
               ],
@@ -747,27 +747,77 @@ async function runSuite() {
     // -------------------------------------------------------------------------
 
     await testCase('Matches protected YouTube channels by actual Channel ID and env variable', () => {
-      // Direct channel ID matching via env
+      // 1. All 4 canonical verified channel IDs must be recognized as protected
+      const ch1 = matchProtectedYouTubeChannel({
+        platform: 'YOUTUBE',
+        platformAccountId: 'UCBnZGCVHvAdpgxAmofMWMIA',
+        name: 'Tech With Salman',
+        username: '@Tech With Salman',
+      });
+      assert.strictEqual(ch1.isProtected, true);
+      assert.strictEqual(ch1.channel?.displayName, 'Tech With Salman');
+      assert.ok(ch1.matchReason?.includes('UCBnZGCVHvAdpgxAmofMWMIA'));
+
+      const ch2 = matchProtectedYouTubeChannel({
+        platform: 'YOUTUBE',
+        platformAccountId: 'UCIfCPF9nczFDWt13KradQSw',
+        name: 'Beyond History',
+        username: '@Beyond History',
+      });
+      assert.strictEqual(ch2.isProtected, true);
+      assert.strictEqual(ch2.channel?.displayName, 'Beyond History');
+      assert.ok(ch2.matchReason?.includes('UCIfCPF9nczFDWt13KradQSw'));
+
+      const ch3 = matchProtectedYouTubeChannel({
+        platform: 'YOUTUBE',
+        platformAccountId: 'UC0YEctuSxrrTusjvr6T0weQ',
+        name: 'Sheru Bhai Official',
+        username: '@SheruBhaiOfficial',
+      });
+      assert.strictEqual(ch3.isProtected, true);
+      assert.strictEqual(ch3.channel?.displayName, 'Sheru Bhai Official');
+      assert.ok(ch3.matchReason?.includes('UC0YEctuSxrrTusjvr6T0weQ'));
+
+      const ch4 = matchProtectedYouTubeChannel({
+        platform: 'YOUTUBE',
+        platformAccountId: 'UCWYHIx472E94uiSgoMmpsUQ',
+        name: 'VEXORA',
+        username: '@vexora',
+      });
+      assert.strictEqual(ch4.isProtected, true);
+      assert.strictEqual(ch4.channel?.displayName, 'VEXORA');
+      assert.ok(ch4.matchReason?.includes('UCWYHIx472E94uiSgoMmpsUQ'));
+
+      // 2. Conflicting Channel ID Guard: An unapproved channel ID CANNOT spoof protection using an approved name
+      const spoof1 = matchProtectedYouTubeChannel({
+        platform: 'YOUTUBE',
+        platformAccountId: 'UC_unapproved_spoof_1',
+        name: 'Tech With Salman',
+        username: '@TechWithSalman',
+      });
+      assert.strictEqual(spoof1.isProtected, false, 'Conflicting channel ID must NOT be protected even if name matches');
+      assert.ok(spoof1.matchReason?.includes('Unapproved Channel ID'));
+
+      const spoof2 = matchProtectedYouTubeChannel({
+        platform: 'YOUTUBE',
+        platformAccountId: 'UC_unapproved_spoof_2',
+        name: 'VEXORA Official',
+        username: '@vexora',
+      });
+      assert.strictEqual(spoof2.isProtected, false, 'Conflicting channel ID must NOT be protected even if username matches');
+
+      // 3. Environment variable APPROVED_YOUTUBE_CHANNEL_IDS matching
       const origEnv = process.env.APPROVED_YOUTUBE_CHANNEL_IDS;
       try {
-        process.env.APPROVED_YOUTUBE_CHANNEL_IDS = 'UC_custom_salman_channel,UC_custom_beyond_history';
+        process.env.APPROVED_YOUTUBE_CHANNEL_IDS = 'UCBnZGCVHvAdpgxAmofMWMIA,UCIfCPF9nczFDWt13KradQSw,UC0YEctuSxrrTusjvr6T0weQ,UCWYHIx472E94uiSgoMmpsUQ';
 
-        const match1 = matchProtectedYouTubeChannel({
+        const envMatch = matchProtectedYouTubeChannel({
           platform: 'YOUTUBE',
-          platformAccountId: 'UC_custom_salman_channel',
-          name: 'Some Channel Title',
-          username: 'custom_user',
+          platformAccountId: 'UCBnZGCVHvAdpgxAmofMWMIA',
+          name: 'Renamed Channel Title',
+          username: 'custom_handle',
         });
-        assert.strictEqual(match1.isProtected, true);
-        assert.ok(match1.matchReason?.includes('UC_custom_salman_channel'));
-
-        const match2 = matchProtectedYouTubeChannel({
-          platform: 'YOUTUBE',
-          platformAccountId: 'UC_unapproved_channel',
-          name: 'Unapproved Channel',
-          username: 'unapproved',
-        });
-        assert.strictEqual(match2.isProtected, false);
+        assert.strictEqual(envMatch.isProtected, true);
       } finally {
         process.env.APPROVED_YOUTUBE_CHANNEL_IDS = origEnv;
       }
@@ -870,7 +920,7 @@ async function runSuite() {
                 platform: 'YOUTUBE',
                 name: 'VEXORA',
                 username: '@vexora',
-                platformAccountId: 'UC_vexora_official',
+                platformAccountId: 'UCWYHIx472E94uiSgoMmpsUQ',
               },
             },
             {

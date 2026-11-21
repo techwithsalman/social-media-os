@@ -13,6 +13,7 @@ export const APPROVED_YOUTUBE_CHANNELS: ProtectedChannelDef[] = [
     handle: '@Tech With Salman',
     normalizedKeys: ['techwithsalman', 'techwithsalmanonline'],
     knownAccountIds: [
+      'UCBnZGCVHvAdpgxAmofMWMIA',
       ...(process.env.YOUTUBE_CHANNEL_ID_TECH_WITH_SALMAN ? [process.env.YOUTUBE_CHANNEL_ID_TECH_WITH_SALMAN.trim()] : []),
     ],
   },
@@ -22,6 +23,7 @@ export const APPROVED_YOUTUBE_CHANNELS: ProtectedChannelDef[] = [
     handle: '@Beyond History',
     normalizedKeys: ['beyondhistory'],
     knownAccountIds: [
+      'UCIfCPF9nczFDWt13KradQSw',
       ...(process.env.YOUTUBE_CHANNEL_ID_BEYOND_HISTORY ? [process.env.YOUTUBE_CHANNEL_ID_BEYOND_HISTORY.trim()] : []),
     ],
   },
@@ -31,6 +33,7 @@ export const APPROVED_YOUTUBE_CHANNELS: ProtectedChannelDef[] = [
     handle: '@Sheru Bhai Official',
     normalizedKeys: ['sherubhaiofficial', 'sherubhai'],
     knownAccountIds: [
+      'UC0YEctuSxrrTusjvr6T0weQ',
       ...(process.env.YOUTUBE_CHANNEL_ID_SHERU_BHAI ? [process.env.YOUTUBE_CHANNEL_ID_SHERU_BHAI.trim()] : []),
     ],
   },
@@ -40,6 +43,7 @@ export const APPROVED_YOUTUBE_CHANNELS: ProtectedChannelDef[] = [
     handle: '@VEXORA',
     normalizedKeys: ['vexora'],
     knownAccountIds: [
+      'UCWYHIx472E94uiSgoMmpsUQ',
       ...(process.env.YOUTUBE_CHANNEL_ID_VEXORA ? [process.env.YOUTUBE_CHANNEL_ID_VEXORA.trim()] : []),
     ],
   },
@@ -51,7 +55,9 @@ export function normalizeKey(str?: string | null): string {
 }
 
 /**
- * Accurately identify if a connected social account matches one of the 4 protected YouTube channels
+ * Accurately identify if a connected social account matches one of the 4 protected YouTube channels.
+ * Prioritizes exact Channel ID matching; display name/handle is only a fallback when Channel ID is absent,
+ * and cannot override an unapproved/conflicting Channel ID.
  */
 export function matchProtectedYouTubeChannel(account?: {
   platform?: string | null;
@@ -68,20 +74,28 @@ export function matchProtectedYouTubeChannel(account?: {
     return { isProtected: false };
   }
 
+  const accountId = (account.platformAccountId || '').trim();
   const normName = normalizeKey(account.name);
   const normUser = normalizeKey(account.username);
-  const accountId = (account.platformAccountId || '').trim();
 
-  // 0. Check global environment variable list of approved channel IDs if provided
+  // Check global environment variable list of approved channel IDs if provided
   const envChannelIds = (process.env.APPROVED_YOUTUBE_CHANNEL_IDS || '')
     .split(',')
     .map((s) => s.trim())
     .filter(Boolean);
 
+  // 1. PRIORITY 1: Exact YouTube Channel ID matching (Authoritative)
+  for (const channel of APPROVED_YOUTUBE_CHANNELS) {
+    if (accountId && channel.knownAccountIds.includes(accountId)) {
+      return { isProtected: true, channel, matchReason: `Matched Channel ID: ${accountId}` };
+    }
+  }
+
   if (accountId && envChannelIds.includes(accountId)) {
+    const matchingChannel = APPROVED_YOUTUBE_CHANNELS.find((c) => c.knownAccountIds.includes(accountId));
     return {
       isProtected: true,
-      channel: {
+      channel: matchingChannel || {
         id: 'env_whitelisted',
         displayName: account.name || 'Protected YouTube Channel',
         handle: account.username || account.name || 'YouTube',
@@ -92,19 +106,24 @@ export function matchProtectedYouTubeChannel(account?: {
     };
   }
 
-  for (const channel of APPROVED_YOUTUBE_CHANNELS) {
-    // 1. Match by known Account/Channel ID if configured
-    if (accountId && channel.knownAccountIds.includes(accountId)) {
-      return { isProtected: true, channel, matchReason: `Matched Channel ID: ${accountId}` };
-    }
+  // 2. CONFLICTING CHANNEL ID GUARD:
+  // If this account has an explicit, non-empty YouTube Channel ID that does NOT match any approved channel,
+  // display-name/handle matching MUST NOT override it (prevents display-name spoofing by unapproved channels).
+  if (accountId) {
+    return {
+      isProtected: false,
+      matchReason: `Unapproved Channel ID: ${accountId} (display-name match rejected for conflicting channel ID)`,
+    };
+  }
 
-    // 2. Match by normalized name or handle
+  // 3. PRIORITY 3: Fallback (Only when accountId is missing/empty, e.g. legacy/mock data without Channel ID)
+  for (const channel of APPROVED_YOUTUBE_CHANNELS) {
     for (const key of channel.normalizedKeys) {
       if (normName === key || normUser === key) {
-        return { isProtected: true, channel, matchReason: `Matched handle/key: ${key}` };
+        return { isProtected: true, channel, matchReason: `Matched handle/key fallback: ${key}` };
       }
       if (normName.includes(key) || normUser.includes(key)) {
-        return { isProtected: true, channel, matchReason: `Contains channel key: ${key}` };
+        return { isProtected: true, channel, matchReason: `Contains channel key fallback: ${key}` };
       }
     }
   }
