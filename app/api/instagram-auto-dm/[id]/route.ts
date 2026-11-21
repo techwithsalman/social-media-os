@@ -2,11 +2,13 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
 import prisma from '@/lib/prisma';
 import { checkPlanLimit, PlanLimitError, createPlanLimitResponse } from '@/lib/billing/plan-limits';
+import { assertPaidSubscription, accessControlErrorResponse, AccessControlError } from '@/lib/access-control';
 
 export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
   try {
     const session = await getSession();
     if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    await assertPaidSubscription(session);
 
     const ruleId = params.id;
     const body = await req.json();
@@ -51,6 +53,9 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
 
     return NextResponse.json({ success: true, rule });
   } catch (error: any) {
+    if (error instanceof AccessControlError) {
+      return accessControlErrorResponse(error);
+    }
     console.error(error);
     return NextResponse.json({ error: 'Failed to update rule' }, { status: 500 });
   }
@@ -60,6 +65,7 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
   try {
     const session = await getSession();
     if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    await assertPaidSubscription(session);
 
     const ruleId = params.id;
     
@@ -77,6 +83,9 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
 
     return NextResponse.json({ success: true });
   } catch (error: any) {
+    if (error instanceof AccessControlError) {
+      return accessControlErrorResponse(error);
+    }
     console.error(error);
     return NextResponse.json({ error: 'Failed to delete rule' }, { status: 500 });
   }

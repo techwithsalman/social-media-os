@@ -4,6 +4,7 @@ import { getSession } from '@/lib/auth';
 import { PublishingEngine } from '@/lib/queue/publisher';
 import prisma from '@/lib/prisma';
 import { EntitlementError, assertCanCreateBillablePost, assertWorkspaceActive, recordPostUsage } from '@/lib/billing';
+import { assertPaidSubscription, accessControlErrorResponse, AccessControlError } from '@/lib/access-control';
 
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
   if (!verifyCsrfOrigin(req)) return NextResponse.json({ error: 'CSRF token missing or invalid' }, { status: 403 });
@@ -12,6 +13,8 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    await assertPaidSubscription(session);
 
     const post = await prisma.contentPost.findUnique({
       where: { id: params.id, workspaceId: session.workspaceId },
@@ -39,6 +42,9 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       result,
     });
   } catch (error: any) {
+    if (error instanceof AccessControlError) {
+      return accessControlErrorResponse(error);
+    }
     console.error('Publish post error:', error);
     if (error instanceof EntitlementError) {
       return NextResponse.json({ error: error.message, code: error.code }, { status: error.status });

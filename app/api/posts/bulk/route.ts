@@ -9,6 +9,7 @@ import {
 } from '@/lib/billing';
 import { checkPlanLimit, PlanLimitError, createPlanLimitResponse } from '@/lib/billing/plan-limits';
 import { SUPPORTED_PLATFORM_IDS } from '@/lib/platforms';
+import { assertPaidSubscription, accessControlErrorResponse, AccessControlError } from '@/lib/access-control';
 
 export async function POST(req: Request) {
   try {
@@ -16,6 +17,8 @@ export async function POST(req: Request) {
     if (!session || !session.workspaceId) {
       return NextResponse.json({ error: 'Workspace required' }, { status: 400 });
     }
+
+    await assertPaidSubscription(session);
 
     const { items } = await req.json();
     if (!Array.isArray(items) || items.length === 0) {
@@ -302,6 +305,9 @@ export async function POST(req: Request) {
       posts: successfulResults.map((r) => r.post?.id),
     });
   } catch (error: any) {
+    if (error instanceof AccessControlError) {
+      return accessControlErrorResponse(error);
+    }
     console.error('[BULK_POSTS] CREATE_FAILED', error instanceof Error ? error.stack : error);
     return NextResponse.json(
       { error: error.message || 'Failed to create bulk posts' },

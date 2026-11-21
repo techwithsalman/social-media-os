@@ -91,6 +91,12 @@ export function UserDetailClient({ detail, plans }: { detail: any, plans: any[] 
             </div>
           </div>
           <div className="flex items-center gap-3">
+            <Link
+              href={`/super-admin/usage/${detail.user.id}`}
+              className="px-4 py-2 rounded-xl bg-amber-500/15 text-amber-300 border border-amber-500/30 font-bold text-sm hover:bg-amber-500/25 transition-all inline-flex items-center gap-1.5"
+            >
+              <span>Usage & Storage</span>
+            </Link>
             {isSuspended ? (
               <button
                 onClick={() => handleAction('unsuspend')}

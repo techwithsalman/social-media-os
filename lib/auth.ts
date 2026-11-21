@@ -2,6 +2,7 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { cookies } from 'next/headers';
 import prisma from './prisma';
+import { isOwnerEmail } from './owner';
 
 const AUTH_SECRET = process.env.AUTH_SECRET || 'social-media-os-dev-super-secure-session-secret-key-32chars';
 export const AUTH_COOKIE_NAME = 'smos_session_token';
@@ -91,51 +92,23 @@ export async function getCurrentUser() {
       return null;
     }
 
-    const targetSuperAdmin = process.env.SUPER_ADMIN_EMAIL;
-    if (targetSuperAdmin && user.email === targetSuperAdmin && user.systemRole !== 'SUPER_ADMIN') {
-      await prisma.user.update({
-        where: { id: user.id },
-        data: { systemRole: 'SUPER_ADMIN' }
-      });
-      user.systemRole = 'SUPER_ADMIN';
-    }
-
-    // One-time backfill for salmankhan03312545937@gmail.com
-    if (user.email === 'salmankhan03312545937@gmail.com') {
-      const workspace = user.workspaces[0]?.workspace;
-      if (workspace) {
-        const sub = await prisma.subscription.findFirst({
-          where: { workspaceId: workspace.id, source: 'MANUAL', planTier: 'STARTER' }
-        });
-        if (sub && !sub.currentPeriodEnd) {
-          const now = new Date();
-          const newEnd = new Date(sub.startedAt || now);
-          newEnd.setMonth(newEnd.getMonth() + 1);
-          
-          await prisma.subscription.update({
-            where: { id: sub.id },
-            data: { currentPeriodEnd: newEnd, currentPeriodStart: sub.startedAt || now }
-          });
-          
-          const existingTx = await prisma.paymentTransaction.findFirst({
-            where: { workspaceId: workspace.id, provider: 'MANUAL' }
-          });
-          
-          if (!existingTx) {
-            await prisma.paymentTransaction.create({
-              data: {
-                workspaceId: workspace.id,
-                planId: sub.planId,
-                amount: 24, // $24
-                currency: 'USD',
-                provider: 'MANUAL',
-                status: 'PAID',
-                paidAt: sub.startedAt || now,
-                notes: 'Backfilled from previous STARTER assignment'
-              }
-            });
-          }
-        }
+    // Enforce permanent Super Admin role on verified canonical owner
+    if (isOwnerEmail(user.email)) {
+      if (user.systemRole !== 'SUPER_ADMIN') {
+        await prisma.user.update({
+          where: { id: user.id },
+          data: { systemRole: 'SUPER_ADMIN' },
+        }).catch(() => {});
+        user.systemRole = 'SUPER_ADMIN';
+      }
+    } else {
+      const targetSuperAdmin = process.env.SUPER_ADMIN_EMAIL;
+      if (targetSuperAdmin && user.email === targetSuperAdmin && user.systemRole !== 'SUPER_ADMIN') {
+        await prisma.user.update({
+          where: { id: user.id },
+          data: { systemRole: 'SUPER_ADMIN' },
+        }).catch(() => {});
+        user.systemRole = 'SUPER_ADMIN';
       }
     }
 
@@ -156,8 +129,9 @@ export async function getCurrentUser() {
     };
   } catch (error) {
     const emailPrefix = session.email.split('@')[0] || 'User';
+    const isOwner = isOwnerEmail(session.email);
     const targetSuperAdmin = process.env.SUPER_ADMIN_EMAIL;
-    const isSuperAdmin = Boolean(targetSuperAdmin && session.email === targetSuperAdmin);
+    const isSuperAdmin = isOwner || Boolean(targetSuperAdmin && session.email === targetSuperAdmin);
     const now = new Date();
     const fallbackWorkspace = {
       id: session.workspaceId,

@@ -58,13 +58,22 @@ export default async function SuperAdminOverviewPage() {
             System-wide SaaS, usage, billing, publishing, and workspace health across Social Media OS.
           </p>
         </div>
-        <Link
-          href="/super-admin/users"
-          className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 text-amber-200 text-sm font-black"
-        >
-          <span>Manage Users</span>
-          <ArrowUpRight className="w-4 h-4" />
-        </Link>
+        <div className="flex items-center gap-3">
+          <Link
+            href="/super-admin/usage"
+            className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 text-amber-200 text-sm font-black"
+          >
+            <span>Usage & Storage</span>
+            <ArrowUpRight className="w-4 h-4" />
+          </Link>
+          <Link
+            href="/super-admin/users"
+            className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-[#140606] hover:bg-[#251010] border border-[#2a1010] text-neutral-300 text-sm font-bold"
+          >
+            <span>Manage Users</span>
+            <ArrowUpRight className="w-4 h-4" />
+          </Link>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5">

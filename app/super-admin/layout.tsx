@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation';
 import { getCurrentUser } from '@/lib/auth';
+import { isOwnerUser } from '@/lib/owner';
 import { SuperAdminShell } from '@/components/layout/SuperAdminShell';
 
 export default async function SuperAdminLayout({
@@ -13,7 +14,8 @@ export default async function SuperAdminLayout({
     redirect('/login?session_invalid=1&redirect=/super-admin');
   }
 
-  if (user.systemRole !== 'SUPER_ADMIN') {
+  // Strict check: Only the verified owner has Super Admin access
+  if (!isOwnerUser(user)) {
     redirect('/dashboard');
   }
 

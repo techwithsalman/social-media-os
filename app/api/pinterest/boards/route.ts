@@ -4,6 +4,7 @@ import prisma from '@/lib/prisma';
 import { getPinterestBoards } from '@/lib/pinterest-oauth';
 import { decryptToken } from '@/lib/crypto';
 import { PinterestAdapter } from '@/integrations/pinterest';
+import { assertPaidSubscription, accessControlErrorResponse, AccessControlError } from '@/lib/access-control';
 
 export const dynamic = 'force-dynamic';
 
@@ -13,6 +14,8 @@ export async function GET(req: NextRequest) {
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    await assertPaidSubscription(session);
 
     const { searchParams } = new URL(req.url);
     const accountId = searchParams.get('accountId');
@@ -72,6 +75,9 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({ boards: allBoards });
   } catch (error: any) {
+    if (error instanceof AccessControlError) {
+      return accessControlErrorResponse(error);
+    }
     console.error('[Pinterest Boards Error]:', error);
     return NextResponse.json({ error: 'Failed to fetch boards', message: error.message }, { status: 500 });
   }

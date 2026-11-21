@@ -13,6 +13,7 @@ import {
   setCurrentPostUsage,
 assignManualSubscription, renewManualSubscription, downgradeToFree } from '@/lib/billing';
 import { adminErrorResponse, requireSuperAdmin } from '@/lib/super-admin';
+import { isOwnerEmail } from '@/lib/owner';
 
 function addDuration(duration: string) {
   const expiresAt = new Date();
@@ -146,6 +147,9 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
         details: `${admin.user.email} renewed ${result.plan.code} for 1 month.`,
       });
     } else if (body.action === 'downgrade_free') {
+      if (isOwnerEmail(target.detail.user.email)) {
+        return NextResponse.json({ error: 'Cannot downgrade the canonical SaaS owner account.' }, { status: 400 });
+      }
       await downgradeToFree(workspaceId, admin.user.id);
       await logActivity({
         workspaceId,
@@ -203,6 +207,9 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
         metadata: { planCode: plan.code, trialEndsAt: trialEndsAt.toISOString() },
       });
     } else if (body.action === 'suspend') {
+      if (isOwnerEmail(target.detail.user.email)) {
+        return NextResponse.json({ error: 'Cannot suspend the canonical SaaS owner account.' }, { status: 400 });
+      }
       await prisma.$transaction([
         prisma.workspace.update({
           where: { id: workspaceId },

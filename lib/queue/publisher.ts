@@ -319,6 +319,20 @@ export class PublishingEngine {
               },
             });
             console.log(`[RECONCILE] Parent ContentPost ${pPost.contentPostId} updated to ${finalStatus}`);
+
+            // Safe automatic R2 media asset cleanup check upon reaching confirmed published or draft state
+            if (pPost.contentPost.mediaAssetId && (finalStatus === 'PUBLISHED' || finalStatus === 'INBOX_DRAFT')) {
+              try {
+                const cleanupResult = await safeCleanupMediaAsset(pPost.contentPost.mediaAssetId, pPost.contentPost.workspaceId);
+                if (cleanupResult.action === 'DELETED') {
+                  console.log(
+                    `[RECONCILE] Post ${pPost.contentPostId} triggered automatic R2 cleanup for asset ${pPost.contentPost.mediaAssetId}`
+                  );
+                }
+              } catch (cleanupErr) {
+                console.error(`[RECONCILE] Non-critical error during post-reconciliation R2 cleanup:`, cleanupErr);
+              }
+            }
           }
         }
       }

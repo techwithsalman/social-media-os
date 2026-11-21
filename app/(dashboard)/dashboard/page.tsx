@@ -2,6 +2,7 @@ import React from 'react';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { getCurrentUser } from '@/lib/auth';
+import { requirePaidAccessForPage } from '@/lib/access-control';
 import prisma from '@/lib/prisma';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PlatformIcon } from '@/components/ui/PlatformIcons';
@@ -22,10 +23,7 @@ import {
 } from 'lucide-react';
 
 export default async function DashboardPage() {
-  const user = await getCurrentUser();
-  if (!user || !user.activeWorkspace) {
-    redirect('/login?session_invalid=1');
-  }
+  const user = await requirePaidAccessForPage();
 
   const workspaceId = user.activeWorkspace.id;
   const workspaceTimezone = user.activeWorkspace.timezone || WORKSPACE_TIMEZONE;

@@ -1,6 +1,7 @@
 import { computePaymentStatus } from './billing';
 import prisma from './prisma';
 import { getPlans, getWorkspaceEntitlements, serializeEntitlements } from './billing';
+import { getStorageMetrics } from './storage/r2-storage-monitor';
 
 export function toIso(value: Date | null | undefined) {
   return value ? value.toISOString() : null;
@@ -36,6 +37,7 @@ export async function getAdminOverview() {
     recentUsers,
     recentActivity,
     reconnectionIssues,
+    storageMetrics,
   ] = await Promise.all([
     prisma.user.count(),
     prisma.user.count({ where: { status: 'ACTIVE' } }),
@@ -84,6 +86,7 @@ export async function getAdminOverview() {
     prisma.socialAccount.count({
       where: { status: { in: ['EXPIRED', 'NEEDS_RECONNECTION', 'DISCONNECTED'] } },
     }),
+    getStorageMetrics(),
   ]);
 
   return {
@@ -99,12 +102,19 @@ export async function getAdminOverview() {
       postsScheduled,
       failedPosts,
       mrr: 0,
-      storageUsedBytes: storageAggregate._sum.size || 0,
+      storageUsedBytes: storageMetrics.activeStorageBytes,
+      storageUsedMB: storageMetrics.activeStorageMB,
+      storageUsedGB: storageMetrics.activeStorageGB,
+      storagePercentageUsed: storageMetrics.percentageUsed,
+      storageWarningLevel: storageMetrics.warningLevel,
+      storageWarningMessage: storageMetrics.warningMessage,
+      storageSavedArchivedGB: storageMetrics.savedArchivedGB,
       activeSubscriptions,
       manualSubscriptions,
       complimentaryUsers,
       reconnectionIssues,
     },
+    storageMetrics,
     recentUsers: recentUsers.map((user) => ({
       ...user,
       createdAt: user.createdAt.toISOString(),

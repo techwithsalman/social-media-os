@@ -31,6 +31,24 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(2);
 
+  React.useEffect(() => {
+    const originalFetch = window.fetch;
+    window.fetch = async (...args) => {
+      const response = await originalFetch(...args);
+      if (
+        response.status === 402 &&
+        typeof window !== 'undefined' &&
+        !window.location.pathname.startsWith('/billing')
+      ) {
+        window.location.href = '/billing?required=1';
+      }
+      return response;
+    };
+    return () => {
+      window.fetch = originalFetch;
+    };
+  }, []);
+
   return (
     <div className="min-h-screen bg-[#070b14] text-neutral-100 flex">
       {/* Left Sidebar (w-72) */}

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getSession } from '@/lib/auth';
 import { EntitlementError, assertCanInviteTeamMember } from '@/lib/billing';
+import { assertPaidSubscription, accessControlErrorResponse, AccessControlError } from '@/lib/access-control';
 import { checkPlanLimit, PlanLimitError, createPlanLimitResponse } from '@/lib/billing/plan-limits';
 
 export async function GET() {
@@ -10,6 +11,8 @@ export async function GET() {
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    await assertPaidSubscription(session);
 
     const members = await prisma.workspaceMember.findMany({
       where: { workspaceId: session.workspaceId },
@@ -29,6 +32,9 @@ export async function GET() {
 
     return NextResponse.json({ members });
   } catch (error: any) {
+    if (error instanceof AccessControlError) {
+      return accessControlErrorResponse(error);
+    }
     return NextResponse.json({ error: error.message || 'Failed to fetch team' }, { status: 500 });
   }
 }
@@ -39,6 +45,8 @@ export async function POST(req: NextRequest) {
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    await assertPaidSubscription(session);
 
     const { email, role, firstName = 'Team', lastName = 'Member' } = await req.json();
 
@@ -96,6 +104,9 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ success: true, member });
   } catch (error: any) {
+    if (error instanceof AccessControlError) {
+      return accessControlErrorResponse(error);
+    }
     if (error instanceof EntitlementError) {
       return NextResponse.json({ error: error.message, code: error.code }, { status: error.status });
     }

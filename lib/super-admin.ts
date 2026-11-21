@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import prisma from './prisma';
-import { getSession } from './auth';
+import { getSession, SessionPayload } from './auth';
+import { isOwnerEmail } from './owner';
 
 export class AdminAccessError extends Error {
   status: number;
@@ -12,8 +13,8 @@ export class AdminAccessError extends Error {
   }
 }
 
-export async function requireSuperAdmin() {
-  const session = await getSession();
+export async function requireSuperAdmin(sessionOverride?: SessionPayload | null) {
+  const session = sessionOverride || (await getSession());
   if (!session) {
     throw new AdminAccessError('Unauthorized', 401);
   }
@@ -34,8 +35,19 @@ export async function requireSuperAdmin() {
     throw new AdminAccessError('Unauthorized', 401);
   }
 
+  // Strict: Only the canonical verified owner has Super Admin authority.
+  // Mere database role assignment is not sufficient to gain Super Admin privileges.
+  if (!isOwnerEmail(user.email)) {
+    throw new AdminAccessError('Forbidden: Only the verified owner has Super Admin access.', 403);
+  }
+
+  // Ensure owner always has systemRole === 'SUPER_ADMIN'
   if (user.systemRole !== 'SUPER_ADMIN') {
-    throw new AdminAccessError('Forbidden', 403);
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { systemRole: 'SUPER_ADMIN' },
+    }).catch(() => {});
+    user.systemRole = 'SUPER_ADMIN';
   }
 
   return { session, user };

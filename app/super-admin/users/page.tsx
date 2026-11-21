@@ -16,6 +16,15 @@ export default async function SuperAdminUsersPage() {
             Manage system users, workspaces, and plans.
           </p>
         </div>
+        <div className="flex items-center gap-3">
+          <Link
+            href="/super-admin/usage"
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 text-amber-200 text-sm font-bold transition-all"
+          >
+            <span>Usage & Storage Analytics</span>
+            <ChevronRight className="w-4 h-4" />
+          </Link>
+        </div>
       </div>
 
       <div className="bg-[#0f0505] border border-[#2a1010] rounded-2xl overflow-hidden">
@@ -77,13 +86,21 @@ export default async function SuperAdminUsersPage() {
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right">
-                    <Link
-                      href={`/super-admin/users/${user.id}`}
-                      className="inline-flex items-center gap-1.5 text-sm font-bold text-neutral-400 hover:text-red-400 transition-colors"
-                    >
-                      <span>Manage</span>
-                      <ChevronRight className="w-4 h-4" />
-                    </Link>
+                    <div className="flex items-center justify-end gap-2">
+                      <Link
+                        href={`/super-admin/usage/${user.id}`}
+                        className="inline-flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/20 transition-colors"
+                      >
+                        <span>Usage</span>
+                      </Link>
+                      <Link
+                        href={`/super-admin/users/${user.id}`}
+                        className="inline-flex items-center gap-1.5 text-sm font-bold text-neutral-400 hover:text-red-400 transition-colors"
+                      >
+                        <span>Manage</span>
+                        <ChevronRight className="w-4 h-4" />
+                      </Link>
+                    </div>
                   </td>
                 </tr>
               ))}

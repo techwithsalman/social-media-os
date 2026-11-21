@@ -1,5 +1,6 @@
 import prisma from './prisma';
 import { SUPPORTED_PLATFORM_IDS } from './platforms';
+import { isOwnerEmail } from './owner';
 
 export const PLAN_CODES = ['FREE', 'STARTER', 'PRO', 'AGENCY'] as const;
 export type PlanCode = (typeof PLAN_CODES)[number];
@@ -194,6 +195,11 @@ export async function getEffectivePlan(workspaceId: string, now = new Date()) {
         status: true,
         suspendedAt: true,
         suspendedReason: true,
+        members: {
+          select: {
+            user: { select: { email: true } },
+          },
+        },
       },
     }),
     prisma.planOverride.findFirst({
@@ -220,6 +226,19 @@ export async function getEffectivePlan(workspaceId: string, now = new Date()) {
 
   if (!workspace) {
     throw new EntitlementError('Workspace not found.', 'WORKSPACE_NOT_FOUND', 404);
+  }
+
+  // Canonical Owner Workspace: Guaranteed highest tier (AGENCY) with permanent full access
+  const isOwnerWorkspace = workspace.members?.some((m) => isOwnerEmail(m.user?.email));
+  if (isOwnerWorkspace) {
+    const agencyPlan = (await prisma.plan.findUnique({ where: { code: 'AGENCY' } })) || freePlan;
+    return {
+      workspace: { ...workspace, status: 'ACTIVE' },
+      plan: agencyPlan!,
+      source: 'OWNER_PERMANENT' as const,
+      subscription: null,
+      override: null,
+    };
   }
 
   if (activeOverride) {
@@ -339,11 +358,13 @@ export async function getWorkspaceEntitlements(workspaceId: string, now = new Da
     getActiveUsageCredits(workspaceId, now),
   ]);
 
+  const isOwner = effectivePlan.source === 'OWNER_PERMANENT';
+
   const limits = {
-    maxSocialAccounts: addCreditToLimit(effectivePlan.plan.maxSocialAccounts, activeCredits.totals.SOCIAL_ACCOUNTS),
-    monthlyPostLimit: addCreditToLimit(effectivePlan.plan.monthlyPostLimit, activeCredits.totals.POSTS),
-    maxTeamMembers: addCreditToLimit(effectivePlan.plan.maxTeamMembers, activeCredits.totals.TEAM_MEMBERS),
-    storageLimitMB: addCreditToLimit(effectivePlan.plan.storageLimitMB, activeCredits.totals.STORAGE_MB),
+    maxSocialAccounts: isOwner ? null : addCreditToLimit(effectivePlan.plan.maxSocialAccounts, activeCredits.totals.SOCIAL_ACCOUNTS),
+    monthlyPostLimit: isOwner ? null : addCreditToLimit(effectivePlan.plan.monthlyPostLimit, activeCredits.totals.POSTS),
+    maxTeamMembers: isOwner ? null : addCreditToLimit(effectivePlan.plan.maxTeamMembers, activeCredits.totals.TEAM_MEMBERS),
+    storageLimitMB: isOwner ? null : addCreditToLimit(effectivePlan.plan.storageLimitMB, activeCredits.totals.STORAGE_MB),
   };
 
   return {
@@ -354,12 +375,12 @@ export async function getWorkspaceEntitlements(workspaceId: string, now = new Da
     override: effectivePlan.override,
     limits,
     features: {
-      bulkUploadEnabled: effectivePlan.plan.bulkUploadEnabled,
-      analyticsEnabled: effectivePlan.plan.analyticsEnabled,
-      advancedAnalyticsEnabled: effectivePlan.plan.advancedAnalyticsEnabled,
-      schedulingEnabled: effectivePlan.plan.schedulingEnabled,
-      customCaptionsEnabled: effectivePlan.plan.customCaptionsEnabled,
-      prioritySupportEnabled: effectivePlan.plan.prioritySupportEnabled,
+      bulkUploadEnabled: isOwner ? true : effectivePlan.plan.bulkUploadEnabled,
+      analyticsEnabled: isOwner ? true : effectivePlan.plan.analyticsEnabled,
+      advancedAnalyticsEnabled: isOwner ? true : effectivePlan.plan.advancedAnalyticsEnabled,
+      schedulingEnabled: isOwner ? true : effectivePlan.plan.schedulingEnabled,
+      customCaptionsEnabled: isOwner ? true : effectivePlan.plan.customCaptionsEnabled,
+      prioritySupportEnabled: isOwner ? true : effectivePlan.plan.prioritySupportEnabled,
     },
     usage,
     credits: activeCredits.credits,
@@ -369,11 +390,24 @@ export async function getWorkspaceEntitlements(workspaceId: string, now = new Da
 export async function assertWorkspaceActive(workspaceId: string) {
   const workspace = await prisma.workspace.findUnique({
     where: { id: workspaceId },
-    select: { status: true, suspendedReason: true },
+    select: {
+      status: true,
+      suspendedReason: true,
+      members: {
+        select: {
+          user: { select: { email: true } },
+        },
+      },
+    },
   });
 
   if (!workspace) {
     throw new EntitlementError('Workspace not found.', 'WORKSPACE_NOT_FOUND', 404);
+  }
+
+  // Canonical owner's workspace can never be suspended or blocked
+  if (workspace.members?.some((m) => isOwnerEmail(m.user?.email))) {
+    return;
   }
 
   if (workspace.status === 'SUSPENDED') {

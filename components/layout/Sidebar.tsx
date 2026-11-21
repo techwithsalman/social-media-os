@@ -84,7 +84,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   const resolvedUser = user || hydratedUser;
   const resolvedWorkspace = workspace || hydratedWorkspace;
-  const isSuperAdmin = resolvedUser?.systemRole === 'SUPER_ADMIN';
+  const isSuperAdmin = Boolean(
+    resolvedUser?.email &&
+    resolvedUser.email.toLowerCase().trim() === 'salmandesigner24@gmail.com'
+  );
 
   const handleLogout = async () => {
     try {

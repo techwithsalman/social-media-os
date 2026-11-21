@@ -1,6 +1,7 @@
 import prisma from '../prisma';
 import { PublishingEngine } from './publisher';
 import { processScheduledMediaCleanup } from '../storage/r2-cleanup';
+import { enforceStorageSafeguards } from '../storage/r2-storage-monitor';
 
 /**
  * Worker that checks for scheduled posts that are due and triggers publishing.
@@ -100,9 +101,21 @@ export async function processDueScheduledPosts() {
     console.error('[Queue Worker] Non-critical error during maintenance media cleanup:', cleanupErr);
   }
 
+  // 4. Storage Safety & 10 GB Safeguard Check
+  let storageSafety = null;
+  try {
+    storageSafety = await enforceStorageSafeguards();
+    console.log(
+      `[Queue Worker] R2 Storage Health: ${storageSafety.metrics.activeStorageMB} MB used (${storageSafety.metrics.percentageUsed}% of 10 GB limit, Status: ${storageSafety.metrics.warningLevel})`
+    );
+  } catch (safeguardErr) {
+    console.error('[Queue Worker] Error checking R2 storage safeguards:', safeguardErr);
+  }
+
   return {
     processedCount: claimedCount,
     results,
     cleanupSummary,
+    storageSafety,
   };
 }

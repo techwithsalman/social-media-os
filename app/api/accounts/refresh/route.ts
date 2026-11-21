@@ -3,6 +3,7 @@ import prisma from '@/lib/prisma';
 import { getSession } from '@/lib/auth';
 import { decryptToken, encryptToken } from '@/lib/crypto';
 import { fetchTikTokUserInfo, refreshTikTokTokenWithLock, TikTokOAuthError } from '@/lib/tiktok-oauth';
+import { assertPaidSubscription, accessControlErrorResponse, AccessControlError } from '@/lib/access-control';
 
 export async function POST(req: NextRequest) {
   try {
@@ -10,6 +11,8 @@ export async function POST(req: NextRequest) {
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    await assertPaidSubscription(session);
 
     const body = await req.json().catch(() => ({}));
     const { accountId } = body;
@@ -133,6 +136,9 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ success: true, account: updated });
   } catch (error: any) {
+    if (error instanceof AccessControlError) {
+      return accessControlErrorResponse(error);
+    }
     console.error('[Account Refresh API Exception]:', error);
     return NextResponse.json({ error: error.message || 'Failed to refresh account' }, { status: 500 });
   }

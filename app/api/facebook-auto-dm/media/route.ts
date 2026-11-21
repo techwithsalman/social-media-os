@@ -3,11 +3,14 @@ import { getSession } from '@/lib/auth';
 import prisma from '@/lib/prisma';
 import { decryptToken } from '@/lib/crypto';
 import { buildMetaGraphUrl } from '@/lib/meta-token-service';
+import { assertPaidSubscription, accessControlErrorResponse, AccessControlError } from '@/lib/access-control';
 
 export async function GET(req: NextRequest) {
   try {
     const session = await getSession();
     if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+    await assertPaidSubscription(session);
 
     const accountId = req.nextUrl.searchParams.get('accountId');
     if (!accountId) {
@@ -68,6 +71,9 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({ media });
   } catch (error: any) {
+    if (error instanceof AccessControlError) {
+      return accessControlErrorResponse(error);
+    }
     console.error('[FB Media Fetch Error]', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }

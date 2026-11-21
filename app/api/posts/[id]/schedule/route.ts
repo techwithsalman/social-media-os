@@ -3,6 +3,7 @@ import { getSession } from '@/lib/auth';
 import prisma from '@/lib/prisma';
 import { WORKSPACE_TIMEZONE, zonedDateTimeToUtcDate } from '@/lib/timezone';
 import { EntitlementError, assertCanCreateBillablePost, recordPostUsage } from '@/lib/billing';
+import { assertPaidSubscription, accessControlErrorResponse, AccessControlError } from '@/lib/access-control';
 
 function parseScheduleDate(body: any, timezone: string) {
   if (body.scheduledDate || body.scheduledTime) {
@@ -31,6 +32,8 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    await assertPaidSubscription(session);
 
     const body = await req.json();
     const { timezone = WORKSPACE_TIMEZONE } = body;
@@ -80,6 +83,9 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       post,
     });
   } catch (error: any) {
+    if (error instanceof AccessControlError) {
+      return accessControlErrorResponse(error);
+    }
     if (error instanceof EntitlementError) {
       return NextResponse.json({ error: error.message, code: error.code }, { status: error.status });
     }
