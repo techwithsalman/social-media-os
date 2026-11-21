@@ -3,6 +3,7 @@ import prisma from '@/lib/prisma';
 import { getSession } from '@/lib/auth';
 import { decryptToken, encryptToken } from '@/lib/crypto';
 import { refreshTikTokToken } from '@/lib/tiktok-oauth';
+import { safeCleanupMediaAsset } from '@/lib/storage/r2-cleanup';
 
 export async function POST(
   req: NextRequest,
@@ -423,6 +424,20 @@ export async function POST(
         },
       },
     });
+
+    // Safe automatic R2 media asset cleanup check upon reaching confirmed published or draft state
+    if (contentPost.mediaAssetId && (finalStatus === 'PUBLISHED' || finalStatus === 'INBOX_DRAFT')) {
+      try {
+        const cleanupResult = await safeCleanupMediaAsset(contentPost.mediaAssetId, contentPost.workspaceId);
+        if (cleanupResult.action === 'DELETED') {
+          console.log(
+            `[Refresh Status] Post ${contentPost.id} triggered automatic R2 cleanup for asset ${contentPost.mediaAssetId}`
+          );
+        }
+      } catch (cleanupErr) {
+        console.error('[Refresh Status] Non-critical error during post-refresh R2 cleanup:', cleanupErr);
+      }
+    }
 
     return NextResponse.json({
       success: true,
