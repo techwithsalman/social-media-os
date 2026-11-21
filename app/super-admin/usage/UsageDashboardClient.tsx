@@ -22,6 +22,7 @@ import {
   RefreshCw,
   FolderArchive,
   Database,
+  FileText,
 } from 'lucide-react';
 import {
   UserUsageItem,
@@ -176,55 +177,109 @@ export function UsageDashboardClient({
       </div>
 
       {/* Top Summary Cards (Requirement 5) */}
-      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="rounded-2xl bg-[#0a0404] border border-[#2a1010] p-5">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+        <div className="rounded-2xl bg-[#0a0404] border border-[#2a1010] p-4">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-black uppercase tracking-wider text-neutral-500">Total Users</span>
+            <span className="text-[10px] font-black uppercase tracking-wider text-neutral-500">Total Users</span>
             <Users className="w-4 h-4 text-indigo-400" />
           </div>
-          <div className="text-2xl font-black text-white mt-4">{summary.totalUsers}</div>
-          <div className="text-xs text-neutral-400 mt-1 flex items-center gap-1 font-semibold">
+          <div className="text-xl font-black text-white mt-2">{summary.totalUsers}</div>
+          <div className="text-[11px] text-neutral-400 mt-0.5 flex items-center gap-1 font-semibold">
             <span className="text-emerald-400 font-bold">{summary.activeUsers} Active</span>
-            <span>in system</span>
           </div>
         </div>
 
-        <div className="rounded-2xl bg-[#0a0404] border border-[#2a1010] p-5">
+        <div className="rounded-2xl bg-[#0a0404] border border-[#2a1010] p-4">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-black uppercase tracking-wider text-neutral-500">Total Posts</span>
+            <span className="text-[10px] font-black uppercase tracking-wider text-neutral-500">Paid vs Free</span>
+            <Shield className="w-4 h-4 text-purple-400" />
+          </div>
+          <div className="text-xl font-black text-white mt-2 flex items-center gap-1.5">
+            <span className="text-purple-300">{summary.paidUsers} Paid</span>
+          </div>
+          <div className="text-[11px] text-neutral-400 mt-0.5 font-semibold">
+            <span>{summary.freeUsers} Free Users</span>
+          </div>
+        </div>
+
+        <div className="rounded-2xl bg-[#0a0404] border border-[#2a1010] p-4">
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-black uppercase tracking-wider text-neutral-500">Workspaces</span>
+            <Database className="w-4 h-4 text-cyan-400" />
+          </div>
+          <div className="text-xl font-black text-white mt-2">{summary.totalWorkspaces}</div>
+          <div className="text-[11px] text-neutral-400 mt-0.5 font-semibold">
+            Registered workspaces
+          </div>
+        </div>
+
+        <div className="rounded-2xl bg-[#0a0404] border border-[#2a1010] p-4">
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-black uppercase tracking-wider text-neutral-500">Total Posts</span>
             <WalletCards className="w-4 h-4 text-cyan-400" />
           </div>
-          <div className="text-2xl font-black text-white mt-4">{summary.totalPosts}</div>
-          <div className="text-xs text-neutral-400 mt-1 font-semibold">
-            Unique content posts created
+          <div className="text-xl font-black text-white mt-2">{summary.totalPosts}</div>
+          <div className="text-[11px] text-neutral-400 mt-0.5 font-semibold">
+            {summary.totalDraftPosts} in drafts
           </div>
         </div>
 
-        <div className="rounded-2xl bg-[#0a0404] border border-[#2a1010] p-5">
+        <div className="rounded-2xl bg-[#0a0404] border border-[#2a1010] p-4">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-black uppercase tracking-wider text-neutral-500">Published Posts</span>
+            <span className="text-[10px] font-black uppercase tracking-wider text-neutral-500">Published Posts</span>
             <CheckCircle2 className="w-4 h-4 text-emerald-400" />
           </div>
-          <div className="text-2xl font-black text-emerald-300 mt-4">{summary.totalPublishedPosts}</div>
-          <div className="text-xs text-neutral-400 mt-1 font-semibold">
-            Successfully published to social
+          <div className="text-xl font-black text-emerald-300 mt-2">{summary.totalPublishedPosts}</div>
+          <div className="text-[11px] text-neutral-400 mt-0.5 font-semibold">
+            Published to social
           </div>
         </div>
 
-        <div className="rounded-2xl bg-[#0a0404] border border-[#2a1010] p-5">
+        <div className="rounded-2xl bg-[#0a0404] border border-[#2a1010] p-4">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-black uppercase tracking-wider text-neutral-500">R2 Active Storage</span>
+            <span className="text-[10px] font-black uppercase tracking-wider text-neutral-500">Scheduled</span>
+            <Clock className="w-4 h-4 text-blue-400" />
+          </div>
+          <div className="text-xl font-black text-blue-300 mt-2">{summary.totalScheduledPosts}</div>
+          <div className="text-[11px] text-neutral-400 mt-0.5 font-semibold">
+            Queued for publishing
+          </div>
+        </div>
+
+        <div className="rounded-2xl bg-[#0a0404] border border-[#2a1010] p-4">
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-black uppercase tracking-wider text-neutral-500">Failed Posts</span>
+            <AlertTriangle className="w-4 h-4 text-red-400" />
+          </div>
+          <div className="text-xl font-black text-red-400 mt-2">{summary.totalFailedPosts}</div>
+          <div className="text-[11px] text-neutral-400 mt-0.5 font-semibold">
+            Publish errors
+          </div>
+        </div>
+
+        <div className="rounded-2xl bg-[#0a0404] border border-[#2a1010] p-4">
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-black uppercase tracking-wider text-neutral-500">Videos Uploaded</span>
+            <Video className="w-4 h-4 text-rose-400" />
+          </div>
+          <div className="text-xl font-black text-rose-300 mt-2">{summary.totalVideosUploaded}</div>
+          <div className="text-[11px] text-neutral-400 mt-0.5 font-semibold">
+            Across {summary.totalMediaFiles} total files
+          </div>
+        </div>
+
+        <div className="rounded-2xl bg-[#0a0404] border border-[#2a1010] p-4">
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-black uppercase tracking-wider text-neutral-500">R2 Storage (GB)</span>
             <HardDrive className="w-4 h-4 text-teal-400" />
           </div>
-          <div className="text-2xl font-black text-white mt-4">
-            {summary.totalStorageMB >= 1024
-              ? `${summary.totalStorageGB} GB`
-              : `${summary.totalStorageMB} MB`}
+          <div className="text-xl font-black text-teal-300 mt-2">
+            {summary.totalStorageGB} GB
           </div>
-          <div className="text-xs text-neutral-400 mt-1 flex items-center justify-between font-semibold">
-            <span>{summary.storagePercentageUsed}% of 10 GB</span>
+          <div className="text-[11px] text-neutral-400 mt-0.5 flex items-center justify-between font-semibold">
+            <span>{summary.totalStorageMB} MB active</span>
             <span
-              className={`px-1.5 py-0.5 rounded text-[10px] font-black uppercase ${
+              className={`px-1 rounded text-[9px] font-black uppercase ${
                 summary.storageWarningLevel === 'HEALTHY'
                   ? 'bg-emerald-500/10 text-emerald-400'
                   : summary.storageWarningLevel === 'WARNING'
@@ -237,47 +292,36 @@ export function UsageDashboardClient({
           </div>
         </div>
 
-        <div className="rounded-2xl bg-[#0a0404] border border-[#2a1010] p-5">
+        <div className="rounded-2xl bg-[#0a0404] border border-[#2a1010] p-4">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-black uppercase tracking-wider text-neutral-500">Videos Uploaded</span>
-            <Video className="w-4 h-4 text-rose-400" />
-          </div>
-          <div className="text-2xl font-black text-white mt-4">{summary.totalVideosUploaded}</div>
-          <div className="text-xs text-neutral-400 mt-1 font-semibold">
-            Across {summary.totalMediaFiles} total media files
-          </div>
-        </div>
-
-        <div className="rounded-2xl bg-[#0a0404] border border-[#2a1010] p-5">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-black uppercase tracking-wider text-neutral-500">Scheduled Posts</span>
-            <Clock className="w-4 h-4 text-blue-400" />
-          </div>
-          <div className="text-2xl font-black text-blue-300 mt-4">{summary.totalScheduledPosts}</div>
-          <div className="text-xs text-neutral-400 mt-1 font-semibold">
-            Queued for automated publishing
-          </div>
-        </div>
-
-        <div className="rounded-2xl bg-[#0a0404] border border-[#2a1010] p-5">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-black uppercase tracking-wider text-neutral-500">Failed Posts</span>
-            <AlertTriangle className="w-4 h-4 text-red-400" />
-          </div>
-          <div className="text-2xl font-black text-red-400 mt-4">{summary.totalFailedPosts}</div>
-          <div className="text-xs text-neutral-400 mt-1 font-semibold">
-            Requiring retry or attention
-          </div>
-        </div>
-
-        <div className="rounded-2xl bg-[#0a0404] border border-[#2a1010] p-5">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-black uppercase tracking-wider text-neutral-500">Storage Saved</span>
+            <span className="text-[10px] font-black uppercase tracking-wider text-neutral-500">Storage Saved</span>
             <FolderArchive className="w-4 h-4 text-amber-400" />
           </div>
-          <div className="text-2xl font-black text-amber-300 mt-4">{summary.storageSavedArchivedGB} GB</div>
-          <div className="text-xs text-neutral-400 mt-1 font-semibold">
-            Freed via automated R2 post-publish cleanup
+          <div className="text-xl font-black text-amber-300 mt-2">{summary.storageSavedArchivedGB} GB</div>
+          <div className="text-[11px] text-neutral-400 mt-0.5 font-semibold">
+            Freed post-publish
+          </div>
+        </div>
+
+        <div className="rounded-2xl bg-[#0a0404] border border-[#2a1010] p-4">
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-black uppercase tracking-wider text-neutral-500">10 GB Quota</span>
+            <BarChart3 className="w-4 h-4 text-teal-400" />
+          </div>
+          <div className="text-xl font-black text-white mt-2">{summary.storagePercentageUsed}%</div>
+          <div className="text-[11px] text-neutral-400 mt-0.5 font-semibold">
+            of free 10 GB tier
+          </div>
+        </div>
+
+        <div className="rounded-2xl bg-[#0a0404] border border-[#2a1010] p-4">
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-black uppercase tracking-wider text-neutral-500">Drafts</span>
+            <FileText className="w-4 h-4 text-amber-400" />
+          </div>
+          <div className="text-xl font-black text-amber-300 mt-2">{summary.totalDraftPosts}</div>
+          <div className="text-[11px] text-neutral-400 mt-0.5 font-semibold">
+            Unpublished drafts
           </div>
         </div>
       </div>

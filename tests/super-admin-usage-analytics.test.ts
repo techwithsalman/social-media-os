@@ -149,10 +149,14 @@ async function runSuite() {
         return 10;
       }) as any;
 
+      prisma.workspace.count = (async () => 6) as any;
+      prisma.subscription.count = (async () => 4) as any;
+
       prisma.contentPost.count = (async (args: any = {}) => {
         if (args?.where?.status?.in?.includes('PUBLISHED')) return 45;
         if (args?.where?.status === 'SCHEDULED') return 12;
         if (args?.where?.status === 'FAILED') return 3;
+        if (args?.where?.status === 'DRAFT') return 15;
         return 75; // Total
       }) as any;
 
@@ -178,10 +182,14 @@ async function runSuite() {
 
       assert.strictEqual(summary.totalUsers, 10);
       assert.strictEqual(summary.activeUsers, 8);
+      assert.strictEqual(summary.paidUsers, 4);
+      assert.strictEqual(summary.freeUsers, 6);
+      assert.strictEqual(summary.totalWorkspaces, 6);
       assert.strictEqual(summary.totalPosts, 75);
       assert.strictEqual(summary.totalPublishedPosts, 45);
       assert.strictEqual(summary.totalScheduledPosts, 12);
       assert.strictEqual(summary.totalFailedPosts, 3);
+      assert.strictEqual(summary.totalDraftPosts, 15);
       assert.strictEqual(summary.totalVideosUploaded, 18);
       assert.strictEqual(summary.totalMediaFiles, 30);
       assert.strictEqual(summary.totalStorageBytes, 162529280); // 100 + 50 + 5 MB

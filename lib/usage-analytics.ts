@@ -55,15 +55,19 @@ export interface UserUsageItem {
 export interface SuperAdminUsageSummary {
   totalUsers: number;
   activeUsers: number;
+  paidUsers: number;
+  freeUsers: number;
+  totalWorkspaces: number;
   totalPosts: number;
   totalPublishedPosts: number;
+  totalScheduledPosts: number;
+  totalFailedPosts: number;
+  totalDraftPosts: number;
   totalVideosUploaded: number;
   totalMediaFiles: number;
   totalStorageBytes: number;
   totalStorageMB: number;
   totalStorageGB: number;
-  totalScheduledPosts: number;
-  totalFailedPosts: number;
   storageWarningLevel: string;
   storagePercentageUsed: number;
   storageSavedArchivedGB: number;
@@ -255,22 +259,33 @@ export async function getSuperAdminUsageSummary(): Promise<SuperAdminUsageSummar
   const [
     totalUsers,
     activeUsers,
+    totalWorkspaces,
+    paidSubscriptionsCount,
     totalPosts,
     totalPublishedPosts,
     totalScheduledPosts,
     totalFailedPosts,
+    totalDraftPosts,
     totalVideosUploaded,
     totalMediaFiles,
     storageMetrics,
   ] = await Promise.all([
     prisma.user.count(),
     prisma.user.count({ where: { status: 'ACTIVE' } }),
+    prisma.workspace.count(),
+    prisma.subscription.count({
+      where: {
+        status: { in: ['ACTIVE', 'MANUAL'] },
+        planTier: { not: 'FREE' },
+      },
+    }),
     prisma.contentPost.count(),
     prisma.contentPost.count({
       where: { status: { in: ['PUBLISHED', 'PARTIALLY_FAILED'] } },
     }),
     prisma.contentPost.count({ where: { status: 'SCHEDULED' } }),
     prisma.contentPost.count({ where: { status: 'FAILED' } }),
+    prisma.contentPost.count({ where: { status: 'DRAFT' } }),
     prisma.mediaAsset.count({
       where: { mimeType: { startsWith: 'video/' } },
     }),
@@ -278,18 +293,25 @@ export async function getSuperAdminUsageSummary(): Promise<SuperAdminUsageSummar
     getStorageMetrics(),
   ]);
 
+  const paidUsers = Math.min(totalUsers, paidSubscriptionsCount);
+  const freeUsers = Math.max(0, totalUsers - paidUsers);
+
   return {
     totalUsers,
     activeUsers,
+    paidUsers,
+    freeUsers,
+    totalWorkspaces,
     totalPosts,
     totalPublishedPosts,
+    totalScheduledPosts,
+    totalFailedPosts,
+    totalDraftPosts,
     totalVideosUploaded,
     totalMediaFiles,
     totalStorageBytes: storageMetrics.activeStorageBytes,
     totalStorageMB: storageMetrics.activeStorageMB,
     totalStorageGB: storageMetrics.activeStorageGB,
-    totalScheduledPosts,
-    totalFailedPosts,
     storageWarningLevel: storageMetrics.warningLevel,
     storagePercentageUsed: storageMetrics.percentageUsed,
     storageSavedArchivedGB: storageMetrics.savedArchivedGB,

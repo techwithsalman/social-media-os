@@ -10,7 +10,7 @@ export const OWNER_EMAIL = (
   'salmandesigner24@gmail.com'
 ).toLowerCase().trim();
 
-export const OWNER_NAME = 'Salman Designer';
+export const OWNER_NAME = 'Salman Designer 24';
 
 /**
  * Normalized comparison to verify if an email belongs to the canonical owner
