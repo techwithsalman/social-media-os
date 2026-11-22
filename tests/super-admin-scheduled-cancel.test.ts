@@ -34,6 +34,7 @@ async function runSuite() {
 
   const origContentPostFindMany = prisma.contentPost.findMany;
   const origContentPostUpdate = prisma.contentPost.update;
+  const origContentPostUpdateMany = prisma.contentPost.updateMany;
   const origPlatformPostUpdateMany = prisma.platformPost.updateMany;
   const origPublishingJobUpdateMany = prisma.publishingJob.updateMany;
   const origActivityLogCreate = prisma.activityLog.create;
@@ -295,6 +296,13 @@ async function runSuite() {
       prisma.contentPost.update = (async ({ where }: any) => {
         updatedContentPostIds.push(where.id);
         return { id: where.id, status: 'CANCELLED' };
+      }) as any;
+
+      prisma.contentPost.updateMany = (async ({ where }: any) => {
+        if (where?.id?.in) {
+          updatedContentPostIds.push(...where.id.in);
+        }
+        return { count: where?.id?.in?.length || 0 };
       }) as any;
 
       let loggedAction = '';
@@ -610,6 +618,7 @@ async function runSuite() {
     await testCase('Live cancellation purges exclusive R2 media and strictly retains protected/shared media', async () => {
       prisma.contentPost.findMany = (async () => sampleMediaPosts) as any;
       prisma.contentPost.update = (async () => ({ id: 'mock' })) as any;
+      prisma.contentPost.updateMany = (async () => ({ count: 1 })) as any;
       prisma.platformPost.updateMany = (async () => ({ count: 1 })) as any;
       prisma.publishingJob.updateMany = (async () => ({ count: 0 })) as any;
       prisma.activityLog.create = (async () => ({ id: 'log_r2', createdAt: new Date() })) as any;
@@ -686,6 +695,7 @@ async function runSuite() {
     await testCase('R2 deletion failure marks asset for background retry without throwing or crashing', async () => {
       prisma.contentPost.findMany = (async () => [sampleMediaPosts[1]]) as any; // Only post B
       prisma.contentPost.update = (async () => ({ id: 'mock' })) as any;
+      prisma.contentPost.updateMany = (async () => ({ count: 1 })) as any;
       prisma.platformPost.updateMany = (async () => ({ count: 1 })) as any;
       prisma.publishingJob.updateMany = (async () => ({ count: 0 })) as any;
       prisma.activityLog.create = (async () => ({ id: 'log_r2_fail', createdAt: new Date() })) as any;
@@ -1070,10 +1080,146 @@ async function runSuite() {
       assert.strictEqual(r2DeleteCalled, false, 'Cross-workspace R2 deletion must be blocked');
     });
 
+    await testCase('Executes batch cancellations in 3 DB queries and bounded parallel R2 cleanup for 20 posts', async () => {
+      // Mock 20 cancel candidates (similar to live production workload)
+      const mock20Posts = Array.from({ length: 20 }, (_, i) => ({
+        id: `post_batch_${i}`,
+        workspaceId: `ws_batch_${i % 3}`,
+        title: `Batch Post ${i}`,
+        masterCaption: `Caption ${i}`,
+        scheduledFor: new Date('2026-12-10T10:00:00Z'),
+        status: 'SCHEDULED',
+        workspace: {
+          id: `ws_batch_${i % 3}`,
+          name: `Workspace ${i % 3}`,
+          slug: `ws-${i % 3}`,
+          members: [{ user: { email: `user${i % 3}@test.com`, firstName: 'User', lastName: `${i}` } }],
+        },
+        platformPosts: [
+          {
+            id: `pp_ig_batch_${i}`,
+            platform: 'INSTAGRAM',
+            status: 'SCHEDULED',
+            socialAccountId: `sa_ig_${i}`,
+            socialAccount: {
+              id: `sa_ig_${i}`,
+              platform: 'INSTAGRAM',
+              name: `Instagram Page ${i}`,
+              username: `ig_user_${i}`,
+              platformAccountId: `ig_${i}`,
+            },
+          },
+          {
+            id: `pp_fb_batch_${i}`,
+            platform: 'FACEBOOK',
+            status: 'SCHEDULED',
+            socialAccountId: `sa_fb_${i}`,
+            socialAccount: {
+              id: `sa_fb_${i}`,
+              platform: 'FACEBOOK',
+              name: `Facebook Page ${i}`,
+              username: `fb_user_${i}`,
+              platformAccountId: `fb_${i}`,
+            },
+          },
+        ],
+        mediaAsset: {
+          id: `media_batch_${i}`,
+          size: 1024 * 1024 * 5, // 5 MB
+          sizeBytes: 1024 * 1024 * 5,
+          mimeType: 'video/mp4',
+          filename: `video_${i}.mp4`,
+          originalName: `video_${i}.mp4`,
+          url: `https://r2.socialos.dev/workspaces/ws_batch_${i % 3}/video_${i}.mp4`,
+          storageKey: `workspaces/ws_batch_${i % 3}/video_${i}.mp4`,
+          posts: [
+            {
+              id: `post_batch_${i}`,
+              status: 'SCHEDULED',
+              platformPosts: [],
+            },
+          ],
+        },
+      }));
+
+      prisma.contentPost.findMany = (async () => mock20Posts) as any;
+
+      let platformPostUpdateManyCalls = 0;
+      let publishingJobUpdateManyCalls = 0;
+      let contentPostUpdateManyCalls = 0;
+      let batchNonProtectedIds: string[] = [];
+
+      prisma.platformPost.updateMany = (async ({ where }: any) => {
+        platformPostUpdateManyCalls++;
+        if (where?.id?.in) batchNonProtectedIds.push(...where.id.in);
+        return { count: where?.id?.in?.length || 0 };
+      }) as any;
+
+      prisma.publishingJob.updateMany = (async () => {
+        publishingJobUpdateManyCalls++;
+        return { count: 0 };
+      }) as any;
+
+      prisma.contentPost.updateMany = (async () => {
+        contentPostUpdateManyCalls++;
+        return { count: 20 };
+      }) as any;
+
+      prisma.activityLog.create = (async () => ({ id: 'log_batch_20', createdAt: new Date() })) as any;
+      prisma.mediaAsset.updateMany = (async () => ({ count: 1 })) as any;
+
+      // Mock media asset query for safe cleanup
+      prisma.mediaAsset.findUnique = (async ({ where }: any) => {
+        const idMatch = where.id.match(/\d+$/);
+        const idx = idMatch ? parseInt(idMatch[0], 10) : 0;
+        return {
+          id: where.id,
+          workspaceId: `ws_batch_${idx % 3}`,
+          url: `https://r2.socialos.dev/workspaces/ws_batch_${idx % 3}/video_${idx}.mp4`,
+          storageKey: `workspaces/ws_batch_${idx % 3}/video_${idx}.mp4`,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          posts: [
+            {
+              id: `post_batch_${idx}`,
+              status: 'CANCELLED',
+              platformPosts: [
+                { id: `pp_ig_batch_${idx}`, platform: 'INSTAGRAM', status: 'CANCELLED' },
+                { id: `pp_fb_batch_${idx}`, platform: 'FACEBOOK', status: 'CANCELLED' },
+              ],
+            },
+          ],
+        };
+      }) as any;
+
+      const deletedKeys: string[] = [];
+      const result = await executeBulkCancelScheduledPosts({
+        confirmToken: 'CONFIRM_CANCEL',
+        actorUserId: 'owner_user_id',
+        deleteR2Fn: async (key: string) => {
+          deletedKeys.push(key);
+          return { success: true };
+        },
+      });
+
+      assert.strictEqual(result.success, true);
+      assert.strictEqual(result.cancelledPostsCount, 20);
+      assert.strictEqual(result.cancelledTargetsCount, 40); // 20 * 2
+      assert.strictEqual(result.mediaCleanupResult.deletedR2Count, 20);
+      assert.strictEqual(deletedKeys.length, 20);
+
+      // Verify batch query efficiency: Exactly 1 batch update call each, NOT 20 calls!
+      assert.strictEqual(platformPostUpdateManyCalls, 1, 'PlatformPost.updateMany must be batched in 1 call');
+      assert.strictEqual(publishingJobUpdateManyCalls, 1, 'PublishingJob.updateMany must be batched in 1 call');
+      assert.strictEqual(contentPostUpdateManyCalls, 1, 'ContentPost.updateMany must be batched in 1 call');
+      assert.strictEqual(batchNonProtectedIds.length, 40);
+    });
+
   } finally {
     // Restore mocks
     prisma.contentPost.findMany = origContentPostFindMany;
     prisma.contentPost.update = origContentPostUpdate;
+    prisma.contentPost.updateMany = origContentPostUpdateMany;
     prisma.platformPost.updateMany = origPlatformPostUpdateMany;
     prisma.publishingJob.updateMany = origPublishingJobUpdateMany;
     prisma.activityLog.create = origActivityLogCreate;

@@ -492,7 +492,7 @@ export async function executeBulkCancelScheduledPosts(options: {
     };
   }
 
-  // 1. Live Transactional Post & Target Cancellations
+  // 1. Live Transactional Post & Target Cancellations (Batch Aggregated)
   const candidateMediaToClean: Array<{
     mediaAssetId: string;
     workspaceId: string;
@@ -501,6 +501,9 @@ export async function executeBulkCancelScheduledPosts(options: {
     sizeFormatted: string;
   }> = [];
   const queuedMediaIds = new Set<string>();
+
+  const allNonProtectedPlatformPostIds: string[] = [];
+  const allContentPostIdsToCancel: string[] = [];
 
   for (const item of eligibleItems) {
     if (item.classification === 'MANUAL_REVIEW') {
@@ -516,30 +519,10 @@ export async function executeBulkCancelScheduledPosts(options: {
 
     if (nonProtectedIds.length === 0) continue;
 
-    // A. Cancel the non-whitelisted PlatformPosts
-    await prisma.platformPost.updateMany({
-      where: { id: { in: nonProtectedIds } },
-      data: {
-        status: 'CANCELLED',
-        errorMessage: 'Bulk-cancelled by Super Admin (non-whitelisted schedule)',
-      },
-    });
-
-    // B. Cancel associated PublishingJobs
-    await prisma.publishingJob.updateMany({
-      where: {
-        platformPostId: { in: nonProtectedIds },
-        status: { in: ['QUEUED', 'SCHEDULED', 'RETRYING'] },
-      },
-      data: {
-        status: 'CANCELLED',
-        errorMessage: 'Bulk-cancelled by Super Admin',
-      },
-    });
-
+    allNonProtectedPlatformPostIds.push(...nonProtectedIds);
     cancelledTargetsCount += nonProtectedIds.length;
 
-    // C. Handle Parent ContentPost
+    // Handle Parent ContentPost
     if (protectedIds.length > 0) {
       // Post still has active whitelisted YouTube targets! Keep ContentPost as SCHEDULED
       cancelledPosts.push({
@@ -551,11 +534,8 @@ export async function executeBulkCancelScheduledPosts(options: {
         preservedTargets: protectedIds,
       });
     } else {
-      // Entire post has only non-whitelisted targets: Cancel parent ContentPost
-      await prisma.contentPost.update({
-        where: { id: item.id },
-        data: { status: 'CANCELLED' },
-      });
+      // Entire post has only non-whitelisted targets: Queue parent ContentPost for cancellation
+      allContentPostIdsToCancel.push(item.id);
       cancelledPostsCount++;
 
       cancelledPosts.push({
@@ -590,68 +570,138 @@ export async function executeBulkCancelScheduledPosts(options: {
     });
   }
 
-  // 2. Automated Safe R2 Media Cleanup (Separate, Traceable Operation)
+  // Execute database updates in high-performance batches (slashes DB roundtrips from 60+ down to 3)
+  if (allNonProtectedPlatformPostIds.length > 0) {
+    // A. Cancel non-whitelisted PlatformPosts in one query
+    await prisma.platformPost.updateMany({
+      where: { id: { in: allNonProtectedPlatformPostIds } },
+      data: {
+        status: 'CANCELLED',
+        errorMessage: 'Bulk-cancelled by Super Admin (non-whitelisted schedule)',
+      },
+    });
+
+    // B. Cancel associated PublishingJobs in one query
+    await prisma.publishingJob.updateMany({
+      where: {
+        platformPostId: { in: allNonProtectedPlatformPostIds },
+        status: { in: ['QUEUED', 'SCHEDULED', 'RETRYING'] },
+      },
+      data: {
+        status: 'CANCELLED',
+        errorMessage: 'Bulk-cancelled by Super Admin',
+      },
+    });
+  }
+
+  if (allContentPostIdsToCancel.length > 0) {
+    // C. Cancel all pure non-whitelisted parent ContentPosts in one batch query
+    if (typeof (prisma.contentPost as any).updateMany === 'function') {
+      await prisma.contentPost.updateMany({
+        where: { id: { in: allContentPostIdsToCancel } },
+        data: { status: 'CANCELLED' },
+      });
+    } else {
+      await Promise.all(
+        allContentPostIdsToCancel.map((id) =>
+          prisma.contentPost.update({
+            where: { id },
+            data: { status: 'CANCELLED' },
+          })
+        )
+      );
+    }
+  }
+
+  // 2. Automated Safe R2 Media Cleanup (Bounded Parallel Operations)
   const shouldCleanupMedia = options.cleanupMedia !== false;
 
   if (shouldCleanupMedia && candidateMediaToClean.length > 0) {
-    for (const mediaItem of candidateMediaToClean) {
-      try {
-        const cleanupResult = await safeCleanupMediaAsset(
-          mediaItem.mediaAssetId,
-          mediaItem.workspaceId,
-          {
-            auditAction: 'SUPER_ADMIN_SCHEDULE_CANCEL_R2_CLEANUP',
-            auditDetails: `Automatically deleted exclusive R2 media for cancelled post ${mediaItem.postId}`,
-            deleteR2Fn: options.deleteR2Fn,
-          }
-        );
+    const CONCURRENCY_LIMIT = 5;
+    let nextIndex = 0;
+    const cleanupResults: Array<BulkCancelResult['mediaCleanupResult']['deletedMediaAssets'][0]> = new Array(
+      candidateMediaToClean.length
+    );
 
-        if (cleanupResult.action === 'DELETED') {
-          deletedR2Count++;
-          freedBytes += mediaItem.sizeBytes;
-          mediaAttempted.push({
+    async function cleanupWorker() {
+      while (nextIndex < candidateMediaToClean.length) {
+        const itemIdx = nextIndex++;
+        const mediaItem = candidateMediaToClean[itemIdx];
+
+        try {
+          const cleanupResult = await safeCleanupMediaAsset(
+            mediaItem.mediaAssetId,
+            mediaItem.workspaceId,
+            {
+              auditAction: 'SUPER_ADMIN_SCHEDULE_CANCEL_R2_CLEANUP',
+              auditDetails: `Automatically deleted exclusive R2 media for cancelled post ${mediaItem.postId}`,
+              deleteR2Fn: options.deleteR2Fn,
+            }
+          );
+
+          if (cleanupResult.action === 'DELETED') {
+            cleanupResults[itemIdx] = {
+              mediaAssetId: mediaItem.mediaAssetId,
+              objectKey: cleanupResult.reason || '',
+              workspaceId: mediaItem.workspaceId,
+              postId: mediaItem.postId,
+              sizeFormatted: mediaItem.sizeFormatted,
+              status: 'DELETED',
+              reason: 'R2 object successfully deleted and archived',
+            };
+          } else if (cleanupResult.action === 'FAILED') {
+            cleanupResults[itemIdx] = {
+              mediaAssetId: mediaItem.mediaAssetId,
+              objectKey: cleanupResult.reason || '',
+              workspaceId: mediaItem.workspaceId,
+              postId: mediaItem.postId,
+              sizeFormatted: mediaItem.sizeFormatted,
+              status: 'FAILED_RETRY',
+              reason: cleanupResult.reason || 'R2 deletion failed; queued for background retry',
+            };
+          } else {
+            cleanupResults[itemIdx] = {
+              mediaAssetId: mediaItem.mediaAssetId,
+              objectKey: cleanupResult.reason || '',
+              workspaceId: mediaItem.workspaceId,
+              postId: mediaItem.postId,
+              sizeFormatted: mediaItem.sizeFormatted,
+              status: 'SKIPPED',
+              reason: cleanupResult.reason || 'Media skipped because it was shared or protected',
+            };
+          }
+        } catch (mediaErr: any) {
+          console.error(`[R2 Cancel Cleanup Error] Asset ${mediaItem.mediaAssetId}:`, mediaErr);
+          cleanupResults[itemIdx] = {
             mediaAssetId: mediaItem.mediaAssetId,
-            objectKey: cleanupResult.reason || '',
-            workspaceId: mediaItem.workspaceId,
-            postId: mediaItem.postId,
-            sizeFormatted: mediaItem.sizeFormatted,
-            status: 'DELETED',
-            reason: 'R2 object successfully deleted and archived',
-          });
-        } else if (cleanupResult.action === 'FAILED') {
-          failedRetryCount++;
-          mediaAttempted.push({
-            mediaAssetId: mediaItem.mediaAssetId,
-            objectKey: cleanupResult.reason || '',
+            objectKey: '',
             workspaceId: mediaItem.workspaceId,
             postId: mediaItem.postId,
             sizeFormatted: mediaItem.sizeFormatted,
             status: 'FAILED_RETRY',
-            reason: cleanupResult.reason || 'R2 deletion failed; queued for background retry',
-          });
-        } else {
-          mediaAttempted.push({
-            mediaAssetId: mediaItem.mediaAssetId,
-            objectKey: cleanupResult.reason || '',
-            workspaceId: mediaItem.workspaceId,
-            postId: mediaItem.postId,
-            sizeFormatted: mediaItem.sizeFormatted,
-            status: 'SKIPPED',
-            reason: cleanupResult.reason || 'Media skipped because it was shared or protected',
-          });
+            reason: mediaErr.message || 'Unexpected cleanup error',
+          };
         }
-      } catch (mediaErr: any) {
-        failedRetryCount++;
-        console.error(`[R2 Cancel Cleanup Error] Asset ${mediaItem.mediaAssetId}:`, mediaErr);
-        mediaAttempted.push({
-          mediaAssetId: mediaItem.mediaAssetId,
-          objectKey: '',
-          workspaceId: mediaItem.workspaceId,
-          postId: mediaItem.postId,
-          sizeFormatted: mediaItem.sizeFormatted,
-          status: 'FAILED_RETRY',
-          reason: mediaErr.message || 'Unexpected cleanup error',
-        });
+      }
+    }
+
+    const workers = Array.from(
+      { length: Math.min(CONCURRENCY_LIMIT, candidateMediaToClean.length) },
+      () => cleanupWorker()
+    );
+    await Promise.all(workers);
+
+    // Collate results in deterministic order
+    for (let i = 0; i < cleanupResults.length; i++) {
+      const resItem = cleanupResults[i];
+      if (resItem) {
+        mediaAttempted.push(resItem);
+        if (resItem.status === 'DELETED') {
+          deletedR2Count++;
+          freedBytes += candidateMediaToClean[i].sizeBytes;
+        } else if (resItem.status === 'FAILED_RETRY') {
+          failedRetryCount++;
+        }
       }
     }
   }

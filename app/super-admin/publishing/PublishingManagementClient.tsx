@@ -51,10 +51,22 @@ export function PublishingManagementClient({ initialAudit }: Props) {
     setErrorMessage(null);
     try {
       const res = await fetch('/api/super-admin/publishing/bulk-cancel');
-      if (!res.ok) {
-        throw new Error('Failed to fetch scheduled posts audit');
+      const contentType = res.headers.get('content-type') || '';
+      let data: any = null;
+      if (contentType.includes('application/json')) {
+        data = await res.json();
+      } else {
+        const text = await res.text();
+        throw new Error(
+          !res.ok
+            ? `Server error (HTTP ${res.status}): ${res.statusText || 'Gateway error'}. ${text.slice(0, 150)}`
+            : `Unexpected non-JSON response from server: ${text.slice(0, 150)}`
+        );
       }
-      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data?.error || `Failed to fetch scheduled posts audit (HTTP ${res.status})`);
+      }
       setAudit(data);
     } catch (err: any) {
       setErrorMessage(err.message || 'Error refreshing audit');
@@ -83,9 +95,21 @@ export function PublishingManagementClient({ initialAudit }: Props) {
         }),
       });
 
-      const data = await res.json();
+      const contentType = res.headers.get('content-type') || '';
+      let data: any = null;
+      if (contentType.includes('application/json')) {
+        data = await res.json();
+      } else {
+        const text = await res.text();
+        throw new Error(
+          !res.ok
+            ? `Server execution error (HTTP ${res.status}): ${res.statusText || 'Gateway timeout'}. ${text.slice(0, 150)}`
+            : `Unexpected non-JSON response from server: ${text.slice(0, 150)}`
+        );
+      }
+
       if (!res.ok) {
-        throw new Error(data.error || 'Failed to execute bulk cancellation');
+        throw new Error(data?.error || `Failed to execute bulk cancellation (HTTP ${res.status})`);
       }
 
       setExecutionResult(data);
