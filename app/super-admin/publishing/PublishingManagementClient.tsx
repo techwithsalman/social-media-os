@@ -166,6 +166,14 @@ export function PublishingManagementClient({ initialAudit }: Props) {
         </div>
 
         <div className="flex items-center gap-3">
+          <Link
+            href="/super-admin/storage"
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-teal-500/10 hover:bg-teal-500/20 border border-teal-500/30 text-teal-300 text-xs font-bold transition-all"
+          >
+            <HardDrive className="w-3.5 h-3.5" />
+            <span>R2 Storage Cleanup</span>
+          </Link>
+
           <button
             onClick={refreshAudit}
             disabled={isRefreshing}

@@ -166,14 +166,23 @@ export function UsageDashboardClient({
             Audit live user activity, unique content posts, platform publishing attempts, and Cloudflare R2 storage consumption per workspace.
           </p>
         </div>
-        <button
-          onClick={refreshData}
-          disabled={isRefreshing}
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#160a0a] hover:bg-[#251010] border border-[#3a1515] text-amber-200 text-xs font-bold transition-all disabled:opacity-50"
-        >
-          <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />
-          <span>{isRefreshing ? 'Refreshing...' : 'Refresh Metrics'}</span>
-        </button>
+        <div className="flex items-center gap-3">
+          <Link
+            href="/super-admin/storage"
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-teal-500/10 hover:bg-teal-500/20 border border-teal-500/30 text-teal-300 text-xs font-bold transition-all"
+          >
+            <HardDrive className="w-3.5 h-3.5" />
+            <span>R2 Cleanup & Audit</span>
+          </Link>
+          <button
+            onClick={refreshData}
+            disabled={isRefreshing}
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#160a0a] hover:bg-[#251010] border border-[#3a1515] text-amber-200 text-xs font-bold transition-all disabled:opacity-50"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />
+            <span>{isRefreshing ? 'Refreshing...' : 'Refresh Metrics'}</span>
+          </button>
+        </div>
       </div>
 
       {/* Top Summary Cards (Requirement 5) */}
