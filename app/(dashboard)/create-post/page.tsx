@@ -1794,18 +1794,31 @@ export default function CreatePostPage() {
                   <PlatformIcon platform={res.platform} size={20} className="w-5 h-5 rounded" />
                   <span className="font-bold">{res.platform}</span>
                 </div>
-                <div className="flex flex-col sm:items-end gap-1">
-                  <span
-                    className={`inline-flex px-2.5 py-1 rounded-lg text-xs font-black shrink-0 ${
-                      res.status === 'PUBLISHED'
-                        ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
-                        : res.status === 'PROCESSING' || res.status === 'INBOX_DRAFT'
-                        ? 'bg-red-500/20 text-red-400 border border-red-500/30'
-                        : 'bg-red-500/20 text-red-300 border border-red-500/30'
-                    }`}
-                  >
-                    {res.status === 'INBOX_DRAFT' ? 'CREATOR INBOX DRAFT' : res.status}
-                  </span>
+                <div className="flex flex-col sm:items-end gap-1.5">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span
+                      className={`inline-flex px-2.5 py-1 rounded-lg text-xs font-black shrink-0 ${
+                        res.status === 'PUBLISHED'
+                          ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                          : res.status === 'PROCESSING' || res.status === 'INBOX_DRAFT'
+                          ? 'bg-red-500/20 text-red-400 border border-red-500/30'
+                          : 'bg-red-500/20 text-red-300 border border-red-500/30'
+                      }`}
+                    >
+                      {res.status === 'INBOX_DRAFT' ? 'CREATOR INBOX DRAFT' : res.status}
+                    </span>
+                    {res.externalPostUrl && (
+                      <a
+                        href={res.externalPostUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold bg-white/10 hover:bg-white/20 text-white transition-colors border border-white/10"
+                      >
+                        <span>View on {res.platform === 'TIKTOK' ? 'TikTok' : res.platform}</span>
+                        <ExternalLink className="w-3.5 h-3.5" />
+                      </a>
+                    )}
+                  </div>
                   {(res.statusMessage || res.errorMessage) && (
                     <span
                       className={`text-xs max-w-xl leading-relaxed ${
@@ -3340,12 +3353,25 @@ export default function CreatePostPage() {
 
             {selectedAccounts.some((a) => a.platform === 'TIKTOK') && (
               <div className="space-y-3 mb-6">
-                <div className="p-3.5 rounded-xl bg-[#14141e] border border-[#262635] text-xs space-y-2">
+                <div className="p-3.5 rounded-xl bg-[#14141e] border border-[#262635] text-xs space-y-2.5">
                   <div className="flex items-center justify-between">
-                    <span className="font-bold text-white flex items-center gap-2">
-                      <PlatformIcon platform="TIKTOK" size={16} className="w-4 h-4 rounded" />
-                      TikTok Post Mode
-                    </span>
+                    <div className="flex items-center gap-2">
+                      {tiktokCreatorInfo?.creatorAvatarUrl || selectedTikTokAccount?.profileImageUrl ? (
+                        <img
+                          src={tiktokCreatorInfo?.creatorAvatarUrl || selectedTikTokAccount?.profileImageUrl || ''}
+                          alt="TikTok Creator"
+                          className="w-5 h-5 rounded-full object-cover border border-red-500/40"
+                        />
+                      ) : (
+                        <PlatformIcon platform="TIKTOK" size={16} className="w-4 h-4 rounded" />
+                      )}
+                      <span className="font-bold text-white">
+                        {tiktokCreatorInfo?.creatorNickname || selectedTikTokAccount?.name || 'TikTok Creator'}
+                      </span>
+                      <span className="text-[11px] text-neutral-400">
+                        (@{tiktokCreatorInfo?.creatorUsername || selectedTikTokAccount?.username || 'creator'})
+                      </span>
+                    </div>
                     <span className="text-[10px] font-bold text-neutral-300 bg-neutral-800 px-2 py-0.5 rounded border border-neutral-700">
                       {platformSettings.TIKTOK?.contentType === 'INBOX_DRAFT' ? 'Creator Inbox Draft' : 'Direct Post to Profile'}
                     </span>

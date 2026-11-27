@@ -9,18 +9,25 @@
 
 ## 1. Executive Summary & Audit Context
 
-### 1.1 Previous Rejection Feedback
-TikTok App Review rejected the previous audit submission with the following explicit feedback:
+### 1.1 Official Rejection Feedback
+TikTok App Review rejected the developer application with the following explicit feedback:
 
-> *"Please review the 'Required UX Implementation in Your App' section of the Content Sharing Guidelines for the complete requirements. All applicable requirements must be clearly demonstrated in the Demo Video."*  
-> *"Your application does not follow Point 3 of our UX Guidelines, please demonstrate every required Point 3 behavior in the Demo Video."*  
-> *"Your application does not follow Point 4 of our UX Guidelines, please demonstrate every required Point 4 behavior in the Demo Video."*
+> *"Please review the Required UX Implementation in Your App section of the Content Sharing Guidelines for the complete requirements. All applicable requirements must be clearly demonstrated in the Demo Video. The Demo Video does not show a successful publication result on TikTok, please complete the posting flow and clearly demonstrate that the post was successfully published."*
 
-### 1.2 Core Audit Finding
-Our deep codebase audit confirms that while the application implements OAuth 2.0 PKCE, creator information querying, chunked binary media upload, and post status reconciliation:
-1. **Point 3 (Content Disclosure Setting)** is completely absent from the UI and API payload. The application has no Commercial Content toggle, no "Your brand" or "Branded content" selections, does not restrict private visibility (`SELF_ONLY`) for branded content, and does not disable publishing when disclosure is incomplete.
-2. **Point 4 (Compliance Requirements & Declarations)** is completely absent. The required dynamic legal declarations ("Music Usage Confirmation" and "Branded Content Policy and Music Usage Confirmation") with official hyperlinks are never displayed to the user prior to posting.
-3. **Demo Video Gaps (Points 1 & 2)**: Several capabilities (such as creator nickname display, unselected privacy dropdown, and interaction restrictions) exist in code but were poorly emphasized or not explicitly demonstrated in the submitted screen recording.
+### 1.2 Root Cause Analysis & Complete Remediation
+1. **Rejection Reason 1: Required UX Implementation in the App**:
+   - **Point 1 (Creator Awareness & Duration Limit)**: Creator identity (nickname, avatar, `@username`) is displayed in the account selector, TikTok settings panel, live preview, and confirmation modal. Account `max_video_post_duration_sec` is strictly enforced.
+   - **Point 2 (Privacy & Interactions)**: Privacy dropdown strictly starts unselected (`""`) with mandatory manual selection. Interaction controls (Comments, Duet, Stitch) default to unchecked (`false`) and are automatically disabled and labelled if the creator's account disabled them in TikTok settings.
+   - **Point 3 (Content Disclosure Setting)**: Commercial Content Disclosure master toggle defaults to OFF. When turned ON, "Your brand" (Promotional content / Brand Organic) and "Branded content" (Paid partnership) sub-options appear. If disclosure is ON with neither selected, publishing is disabled with the prompt: *"You need to indicate if your content promotes yourself, a third party, or both."* Branded content visibility is prohibited from being private (`SELF_ONLY`).
+   - **Point 4 (Compliance Declarations)**: Dynamic legal declarations linking to official *Music Usage Confirmation*, *Terms of Service*, *Community Guidelines*, and *Branded Content Policy* are rendered with clickable links opening in new tabs.
+   - **Point 5 / 6 (Explicit Confirmation)**: Affirmative user consent in a review modal prior to posting; no silent auto-publishing.
+   - **Point 7 (Processing Feedback & Direct Link)**: Clear post-publish notification that TikTok takes 2-5 minutes to transcode, accompanied by a direct **"View on TikTok"** button linking to the creator's post / profile.
+   - **Point 8 (Direct Post vs Creator Inbox)**: Clear distinction between Direct Post (`/v2/post/publish/video/init/`) and Creator Inbox draft mode (`/v2/post/publish/inbox/video/init/`).
+
+2. **Rejection Reason 2: Demo Video Missing Successful Publication Result on TikTok**:
+   - The previous demo video ended at an in-app dashboard notification and failed to demonstrate the actual live post visible on TikTok.
+   - TikTok reviewers require seeing the post actively appear and play on the creator's profile feed on TikTok (`tiktok.com/@username` or the TikTok mobile app).
+   - The demo script (`docs/tiktok-audit-demo-script.md`) has been updated with a mandatory Scene 11: navigating directly to the live profile, refreshing the feed, opening the video, playing it, and verifying the caption and commercial disclosure badge on TikTok.
 
 ---
 

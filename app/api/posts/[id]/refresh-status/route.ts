@@ -315,7 +315,11 @@ export async function POST(
 
             if (statusRes.ok && statusData.data) {
               const rawStatus = statusData.data.status || '';
-              const publicPostId = statusData.data.public_post_id || statusData.data.video_id;
+              const rawPostId =
+                statusData.data.public_post_id ||
+                statusData.data.public_post_ids ||
+                statusData.data.video_id;
+              const publicPostId = Array.isArray(rawPostId) ? rawPostId[0] : (rawPostId || null);
               const failReason = statusData.data.fail_reason;
 
               if (rawStatus === 'PUBLISH_COMPLETE' || rawStatus === 'SUCCESS' || rawStatus === 'PUBLISHED') {

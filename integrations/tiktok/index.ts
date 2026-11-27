@@ -479,7 +479,7 @@ export class TikTokAdapter implements ISocialPlatformAdapter {
 
       // Step 5: Poll Publish Status until confirmed by TikTok API
       let pollStatus = 'PROCESSING';
-      let publicPostId = null;
+      let publicPostId: string | null = null;
       let failReason = null;
 
       for (let attempt = 0; attempt < 5; attempt++) {
@@ -497,7 +497,11 @@ export class TikTokAdapter implements ISocialPlatformAdapter {
         const statusData = await statusRes.json();
         if (statusRes.ok && statusData.data) {
           pollStatus = statusData.data.status;
-          publicPostId = statusData.data.public_post_id || statusData.data.video_id;
+          const rawPostId =
+            statusData.data.public_post_id ||
+            statusData.data.public_post_ids ||
+            statusData.data.video_id;
+          publicPostId = Array.isArray(rawPostId) ? rawPostId[0] : (rawPostId || null);
           failReason = statusData.data.fail_reason;
 
           if (
@@ -553,7 +557,7 @@ export class TikTokAdapter implements ISocialPlatformAdapter {
         success: true,
         status: finalStatus,
         statusMessage,
-        externalPostId: publishId,
+        externalPostId: publicPostId || publishId,
         externalPostUrl,
         publishedAt: isPubliclyPublished ? new Date() : undefined,
       };
@@ -585,7 +589,7 @@ export class TikTokAdapter implements ISocialPlatformAdapter {
       const statusData = await statusRes.json();
       const status = statusData.data?.status || 'UNKNOWN';
 
-      if (status === 'SUCCESS' || status === 'PUBLISHED') {
+      if (status === 'SUCCESS' || status === 'PUBLISHED' || status === 'PUBLISH_COMPLETE') {
         return { status: 'PUBLISHED' };
       } else if (status === 'FAILED') {
         return { status: 'FAILED', errorMessage: statusData.data?.fail_reason || 'TikTok publish failed' };
